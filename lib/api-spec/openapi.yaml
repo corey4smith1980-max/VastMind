@@ -3,13 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+    description: API health checks
+  - name: profile
+    description: Member profiles and privacy controls
+  - name: users
+    description: Member discovery and safety
+  - name: chats
+    description: Direct and group conversations
+  - name: feed
+    description: Social posts and reactions
+  - name: communities
+    description: Public and private communities
+  - name: channels
+    description: Followable broadcast channels
+  - name: statuses
+    description: 24-hour text statuses
+  - name: business
+    description: Business inbox tools
+  - name: notifications
+    description: In-app notifications
 paths:
   /healthz:
     get:
@@ -24,7 +42,648 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /me:
+    get:
+      operationId: getMyProfile
+      tags: [profile]
+      summary: Get the signed-in member's profile
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+    patch:
+      operationId: updateMyProfile
+      tags: [profile]
+      summary: Update the signed-in member's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+  /me/privacy:
+    put:
+      operationId: updatePrivacySettings
+      tags: [profile]
+      summary: Update member privacy controls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacySettingsInput"
+      responses:
+        "200":
+          description: Updated privacy settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacySettings"
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search members by name or username
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Matching members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+  /users/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      summary: Block a member
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Block status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResult"
+  /users/{userId}/reports:
+    post:
+      operationId: reportUser
+      tags: [users]
+      summary: Report a member for review
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResult"
+  /chats:
+    get:
+      operationId: listChats
+      tags: [chats]
+      summary: List the signed-in member's conversations
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationList"
+    post:
+      operationId: createChat
+      tags: [chats]
+      summary: Start a direct or group conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatInput"
+      responses:
+        "201":
+          description: Created conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+  /chats/{chatId}/messages:
+    get:
+      operationId: getChatMessages
+      tags: [chats]
+      summary: List messages in a conversation
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+        - in: query
+          name: before
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 40
+      responses:
+        "200":
+          description: Message history page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageList"
+    post:
+      operationId: sendMessage
+      tags: [chats]
+      summary: Send a text message
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /chats/{chatId}/read:
+    post:
+      operationId: markChatRead
+      tags: [chats]
+      summary: Mark the conversation as read
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+      responses:
+        "200":
+          description: Read state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResult"
+  /chats/{chatId}/members:
+    post:
+      operationId: addChatMember
+      tags: [chats]
+      summary: Add a member to a group conversation
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMemberInput"
+      responses:
+        "200":
+          description: Updated conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+  /chats/{chatId}/members/{userId}:
+    delete:
+      operationId: removeChatMember
+      tags: [chats]
+      summary: Remove a member from a group conversation
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Updated conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+  /chats/{chatId}/leave:
+    post:
+      operationId: leaveChat
+      tags: [chats]
+      summary: Leave a group conversation
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+      responses:
+        "200":
+          description: Membership ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResult"
+  /chats/{chatId}/invite:
+    post:
+      operationId: createChatInvite
+      tags: [chats]
+      summary: Create or retrieve a group invite link
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+      responses:
+        "200":
+          description: Invite details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteResult"
+  /feed:
+    get:
+      operationId: getFeed
+      tags: [feed]
+      summary: Get the member feed
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: communityId
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: before
+          required: false
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Feed posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostList"
+  /posts:
+    post:
+      operationId: createPost
+      tags: [feed]
+      summary: Publish a text post or poll
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+  /posts/{postId}/reactions:
+    post:
+      operationId: togglePostReaction
+      tags: [feed]
+      summary: Add or remove a reaction
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
+      responses:
+        "200":
+          description: Updated post reaction count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionResult"
+  /posts/{postId}/comments:
+    post:
+      operationId: addPostComment
+      tags: [feed]
+      summary: Comment on a post
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+  /communities:
+    get:
+      operationId: listCommunities
+      tags: [communities]
+      summary: Discover communities
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Communities
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityList"
+    post:
+      operationId: createCommunity
+      tags: [communities]
+      summary: Create a community
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityInput"
+      responses:
+        "201":
+          description: Created community
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Community"
+  /communities/{communityId}/join:
+    post:
+      operationId: joinCommunity
+      tags: [communities]
+      summary: Join a public community or request private membership
+      parameters:
+        - in: path
+          name: communityId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Membership state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinResult"
+  /channels:
+    get:
+      operationId: listChannels
+      tags: [channels]
+      summary: Browse channels
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public channels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelList"
+    post:
+      operationId: createChannel
+      tags: [channels]
+      summary: Create a broadcast channel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelInput"
+      responses:
+        "201":
+          description: Created channel
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+  /channels/{channelId}/follow:
+    post:
+      operationId: toggleChannelFollow
+      tags: [channels]
+      summary: Follow or unfollow a channel
+      parameters:
+        - in: path
+          name: channelId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated channel subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinResult"
+  /channels/{channelId}/updates:
+    post:
+      operationId: publishChannelUpdate
+      tags: [channels]
+      summary: Publish a channel update
+      parameters:
+        - in: path
+          name: channelId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelUpdateInput"
+      responses:
+        "201":
+          description: Published update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelUpdate"
+  /channels/{channelId}/updates/{updateId}/pin:
+    post:
+      operationId: togglePinnedUpdate
+      tags: [channels]
+      summary: Pin or unpin a channel update
+      parameters:
+        - in: path
+          name: channelId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: updateId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated channel update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelUpdate"
+  /statuses:
+    get:
+      operationId: listStatuses
+      tags: [statuses]
+      summary: List unexpired text statuses
+      responses:
+        "200":
+          description: Active statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusList"
+    post:
+      operationId: createStatus
+      tags: [statuses]
+      summary: Publish a text status that expires after 24 hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusInput"
+      responses:
+        "201":
+          description: Created status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+  /business/overview:
+    get:
+      operationId: getBusinessOverview
+      tags: [business]
+      summary: Get business inbox summary
+      responses:
+        "200":
+          description: Business inbox summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOverview"
+  /business/quick-replies:
+    get:
+      operationId: listQuickReplies
+      tags: [business]
+      summary: List saved business replies
+      responses:
+        "200":
+          description: Saved replies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuickReplyList"
+    post:
+      operationId: createQuickReply
+      tags: [business]
+      summary: Save a business quick reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuickReplyInput"
+      responses:
+        "201":
+          description: Saved reply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuickReply"
+  /business/status:
+    patch:
+      operationId: updateBusinessStatus
+      tags: [business]
+      summary: Set business availability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessStatusInput"
+      responses:
+        "200":
+          description: Updated business status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOverview"
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List recent in-app notifications
+      responses:
+        "200":
+          description: Recent notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationList"
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification read state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResult"
 components:
+  parameters:
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema:
+        type: string
+    ChatId:
+      in: path
+      name: chatId
+      required: true
+      schema:
+        type: string
+    PostId:
+      in: path
+      name: postId
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +692,361 @@ components:
           type: string
       required:
         - status
+    Profile:
+      type: object
+      required: [id, name, username, bio, status, online, privacy]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        username: { type: string }
+        email: { type: ["string", "null"] }
+        avatarUrl: { type: ["string", "null"] }
+        bio: { type: ["string", "null"] }
+        status: { type: ["string", "null"] }
+        online: { type: boolean }
+        privacy:
+          $ref: "#/components/schemas/PrivacySettings"
+    ProfileUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        username: { type: string, minLength: 3, maxLength: 32 }
+        bio: { type: ["string", "null"], maxLength: 280 }
+        status: { type: ["string", "null"], maxLength: 80 }
+        avatarUrl: { type: ["string", "null"] }
+    PrivacySettings:
+      type: object
+      required: [allowMessagesFrom, profileVisibility, showOnlineStatus, showLastSeen]
+      properties:
+        allowMessagesFrom: { type: string, enum: [everyone, contacts, nobody] }
+        profileVisibility: { type: string, enum: [everyone, contacts, nobody] }
+        showOnlineStatus: { type: boolean }
+        showLastSeen: { type: boolean }
+    PrivacySettingsInput:
+      type: object
+      required: [allowMessagesFrom, profileVisibility, showOnlineStatus, showLastSeen]
+      properties:
+        allowMessagesFrom: { type: string, enum: [everyone, contacts, nobody] }
+        profileVisibility: { type: string, enum: [everyone, contacts, nobody] }
+        showOnlineStatus: { type: boolean }
+        showLastSeen: { type: boolean }
+    UserSummary:
+      type: object
+      required: [id, name, username, avatarUrl, online, mutualCommunities]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        username: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        online: { type: boolean }
+        mutualCommunities: { type: integer }
+    UserList:
+      type: array
+      items:
+        $ref: "#/components/schemas/UserSummary"
+    BlockResult:
+      type: object
+      required: [blocked]
+      properties:
+        blocked: { type: boolean }
+    ReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 1000 }
+    ReportResult:
+      type: object
+      required: [submitted]
+      properties:
+        submitted: { type: boolean }
+    ConversationMember:
+      type: object
+      required: [user, role, joinedAt]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
+        role: { type: string, enum: [owner, admin, member] }
+        joinedAt: { type: string, format: date-time }
+    Conversation:
+      type: object
+      required: [id, type, name, isPrivate, members, memberCount, lastMessage, lastMessageAt, unreadCount, createdAt]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [private, group] }
+        name: { type: ["string", "null"] }
+        isPrivate: { type: boolean }
+        inviteCode: { type: ["string", "null"] }
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConversationMember"
+        memberCount: { type: integer }
+        lastMessage: { type: ["string", "null"] }
+        lastMessageAt: { type: ["string", "null"], format: date-time }
+        unreadCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+    ConversationList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Conversation"
+    ChatInput:
+      type: object
+      required: [type, memberIds]
+      properties:
+        type: { type: string, enum: [private, group] }
+        name: { type: ["string", "null"], maxLength: 80 }
+        isPrivate: { type: boolean, default: true }
+        memberIds:
+          type: array
+          minItems: 1
+          items: { type: string }
+    ChatMemberInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+    Message:
+      type: object
+      required: [id, chatId, senderId, senderName, senderAvatarUrl, content, type, createdAt, readBy]
+      properties:
+        id: { type: string }
+        chatId: { type: string }
+        senderId: { type: string }
+        senderName: { type: string }
+        senderAvatarUrl: { type: ["string", "null"] }
+        content: { type: string }
+        type: { type: string, enum: [text, system] }
+        createdAt: { type: string, format: date-time }
+        readBy:
+          type: array
+          items: { type: string }
+    MessageList:
+      type: object
+      required: [items, nextBefore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        nextBefore: { type: ["string", "null"], format: date-time }
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 4000 }
+        replyToId: { type: ["string", "null"] }
+    ReadResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+    InviteResult:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode: { type: string }
+        inviteUrl: { type: string }
+    Post:
+      type: object
+      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, pollOptions]
+      properties:
+        id: { type: string }
+        author:
+          $ref: "#/components/schemas/UserSummary"
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+        reactionsCount: { type: integer }
+        reacted: { type: boolean }
+        commentsCount: { type: integer }
+        communityId: { type: ["string", "null"] }
+        communityName: { type: ["string", "null"] }
+        pollOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollOption"
+    PollOption:
+      type: object
+      required: [id, label, votes, votedByMe]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        votes: { type: integer }
+        votedByMe: { type: boolean }
+    PostList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Post"
+    PostInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 5000 }
+        communityId: { type: ["string", "null"] }
+        pollOptions:
+          type: array
+          maxItems: 6
+          items: { type: string, minLength: 1, maxLength: 120 }
+    ReactionInput:
+      type: object
+      required: [reaction]
+      properties:
+        reaction: { type: string, enum: [like, love, celebrate, support, laugh] }
+    ReactionResult:
+      type: object
+      required: [reacted, reactionsCount]
+      properties:
+        reacted: { type: boolean }
+        reactionsCount: { type: integer }
+    Comment:
+      type: object
+      required: [id, postId, author, content, createdAt]
+      properties:
+        id: { type: string }
+        postId: { type: string }
+        author:
+          $ref: "#/components/schemas/UserSummary"
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 2000 }
+    Community:
+      type: object
+      required: [id, name, description, category, isPrivate, memberCount, membership, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        isPrivate: { type: boolean }
+        memberCount: { type: integer }
+        membership: { type: string, enum: [none, member, requested] }
+        createdAt: { type: string, format: date-time }
+    CommunityList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Community"
+    CommunityInput:
+      type: object
+      required: [name, description, category, isPrivate]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        description: { type: string, minLength: 2, maxLength: 500 }
+        category: { type: string, minLength: 2, maxLength: 40 }
+        isPrivate: { type: boolean }
+    JoinResult:
+      type: object
+      required: [membership, memberCount]
+      properties:
+        membership: { type: string, enum: [none, member, requested, followed] }
+        memberCount: { type: integer }
+    Channel:
+      type: object
+      required: [id, name, description, owner, subscriberCount, followed, pinnedUpdate, latestUpdate, createdAt]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        owner:
+          $ref: "#/components/schemas/UserSummary"
+        subscriberCount: { type: integer }
+        followed: { type: boolean }
+        pinnedUpdate:
+          anyOf:
+            - $ref: "#/components/schemas/ChannelUpdate"
+            - type: "null"
+        latestUpdate:
+          anyOf:
+            - $ref: "#/components/schemas/ChannelUpdate"
+            - type: "null"
+        createdAt: { type: string, format: date-time }
+    ChannelList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Channel"
+    ChannelInput:
+      type: object
+      required: [name, description]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80 }
+        description: { type: string, minLength: 2, maxLength: 500 }
+    ChannelUpdate:
+      type: object
+      required: [id, channelId, content, pinned, createdAt]
+      properties:
+        id: { type: string }
+        channelId: { type: string }
+        content: { type: string }
+        pinned: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    ChannelUpdateInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 4000 }
+    Status:
+      type: object
+      required: [id, author, content, createdAt, expiresAt]
+      properties:
+        id: { type: string }
+        author:
+          $ref: "#/components/schemas/UserSummary"
+        content: { type: string }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+    StatusList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Status"
+    StatusInput:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 500 }
+    BusinessOverview:
+      type: object
+      required: [isOpen, unreadCustomerChats, totalCustomers, responseRate]
+      properties:
+        isOpen: { type: boolean }
+        unreadCustomerChats: { type: integer }
+        totalCustomers: { type: integer }
+        responseRate: { type: number }
+    QuickReply:
+      type: object
+      required: [id, label, content]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        content: { type: string }
+    QuickReplyList:
+      type: array
+      items:
+        $ref: "#/components/schemas/QuickReply"
+    QuickReplyInput:
+      type: object
+      required: [label, content]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 80 }
+        content: { type: string, minLength: 1, maxLength: 2000 }
+    BusinessStatusInput:
+      type: object
+      required: [isOpen]
+      properties:
+        isOpen: { type: boolean }
+    Notification:
+      type: object
+      required: [id, type, title, body, read, createdAt]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [message, reaction, comment, community, channel] }
+        title: { type: string }
+        body: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    NotificationList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Notification"
 
