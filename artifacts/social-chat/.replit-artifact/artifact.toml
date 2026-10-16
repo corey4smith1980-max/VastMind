@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Social Chat"
+description = "A mobile social messaging app combining business customer chats, a social feed, and group and channel conversations, designed to make community and customer communication feel connected."
+version = "1.0.0"
+id = "artifacts/social-chat"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 20437
+
+[services.development]
+run = "pnpm --filter @workspace/social-chat run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/social-chat", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/social-chat", "run", "serve" ]
+
+[services.env]
+PORT = "20437"
+BASE_PATH = "/"

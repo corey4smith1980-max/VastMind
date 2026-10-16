@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Gather",
+    "slug": "social-chat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "gather",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#f5f2e9",
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {},
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
