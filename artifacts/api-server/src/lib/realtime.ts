@@ -13,10 +13,11 @@ export function changed(users:string[],entity:string,chatId?:string) {
 }
 export function evictChat(userId:string,chatId:string) {io?.in(`user:${userId}`).socketsLeave(`chat:${chatId}`);}
 export function disconnectUser(userId:string) {io?.in(`user:${userId}`).disconnectSockets(true);}
-async function authenticate(req:IncomingMessage) {
+async function authenticate(req:IncomingMessage, bearer?:string) {
   const host=getClerkProxyHost(req)??"localhost";
   const headers=new Headers();
   for(const [k,v] of Object.entries(req.headers))if(v)headers.set(k,Array.isArray(v)?v.join(","):v);
+  if(bearer)headers.set("authorization",`Bearer ${bearer}`);
   const state=await clerkClient.authenticateRequest(new Request(`https://${host}${req.url??"/api/socket.io"}`,{headers}),{
     publishableKey:publishableKeyFromHost(host,process.env.CLERK_PUBLISHABLE_KEY),
     acceptsToken:"session_token",
@@ -39,17 +40,23 @@ async function presence(userId:string,online:boolean) {
   for(const p of peers)if(await canDiscover(p.user_id,user))io?.to(`user:${p.user_id}`).emit("presence",{userId,online});
 }
 export function attachRealtime(server:HttpServer) {
+  const expoOrigin=process.env.REPLIT_EXPO_DEV_DOMAIN ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}` : undefined;
   io=new Server(server,{
     path:"/api/socket.io",maxHttpBufferSize:8192,
+    cors:{credentials:true,origin:(origin,callback)=>callback(null,!!origin && origin===expoOrigin)},
     allowRequest:(req,callback)=>{
       const origin=req.headers.origin;
       const host=getClerkProxyHost(req);
-      try{callback(null,!origin || new URL(origin).host===host);}catch{callback(null,false);}
+      try{callback(null,!origin || origin===expoOrigin || new URL(origin).host===host);}catch{callback(null,false);}
     },
   });
   io.use(async(socket,next)=>{
     try{
-      const auth=await authenticate(socket.request);
+      // Native/Expo Web sends a short-lived Clerk session token through Socket.IO
+      // auth. It receives the same signature/session checks as browser cookies.
+      const rawToken=socket.handshake.auth?.token;
+      const bearer=rawToken==null ? undefined : z.string().min(1).max(8192).parse(rawToken);
+      const auth=await authenticate(socket.request,bearer);
       const user=await provision(auth.userId);
       socket.data={...auth,name:user.name};
       next();

@@ -3,6 +3,7 @@ import { AppState as NativeAppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import * as api from '@workspace/api-client-react';
 import { AppState } from '@/types';
+import { useMobileRealtime } from '@/state/Realtime';
 
 // Legacy drafts remain untouched at gather-app-state-v1. Never hydrate server
 // identities or sample content from that device-local snapshot.
@@ -12,6 +13,7 @@ export const time = (value: string | null) => value ? new Date(value).toLocaleSt
 
 function useServerStore() {
   const client = useQueryClient();
+  const { presence } = useMobileRealtime();
   const profile = api.useGetMyProfile();
   const chats = api.useListChats(undefined, { query: { queryKey: api.getListChatsQueryKey(), refetchInterval: 10000 } });
   const feed = api.useGetFeed(undefined, { query: { queryKey: api.getGetFeedQueryKey(), refetchInterval: 10000 } });
@@ -43,7 +45,7 @@ function useServerStore() {
     conversations: (chats.data ?? []).map(chat => {
       const other = chat.members.find(m => m.user.id !== profile.data?.id)?.user;
       const name = chat.name || other?.name || 'Conversation';
-      return { id: chat.id, name, initials: initials(name), category: chat.type === 'group' ? 'group' : 'personal', lastMessage: chat.lastMessage ?? '', time: time(chat.lastMessageAt), unread: chat.unreadCount, online: other?.online, messages: [] };
+      return { id: chat.id, name, initials: initials(name), category: chat.type === 'group' ? 'group' : 'personal', lastMessage: chat.lastMessage ?? '', time: time(chat.lastMessageAt), unread: chat.unreadCount, online: other ? (presence[other.id] ?? other.online) : false, messages: [] };
     }),
     posts: (feed.data ?? []).map(p => ({ id: p.id, author: p.author.name, initials: initials(p.author.name), subtitle: p.communityName ?? `@${p.author.username}`, time: time(p.createdAt), text: p.content, image: null, likes: p.reactionsCount, liked: p.reacted, comments: [] })),
     channels: (channels.data ?? []).map(c => ({ id: c.id, name: c.name, initials: initials(c.name), category: c.owner.name, followers: String(c.subscriberCount), color: 'blue', followed: c.followed, description: c.description, updates: c.latestUpdate ? [{ id: c.latestUpdate.id, author: c.owner.name, text: c.latestUpdate.content, time: time(c.latestUpdate.createdAt) }] : [] })),

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -9,12 +9,17 @@ import { Avatar, StorageNotice } from '@/components/common';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { Message } from '@/types';
+import { useMobileRealtime } from '@/state/Realtime';
+
+type RenderMessage = Message & { read: boolean };
 
 export default function ChatDetailScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { status: liveStatus, typing, joinChat, sendTyping } = useMobileRealtime();
+  const lastTyping = useRef(0);
   const { state, profile, sendMessage, markConversationRead } = useAppStore();
   const [before, setBefore] = useState<string | undefined>();
   const [older, setOlder] = useState<ApiMessage[]>([]);
@@ -23,6 +28,20 @@ export default function ChatDetailScreen() {
   const conversation = state.conversations.find((item) => item.id === id);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const typers = typing[id] ?? [];
+  useEffect(() => joinChat(id), [id, joinChat]);
+  useEffect(() => {
+    if (!draft) return;
+    const timeout = setTimeout(() => sendTyping(id, false), 2500);
+    return () => clearTimeout(timeout);
+  }, [draft, id, sendTyping]);
+  useEffect(() => () => sendTyping(id, false), [id, sendTyping]);
+  function changeDraft(value: string) {
+    setDraft(value);
+    if (!value || Date.now() - lastTyping.current > 1500) {
+      sendTyping(id, !!value); lastTyping.current = Date.now();
+    }
+  }
 
   useEffect(() => {
     if (conversation) markConversationRead(conversation.id);
@@ -42,12 +61,12 @@ export default function ChatDetailScreen() {
     if (!draft.trim() || sending) return;
     setSending(true);
     const sent = await sendMessage(conversation.id, draft);
-    if (sent) setDraft('');
+    if (sent) { setDraft(''); sendTyping(id, false); }
     setSending(false);
   };
-  const messages: Message[] = [...new Map([...older, ...(latest.data?.items ?? [])].map(m => [m.id, m])).values()]
+  const messages: RenderMessage[] = [...new Map([...older, ...(latest.data?.items ?? [])].map(m => [m.id, m])).values()]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map(m => ({ id: m.id, text: m.content, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString() }));
+    .map(m => ({ id: m.id, text: m.content, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString(), read: m.readBy.some(reader => reader !== profile?.id) }));
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: colors.background }]} behavior="padding" keyboardVerticalOffset={0}>
@@ -57,8 +76,8 @@ export default function ChatDetailScreen() {
         <View style={styles.headerText}><View style={styles.nameRow}><Text style={[styles.name, { color: colors.forest }]}>{conversation.name}</Text>{conversation.verified ? <Feather name="check-circle" size={14} color={colors.blue} /> : null}</View><Text style={[styles.status, { color: colors.mutedForeground }]}>{conversation.category === 'group' ? 'Group conversation' : conversation.online ? 'Active now' : 'Tap for contact info'}</Text></View>
       </View>
       <StorageNotice />
-      <Pressable onPress={() => { void latest.refetch(); void history.refetch(); }}><Text style={{ color: latest.error || history.error ? colors.destructive : colors.mutedForeground, padding: 10 }}>{latest.error || history.error ? 'Connection failed — tap to retry' : latest.isPending ? 'Loading messages…' : latest.isFetching ? 'Checking for new messages…' : 'Updates checked every 4 seconds'}</Text></Pressable>
-      <FlatList<Message>
+      <Pressable onPress={() => { void latest.refetch(); void history.refetch(); }}><Text style={{ color: latest.error || history.error ? colors.destructive : colors.mutedForeground, padding: 10 }}>{latest.error || history.error ? 'Connection failed — tap to retry' : typers.length ? `${typers.map(p => p.name.split(' ')[0]).join(', ')} typing…` : liveStatus === 'live' ? 'Live · messages update instantly' : 'Reconnecting · checking every 4 seconds'}</Text></Pressable>
+      <FlatList<RenderMessage>
         data={messages}
         inverted
         keyExtractor={(message) => message.id}
@@ -69,7 +88,7 @@ export default function ChatDetailScreen() {
           <View style={[styles.messageRow, item.mine ? styles.mineRow : styles.theirRow]}>
             <View style={[styles.bubble, item.mine ? { backgroundColor: colors.forest } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
               <Text style={[styles.messageText, { color: item.mine ? colors.primaryForeground : colors.foreground }]}>{item.text}</Text>
-              <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather name="check" size={12} color={colors.lime} /> : null}</View>
+              <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather accessibilityLabel={item.read ? 'Read by another member' : 'Sent'} name={item.read ? 'check-circle' : 'check'} size={12} color={colors.lime} /> : null}</View>
             </View>
           </View>
         )}
@@ -77,7 +96,7 @@ export default function ChatDetailScreen() {
       />
       <View style={[styles.composerWrap, { backgroundColor: colors.background, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TextInput accessibilityLabel="Write a message" testID="message-input" placeholder="Write a message…" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={setDraft} onSubmitEditing={send} returnKeyType="send" style={[styles.input, { color: colors.foreground }]} />
+          <TextInput accessibilityLabel="Write a message" testID="message-input" placeholder="Write a message…" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={changeDraft} onSubmitEditing={send} returnKeyType="send" maxLength={4000} style={[styles.input, { color: colors.foreground }]} />
           <Pressable accessibilityLabel={sending ? 'Sending message' : 'Send message'} testID="send-message" onPress={send} disabled={sending || !draft.trim()} style={[styles.sendButton, { backgroundColor: draft.trim() ? colors.lime : colors.secondary }]}><Feather name={sending ? 'clock' : 'arrow-up'} size={18} color={draft.trim() ? colors.forest : colors.mutedForeground} /></Pressable>
         </View>
       </View>
