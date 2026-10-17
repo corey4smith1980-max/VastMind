@@ -6,6 +6,8 @@ const basePath = (process.env.BASE_PATH || "/neura-connect").replace(/\/$/, "");
 const nextConfig = {
   basePath,
   reactStrictMode: true,
+  // Clerk's development handshake uses sensitive URL parameters.
+  logging: { incomingRequests: false },
   allowedDevOrigins: ["*.replit.dev", "*.repl.co", "*.replit.app", "*.pike.replit.dev", "*.picard.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.riker.replit.dev", "*.worf.replit.dev", "*.spock.replit.dev"],
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,

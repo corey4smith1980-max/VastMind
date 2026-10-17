@@ -31,7 +31,18 @@ app.use(
   }),
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(cors({ credentials: true, origin: false }));
+// Native requests have no Origin. Expo's browser preview is on a separate,
+// workspace-owned hostname, so allow that exact origin rather than a wildcard.
+const expoOrigin = process.env.REPLIT_EXPO_DEV_DOMAIN
+  ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}`
+  : undefined;
+app.use(cors({
+  credentials: true,
+  origin: (origin, callback) => callback(null, !!origin && origin === expoOrigin),
+  allowedHeaders: ["Authorization", "Content-Type"],
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  maxAge: 600,
+}));
 app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: false, limit: "32kb" }));
 app.use(

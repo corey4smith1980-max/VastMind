@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native';
-import { useAuth, useSignIn, useSignUp, useClerk, useSession } from '@clerk/expo';
+import { useAuth, useSignIn, useSignUp, useClerk, useSession, useSSO } from '@clerk/expo';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import { useQueryClient } from '@tanstack/react-query';
 import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useColors } from '@/hooks/useColors';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, getToken, userId } = useAuth();
@@ -13,16 +17,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
   const colors = useColors();
   const client = useQueryClient();
-  const [ready, setReady] = useState(false);
+  const [readyUser, setReadyUser] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     // Expo Web lives on a different hostname from the API, so it also needs
     // bearer transport; same-origin sibling web remains cookie authenticated.
     setAuthTokenGetter(() => getToken());
     client.clear();
-    setReady(true);
+    setReadyUser(userId);
     return () => { setAuthTokenGetter(null); client.clear(); };
   }, [getToken, userId, client]);
-  if (!isLoaded || !ready) return <ActivityIndicator accessibilityLabel="Loading session" />;
+  if (!isLoaded || readyUser !== userId) return <ActivityIndicator accessibilityLabel="Loading session" />;
   if (session?.currentTask) return <View style={{ flex: 1, padding: 32, justifyContent: 'center', backgroundColor: colors.background }}><Text style={{ color: colors.foreground }}>Your account requires an additional step ({session.currentTask.key}). Complete account setup on the web app, then sign in again here.</Text><Pressable onPress={() => void signOut()}><Text style={{ color: colors.primary, paddingVertical: 20 }}>Sign out and try again</Text></Pressable></View>;
   return isSignedIn ? children : <AuthForm />;
 }
@@ -32,6 +36,7 @@ function AuthForm() {
   const insets = useSafeAreaInsets();
   const { signIn } = useSignIn();
   const { signUp } = useSignUp();
+  const { startSSOFlow } = useSSO();
   const [register, setRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +44,19 @@ function AuthForm() {
   const [verify, setVerify] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const oauth = async (strategy: 'oauth_google' | 'oauth_apple') => {
+    setBusy(true); setError('');
+    try {
+      const result = await startSSOFlow({ strategy, redirectUrl: AuthSession.makeRedirectUri() });
+      if (result.createdSessionId && result.setActive) {
+        await result.setActive({ session: result.createdSessionId });
+      } else if (result.signIn?.status || result.signUp?.status) {
+        setError('This account needs additional verification. Complete setup in the web app, then sign in here.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'This sign-in provider is unavailable. Use email instead.');
+    } finally { setBusy(false); }
+  };
   const check = (result: { error?: { message?: string } | null }) => { if (result.error) throw new Error(result.error.message || 'Authentication failed'); };
   const execute = async (resend = false) => {
     setBusy(true); setError('');
@@ -71,6 +89,11 @@ function AuthForm() {
     <Text style={{ fontSize: 27, fontWeight: '700', color: colors.foreground }}>NeuraCoreConnect</Text>
     <Text style={{ color: colors.mutedForeground }}>Your people, conversations and communities. One account across web and mobile.</Text>
     <Text style={{ color: colors.foreground, fontSize: 20 }}>{verify ? 'Verify your email' : register ? 'Create your account' : 'Welcome back'}</Text>
+    {!verify && <View style={{ gap: 10 }}>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void oauth('oauth_google')} style={input}><Text style={{ color: colors.foreground }}>Continue with Google</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={() => void oauth('oauth_apple')} style={input}><Text style={{ color: colors.foreground }}>Continue with Apple</Text></Pressable>
+      <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>Social sign-in requires the provider to be enabled for this app. You can also use email below.</Text>
+    </View>}
     {verify ? <TextInput accessibilityLabel="Verification code" style={input} value={code} onChangeText={setCode} keyboardType="number-pad" placeholder="Email verification code" placeholderTextColor={colors.mutedForeground} /> : <>
       <TextInput accessibilityLabel="Email" style={input} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="Email address" placeholderTextColor={colors.mutedForeground} />
       <TextInput accessibilityLabel="Password" style={input} value={password} onChangeText={setPassword} secureTextEntry placeholder="Password" placeholderTextColor={colors.mutedForeground} />

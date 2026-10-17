@@ -260,7 +260,14 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
       <div
         ref={scroller}
         className="switchboard-bg flex-1 overflow-y-auto px-3 py-4 scrollbar-thin sm:px-6"
-        onScroll={(e) => { const el = e.currentTarget; nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120; }}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+          if (el.scrollTop < 60 && nextCursor && !older.includes(nextCursor)) {
+            prevHeight.current = el.scrollHeight;
+            setOlder((pages) => pages.includes(nextCursor) ? pages : [...pages, nextCursor]);
+          }
+        }}
         aria-live="polite"
         data-testid="list-messages"
       >

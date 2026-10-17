@@ -1,2 +1,3 @@
 - [Product direction](product-direction.md) — NeuraCoreConnect extends Gather across web and mobile; use Replit Postgres and defer media uploads.
 - [Generated API exports](generated-api-exports.md) — Orval appends wildcard barrel exports; resolve schema/type name collisions explicitly.
+- [Shared client React alignment](react-peer-alignment.md) — Web, Expo, and shared React Query hooks must resolve the same compatible React context.

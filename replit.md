@@ -1,45 +1,40 @@
-# [Project name]
+# NeuraCoreConnect
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+NeuraCoreConnect is Gather's cross-platform companion for private messaging, community feeds, channels, and everyday business conversations.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
-
-## Stack
-
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
-
-## Where things live
-
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- `pnpm --filter @workspace/api-server run dev` — Express and Socket.IO API (port 8080)
+- `pnpm --filter @workspace/neura-connect run dev` — Next.js web app (port 22088)
+- `pnpm --filter @workspace/social-chat run dev` — Expo mobile/web app (port from `PORT`)
+- `pnpm run typecheck` — TypeScript checks across workspace libraries and apps
+- `pnpm --filter @workspace/api-server test` — database authorization tests (transaction-scoped fixtures)
+- `pnpm --filter @workspace/neura-connect run build` — production web build
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate shared API types and hooks from OpenAPI
+- `pnpm --filter @workspace/db run push` — push schema to the development PostgreSQL database only
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Web lives under `/neura-connect/`; the API is served at `/api`.
+- Web and mobile use the same Clerk accounts and PostgreSQL-backed API.
+- Available text-first features include one-to-one and group chats, message history/search, receipts/presence, feed posts and polls, comments/reactions, communities and member moderation, channels, text statuses, blocking/reporting, privacy controls, business quick replies, and mutual-community people suggestions.
+- Browser notifications are opt-in and only appear while the app remains open in another tab.
+- Media uploads are deliberately deferred. Voice/video calls, background push, and image/video stories and attachments are not implemented.
 
-## User preferences
+## Architecture
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- `lib/api-spec/openapi.yaml` is the shared contract for API validation and generated clients.
+- `lib/db/src/schema/` contains the PostgreSQL/Drizzle schema.
+- `artifacts/api-server/src/routes/social.ts` contains authenticated social endpoints; `src/lib/social.ts` contains data-access and access-control helpers.
+- `artifacts/api-server/src/lib/realtime.ts` contains authenticated Socket.IO events and presence.
+- `artifacts/neura-connect/src/app/` contains the responsive Next.js interface and routes.
+- `artifacts/social-chat/app/` contains the Expo companion.
 
-## Gotchas
+## Configuration and security
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Clerk uses Replit-managed keys from workspace Secrets. Never place secret keys in browser/mobile code or source control; only the publishable key is client-side.
+- Social data is stored in the Replit PostgreSQL database. No Supabase project or media-storage credentials are required for text features.
+- Keep React and React Query as single, compatible workspace versions across web, native, and shared generated-hook packages.
+- Preserve the historical mobile AsyncStorage data; server state is fetched from the shared API.
+- Do not enable unrestricted CORS or log incoming request URLs: auth handshakes can include sensitive query parameters.
 
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
