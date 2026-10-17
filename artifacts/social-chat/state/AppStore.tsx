@@ -55,7 +55,7 @@ function useServerStore() {
     state, profile: profile.data, business: business.data, quickReplies: replies.data ?? [], rawChannels: channels.data ?? [],
     loading: queries.some(q => q.isPending), error: mutationError || queries.find(q => q.error)?.error?.message || '',
     storageError: false, refresh, run,
-    sendMessage: (id: string, text: string) => run(() => send.mutateAsync({ chatId: id, data: { content: text.trim() } })),
+    sendMessage: (id: string, text: string, mediaId?:string) => run(() => send.mutateAsync({ chatId: id, data: { content: text.trim(),mediaId } })),
     markConversationRead: (id: string) => run(() => read.mutateAsync({ chatId: id })),
     toggleLike: (id: string) => run(() => react.mutateAsync({ postId: id, data: { reaction: 'like' } })),
     addComment: (id: string, text: string) => run(() => comment.mutateAsync({ postId: id, data: { content: text.trim() } })),

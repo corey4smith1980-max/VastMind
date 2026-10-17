@@ -12,4 +12,5 @@ export interface StatusInput {
      * @maxLength 500
      */
   content: string;
+  mediaId?: string;
 }

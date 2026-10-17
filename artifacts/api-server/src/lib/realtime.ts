@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getClerkProxyHost } from "../middlewares/clerkProxyMiddleware";
 import { query, chatAllowed, blocked, canDiscover, onlineUsers, provision } from "./social";
 import { logger } from "./logger";
+import { attachCalls } from "./calls";
 
 let io:Server|undefined;
 export function changed(users:string[],entity:string,chatId?:string) {
@@ -42,7 +43,7 @@ async function presence(userId:string,online:boolean) {
 export function attachRealtime(server:HttpServer) {
   const expoOrigin=process.env.REPLIT_EXPO_DEV_DOMAIN ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}` : undefined;
   io=new Server(server,{
-    path:"/api/socket.io",maxHttpBufferSize:8192,
+    path:"/api/socket.io",maxHttpBufferSize:65536,
     cors:{credentials:true,origin:(origin,callback)=>callback(null,!!origin && origin===expoOrigin)},
     allowRequest:(req,callback)=>{
       const origin=req.headers.origin;
@@ -63,6 +64,7 @@ export function attachRealtime(server:HttpServer) {
     }catch{next(new Error("Authentication required"));}
   });
   io.on("connection",socket=>{
+    attachCalls(io!,socket);
     const userId=socket.data.userId as string;
     socket.join(`user:${userId}`);
     const count=onlineUsers.get(userId)??0;onlineUsers.set(userId,count+1);
@@ -72,8 +74,8 @@ export function attachRealtime(server:HttpServer) {
       try{const session=await clerkClient.sessions.getSession(socket.data.sessionId);if(session.status!=="active")socket.disconnect(true);}
       catch{socket.disconnect(true);}
     },30_000);
-    // Reconnect periodically to renew cookie/Bearer authentication.
-    const expiry=setTimeout(()=>socket.conn.close(),5*60_000);
+    // The session is revalidated above. A fixed reconnect timer would terminate
+    // healthy long-running calls even though the member is still signed in.
     let windowStart=Date.now(),events=0;
     const permitted=()=>{if(Date.now()-windowStart>10_000){windowStart=Date.now();events=0;}return ++events<=30;};
     socket.on("chat:join",async(raw,ack)=>{
@@ -98,7 +100,7 @@ export function attachRealtime(server:HttpServer) {
       }catch{/* Invalid or unauthorized socket payloads do not reach recipients. */}
     });
     socket.on("disconnect",()=>{
-      clearInterval(timer);clearTimeout(expiry);
+      clearInterval(timer);
       const remaining=(onlineUsers.get(userId)??1)-1;
       if(remaining>0)onlineUsers.set(userId,remaining);
       else {

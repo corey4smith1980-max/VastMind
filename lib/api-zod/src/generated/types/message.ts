@@ -5,6 +5,7 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { MediaAttachment } from './mediaAttachment';
 import type { MessageType } from './messageType';
 
 export interface Message {
@@ -16,6 +17,7 @@ export interface Message {
   senderAvatarUrl: string | null;
   content: string;
   type: MessageType;
+  media?: MediaAttachment;
   createdAt: Date;
   readBy: string[];
 }

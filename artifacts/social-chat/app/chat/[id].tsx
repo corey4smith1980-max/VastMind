@@ -3,7 +3,8 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useGetChatMessages, getGetChatMessagesQueryKey, Message as ApiMessage } from '@workspace/api-client-react';
+import { useGetChatMessages, getGetChatMessagesQueryKey, Message as ApiMessage, type MediaAttachment } from '@workspace/api-client-react';
+import { MobileMediaPicker, MobileMediaPreview, MobileVoiceRecorder } from '@/components/Media';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, StorageNotice } from '@/components/common';
 import { useColors } from '@/hooks/useColors';
@@ -11,7 +12,7 @@ import { useAppStore } from '@/state/AppStore';
 import { Message } from '@/types';
 import { useMobileRealtime } from '@/state/Realtime';
 
-type RenderMessage = Message & { read: boolean };
+type RenderMessage = Message & { read: boolean; media?:MediaAttachment };
 
 export default function ChatDetailScreen() {
   const colors = useColors();
@@ -27,6 +28,7 @@ export default function ChatDetailScreen() {
   const latest = useGetChatMessages(id, { limit: 50 }, { query: { queryKey: getGetChatMessagesQueryKey(id, { limit: 50 }), refetchInterval: 4000 } });
   const conversation = state.conversations.find((item) => item.id === id);
   const [draft, setDraft] = useState('');
+  const [attachment,setAttachment]=useState<MediaAttachment>();
   const [sending, setSending] = useState(false);
   const typers = typing[id] ?? [];
   useEffect(() => joinChat(id), [id, joinChat]);
@@ -58,15 +60,15 @@ export default function ChatDetailScreen() {
   }
 
   const send = async () => {
-    if (!draft.trim() || sending) return;
+    if ((!draft.trim()&&!attachment) || sending) return;
     setSending(true);
-    const sent = await sendMessage(conversation.id, draft);
-    if (sent) { setDraft(''); sendTyping(id, false); }
+    const sent = await sendMessage(conversation.id, draft.trim()||attachment?.name||"Media",attachment?.id);
+    if (sent) { setDraft('');setAttachment(undefined); sendTyping(id, false); }
     setSending(false);
   };
   const messages: RenderMessage[] = [...new Map([...older, ...(latest.data?.items ?? [])].map(m => [m.id, m])).values()]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map(m => ({ id: m.id, text: m.content, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString(), read: m.readBy.some(reader => reader !== profile?.id) }));
+    .map(m => ({ id: m.id, text: m.content, media:m.media, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString(), read: m.readBy.some(reader => reader !== profile?.id) }));
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: colors.background }]} behavior="padding" keyboardVerticalOffset={0}>
@@ -87,6 +89,7 @@ export default function ChatDetailScreen() {
         renderItem={({ item }) => (
           <View style={[styles.messageRow, item.mine ? styles.mineRow : styles.theirRow]}>
             <View style={[styles.bubble, item.mine ? { backgroundColor: colors.forest } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+              {item.media?<MobileMediaPreview media={item.media}/>:null}
               <Text style={[styles.messageText, { color: item.mine ? colors.primaryForeground : colors.foreground }]}>{item.text}</Text>
               <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather accessibilityLabel={item.read ? 'Read by another member' : 'Sent'} name={item.read ? 'check-circle' : 'check'} size={12} color={colors.lime} /> : null}</View>
             </View>
@@ -95,9 +98,12 @@ export default function ChatDetailScreen() {
         ListFooterComponent={history.data?.nextBefore ? <Pressable onPress={() => setBefore(history.data?.nextBefore ?? undefined)}><Text style={{ color: colors.primary, padding: 16 }}>Load earlier messages</Text></Pressable> : null}
       />
       <View style={[styles.composerWrap, { backgroundColor: colors.background, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
+        {attachment?<Pressable accessibilityLabel="Remove attachment" onPress={()=>setAttachment(undefined)}><Text style={{color:colors.foreground,padding:8}}>{attachment.name} · Remove</Text></Pressable>:null}
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <MobileMediaPicker purpose="chat" chatId={id} onChange={setAttachment} disabled={sending}/>
+          <MobileVoiceRecorder chatId={id} onChange={setAttachment} disabled={sending}/>
           <TextInput accessibilityLabel="Write a message" testID="message-input" placeholder="Write a message…" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={changeDraft} onSubmitEditing={send} returnKeyType="send" maxLength={4000} style={[styles.input, { color: colors.foreground }]} />
-          <Pressable accessibilityLabel={sending ? 'Sending message' : 'Send message'} testID="send-message" onPress={send} disabled={sending || !draft.trim()} style={[styles.sendButton, { backgroundColor: draft.trim() ? colors.lime : colors.secondary }]}><Feather name={sending ? 'clock' : 'arrow-up'} size={18} color={draft.trim() ? colors.forest : colors.mutedForeground} /></Pressable>
+          <Pressable accessibilityLabel={sending ? 'Sending message' : 'Send message'} testID="send-message" onPress={send} disabled={sending || (!draft.trim()&&!attachment)} style={[styles.sendButton, { backgroundColor: draft.trim()||attachment ? colors.lime : colors.secondary }]}><Feather name={sending ? 'clock' : 'arrow-up'} size={18} color={draft.trim()||attachment ? colors.forest : colors.mutedForeground} /></Pressable>
         </View>
       </View>
     </KeyboardAvoidingView>

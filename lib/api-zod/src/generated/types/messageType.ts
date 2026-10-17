@@ -12,4 +12,7 @@ export type MessageType = typeof MessageType[keyof typeof MessageType];
 export const MessageType = {
   text: 'text',
   system: 'system',
+  image: 'image',
+  video: 'video',
+  voice: 'voice',
 } as const;

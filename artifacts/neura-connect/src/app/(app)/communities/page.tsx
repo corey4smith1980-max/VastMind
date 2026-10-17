@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Clock, Crown, Globe2, Loader2, Lock, Plus, Search, UserCheck, UsersRound, X } from "lucide-react";
+import { Check, Clock, Mic, Crown, Globe2, Loader2, Lock, Plus, Search, UserCheck, UsersRound, X } from "lucide-react";
 import {
   useListCommunities, getListCommunitiesQueryKey, useCreateCommunity, useJoinCommunity,
   useListCommunityRequests, getListCommunityRequestsQueryKey, useDecideCommunityRequest, type Community,
@@ -22,6 +22,7 @@ import { errMessage, relTime } from "@/lib/format";
 import { useMe } from "@/lib/me";
 import { useInvalidate, usePollInterval } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
+import { useCall } from "@/components/calling/call-provider";
 
 // ---------- Create community ----------
 function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -104,6 +105,7 @@ function CommunityCard({ c, i, onRequests }: { c: Community; i: number; onReques
     },
   });
   const owner = c.ownerId === me.id;
+  const call = useCall();
   return (
     <article className={cn("rise flex flex-col rounded-[1.6rem] border bg-card p-5", i % 5 === 0 && "sm:col-span-2")} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} data-testid={`card-community-${c.id}`}>
       <div className="flex items-start justify-between gap-3">
@@ -128,6 +130,11 @@ function CommunityCard({ c, i, onRequests }: { c: Community; i: number; onReques
             {join.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}{c.isPrivate ? "Ask to join" : "Join"}
           </Button>
         )}
+        {c.membership === "member" ? (
+          <Button size="sm" variant="outline" className="rounded-full" disabled={call.busy} onClick={() => call.startCall({ scope: "community", id: c.id, video: false, title: c.name })} data-testid={`button-voice-room-${c.id}`}>
+            <Mic className="mr-1 h-3.5 w-3.5" /> Join voice room
+          </Button>
+        ) : null}
       </div>
     </article>
   );

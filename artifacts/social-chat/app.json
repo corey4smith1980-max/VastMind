@@ -14,11 +14,19 @@
     "web": {
       "favicon": "./assets/images/icon.png"
     },
-    "plugins": ["expo-router", ["expo-splash-screen", {
-      "backgroundColor": "#f8f4ec",
-      "image": "./assets/images/icon.png",
-      "resizeMode": "contain"
-    }]],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f8f4ec",
+          "image": "./assets/images/icon.png",
+          "resizeMode": "contain"
+        }
+      ],
+      "expo-video",
+      "expo-audio"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

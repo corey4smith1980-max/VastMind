@@ -47,6 +47,9 @@ import type {
   ListChannelsParams,
   ListChatsParams,
   ListCommunitiesParams,
+  MediaAttachment,
+  MediaUploadInput,
+  MediaUploadTicket,
   MembershipDecisionInput,
   Message,
   MessageInput,
@@ -60,6 +63,9 @@ import type {
   PrivacySettingsInput,
   Profile,
   ProfileUpdate,
+  PushConfiguration,
+  PushEndpointInput,
+  PushSubscriptionInput,
   QuickReply,
   QuickReplyInput,
   QuickReplyList,
@@ -3163,6 +3169,492 @@ export const useTogglePinnedUpdate = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getTogglePinnedUpdateMutationOptions(options));
     }
+
+export const getGetPushConfigUrl = () => {
+
+
+
+
+  return `/api/push/config`
+}
+
+/**
+ * @summary Check web push configuration
+ */
+export const getPushConfig = async ( options?: Parameters<typeof customFetch>[1]): Promise<PushConfiguration> => {
+
+  return customFetch<PushConfiguration>(getGetPushConfigUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPushConfigQueryKey = () => {
+    return [
+    `/api/push/config`
+    ] as const;
+    }
+
+
+export const getGetPushConfigQueryOptions = <TData = Awaited<ReturnType<typeof getPushConfig>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPushConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPushConfigQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPushConfig>>> = ({ signal }) => getPushConfig({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPushConfig>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPushConfigQueryResult = NonNullable<Awaited<ReturnType<typeof getPushConfig>>>
+export type GetPushConfigQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check web push configuration
+ */
+
+export function useGetPushConfig<TData = Awaited<ReturnType<typeof getPushConfig>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPushConfig>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPushConfigQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSavePushSubscriptionUrl = () => {
+
+
+
+
+  return `/api/push/subscription`
+}
+
+/**
+ * @summary Register this browser for private closed-app alerts
+ */
+export const savePushSubscription = async (pushSubscriptionInput: PushSubscriptionInput, options?: Parameters<typeof customFetch>[1]): Promise<ReadResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReadResult>(getSavePushSubscriptionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pushSubscriptionInput)
+  }
+);}
+
+
+
+
+
+export const getSavePushSubscriptionMutationKey = () => ['savePushSubscription'] as const;
+
+export const getSavePushSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePushSubscription>>, TError,SavePushSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof savePushSubscription>>, TError,SavePushSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getSavePushSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof savePushSubscription>>, SavePushSubscriptionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  savePushSubscription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SavePushSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof savePushSubscription>>>
+    export type SavePushSubscriptionMutationBody = BodyType<PushSubscriptionInput>
+    export type SavePushSubscriptionMutationError = ErrorType<unknown>
+    export type SavePushSubscriptionMutationVariables = {data: BodyType<PushSubscriptionInput>}
+
+    /**
+ * @summary Register this browser for private closed-app alerts
+ */
+export const useSavePushSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof savePushSubscription>>, TError,SavePushSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof savePushSubscription>>,
+        TError,
+        SavePushSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSavePushSubscriptionMutationOptions(options));
+    }
+
+export const getRemovePushSubscriptionUrl = () => {
+
+
+
+
+  return `/api/push/subscription`
+}
+
+export const removePushSubscription = async (pushEndpointInput: PushEndpointInput, options?: Parameters<typeof customFetch>[1]): Promise<ReadResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<ReadResult>(getRemovePushSubscriptionUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pushEndpointInput)
+  }
+);}
+
+
+
+
+
+export const getRemovePushSubscriptionMutationKey = () => ['removePushSubscription'] as const;
+
+export const getRemovePushSubscriptionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePushSubscription>>, TError,RemovePushSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removePushSubscription>>, TError,RemovePushSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getRemovePushSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removePushSubscription>>, RemovePushSubscriptionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  removePushSubscription(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemovePushSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof removePushSubscription>>>
+    export type RemovePushSubscriptionMutationBody = BodyType<PushEndpointInput>
+    export type RemovePushSubscriptionMutationError = ErrorType<unknown>
+    export type RemovePushSubscriptionMutationVariables = {data: BodyType<PushEndpointInput>}
+
+    export const useRemovePushSubscription = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removePushSubscription>>, TError,RemovePushSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removePushSubscription>>,
+        TError,
+        RemovePushSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemovePushSubscriptionMutationOptions(options));
+    }
+
+export const getRequestUploadUrlUrl = () => {
+
+
+
+
+  return `/api/storage/uploads/request-url`
+}
+
+/**
+ * @summary Reserve a private media upload
+ */
+export const requestUploadUrl = async (mediaUploadInput: MediaUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<MediaUploadTicket> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MediaUploadTicket>(getRequestUploadUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mediaUploadInput)
+  }
+);}
+
+
+
+
+
+export const getRequestUploadUrlMutationKey = () => ['requestUploadUrl'] as const;
+
+export const getRequestUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext> => {
+
+const mutationKey = getRequestUploadUrlMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestUploadUrl>>, RequestUploadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestUploadUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof requestUploadUrl>>>
+    export type RequestUploadUrlMutationBody = BodyType<MediaUploadInput>
+    export type RequestUploadUrlMutationError = ErrorType<unknown>
+    export type RequestUploadUrlMutationVariables = {data: BodyType<MediaUploadInput>}
+
+    /**
+ * @summary Reserve a private media upload
+ */
+export const useRequestUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestUploadUrl>>, TError,RequestUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestUploadUrl>>,
+        TError,
+        RequestUploadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getCompleteMediaUploadUrl = (mediaId: string,) => {
+
+
+
+
+  return `/api/storage/uploads/${mediaId}/complete`
+}
+
+/**
+ * @summary Verify and seal uploaded media
+ */
+export const completeMediaUpload = async (mediaId: string, options?: Parameters<typeof customFetch>[1]): Promise<MediaAttachment> => {
+
+  return customFetch<MediaAttachment>(getCompleteMediaUploadUrl(mediaId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteMediaUploadMutationKey = () => ['completeMediaUpload'] as const;
+
+export const getCompleteMediaUploadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,CompleteMediaUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,CompleteMediaUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompleteMediaUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMediaUpload>>, CompleteMediaUploadMutationVariables> = (props) => {
+          const {mediaId} = props ?? {};
+
+          return  completeMediaUpload(mediaId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteMediaUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeMediaUpload>>>
+
+    export type CompleteMediaUploadMutationError = ErrorType<unknown>
+    export type CompleteMediaUploadMutationVariables = {mediaId: string}
+
+    /**
+ * @summary Verify and seal uploaded media
+ */
+export const useCompleteMediaUpload = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeMediaUpload>>, TError,CompleteMediaUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeMediaUpload>>,
+        TError,
+        CompleteMediaUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteMediaUploadMutationOptions(options));
+    }
+
+export const getGetMediaContentUrl = (mediaId: string,) => {
+
+
+
+
+  return `/api/storage/media/${mediaId}`
+}
+
+/**
+ * @summary Read media after checking conversation or story permissions
+ */
+export const getMediaContent = async (mediaId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetMediaContentUrl(mediaId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMediaContentQueryKey = (mediaId: string,) => {
+    return [
+    `/api/storage/media/${mediaId}`
+    ] as const;
+    }
+
+
+export const getGetMediaContentQueryOptions = <TData = Awaited<ReturnType<typeof getMediaContent>>, TError = ErrorType<unknown>>(mediaId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMediaContentQueryKey(mediaId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMediaContent>>> = ({ signal }) => getMediaContent(mediaId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: mediaId !== null && mediaId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMediaContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMediaContentQueryResult = NonNullable<Awaited<ReturnType<typeof getMediaContent>>>
+export type GetMediaContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Read media after checking conversation or story permissions
+ */
+
+export function useGetMediaContent<TData = Awaited<ReturnType<typeof getMediaContent>>, TError = ErrorType<unknown>>(
+ mediaId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMediaContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMediaContentQueryOptions(mediaId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListStatusesUrl = () => {
 

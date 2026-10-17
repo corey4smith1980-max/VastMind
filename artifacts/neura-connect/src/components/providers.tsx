@@ -87,6 +87,18 @@ function ClerkQueryClientCacheInvalidator() {
       if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
+      // Prevent a shared device from retaining the previous account's push
+      // subscription after sign-out or an account switch. Closing a tab does
+      // not unsubscribe: that is exactly when background push is needed.
+      if(typeof navigator!=="undefined"&&"serviceWorker" in navigator) {
+        const owner=localStorage.getItem("neura-push-owner");
+        if(owner&&owner!==userId) {
+          localStorage.removeItem("neura-push-owner");
+          navigator.serviceWorker.getRegistration(`${basePath}/`).then(async r=>{
+            const sub=await r?.pushManager.getSubscription();await sub?.unsubscribe();
+          }).catch(()=>{});
+        }
+      }
       prevUserIdRef.current = userId;
     });
     return unsubscribe;

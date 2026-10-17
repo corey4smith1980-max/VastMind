@@ -6,14 +6,17 @@ import { useAppStore, initials } from '@/state/AppStore';
 import { useColors } from '@/hooks/useColors';
 import { AppHeader, Avatar, Eyebrow, PageFrame, StorageNotice } from '@/components/common';
 import { FeedPost } from '@/types';
+import { useRouter } from "expo-router";
 
 export default function FeedScreen() {
+  const router=useRouter();
   const colors = useColors();
   const { state, profile, createPost, loading } = useAppStore();
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   return <PageFrame>
     <AppHeader /><StorageNotice />
+    <Pressable accessibilityLabel="Open stories" onPress={()=>router.push("/stories")} style={{paddingVertical:12}}><Text style={{color:colors.primary,fontWeight:"700"}}>Stories · share for 24 hours</Text></Pressable>
     <Eyebrow>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</Eyebrow>
     <Text style={[styles.heading, { color: colors.foreground }]}>A little closer,{'\n'}wherever you are.</Text>
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>

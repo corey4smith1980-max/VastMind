@@ -1,7 +1,8 @@
 "use client";
 import { useMemo, useState } from "react";
 import { CircleDashed, Hourglass, Loader2 } from "lucide-react";
-import { useListStatuses, getListStatusesQueryKey, useCreateStatus, type Status } from "@workspace/api-client-react";
+import { useListStatuses, getListStatusesQueryKey, useCreateStatus, type Status, type MediaAttachment } from "@workspace/api-client-react";
+import { MediaPicker, MediaPreview } from "@/components/media-attachment";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -31,12 +32,13 @@ export default function StatusesPage() {
   const { toast } = useToast();
   const invalidate = useInvalidate();
   const [text, setText] = useState("");
+  const [attachment,setAttachment]=useState<MediaAttachment>();
   const [viewing, setViewing] = useState<Status[] | null>(null);
   const poll = usePollInterval(60_000);
   const list = useListStatuses({ query: { queryKey: getListStatusesQueryKey(), refetchInterval: poll } });
   const create = useCreateStatus({
     mutation: {
-      onSuccess: () => { setText(""); invalidate("/api/statuses"); toast({ title: "Status is up for 24 hours" }); },
+      onSuccess: () => { setText(""); setAttachment(undefined); invalidate("/api/statuses"); toast({ title: "Status is up for 24 hours" }); },
       onError: (e) => toast({ title: "Couldn't post status", description: errMessage(e), variant: "destructive" }),
     },
   });
@@ -49,7 +51,7 @@ export default function StatusesPage() {
 
   return (
     <PageScroll>
-      <PageHeader kicker="Today only" title="Status" sub="A line about your day. Text only, gone in 24 hours." />
+      <PageHeader kicker="Today only" title="Status" sub="Share a thought, photo or video. Gone in 24 hours." />
       <div className="rise mt-6 rounded-[1.6rem] bg-[hsl(var(--ink))] p-5 text-[#f4ece0]">
         <div className="flex gap-3">
           <UserAvatar id={me.id} name={me.name} src={me.avatarUrl} />
@@ -57,8 +59,8 @@ export default function StatusesPage() {
             className="resize-none border-0 bg-transparent p-0 text-lg text-[#f4ece0] shadow-none placeholder:text-[#f4ece0]/50 focus-visible:ring-0" aria-label="Status text" data-testid="input-status" />
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <span className="font-mono text-[11px] text-[#f4ece0]/60">{text.length}/500 · photo statuses coming soon</span>
-          <Button className="rounded-full" disabled={!text.trim() || create.isPending} onClick={() => create.mutate({ data: { content: text.trim() } })} data-testid="button-post-status">
+          <MediaPicker purpose="status" value={attachment} onChange={setAttachment} />
+          <Button className="rounded-full" disabled={(!text.trim()&&!attachment) || create.isPending} onClick={() => create.mutate({ data: { content: text.trim()||attachment?.name||"Story", mediaId:attachment?.id } })} data-testid="button-post-status">
             {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Share for 24h
           </Button>
         </div>
@@ -105,6 +107,7 @@ export default function StatusesPage() {
               <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 pb-6">
                 {viewing.map((s) => (
                   <div key={s.id} className="rounded-2xl bg-white/5 p-5">
+                    {s.media?<MediaPreview media={s.media}/>:null}
                     <p className="font-display text-2xl font-semibold leading-snug">{s.content}</p>
                     <p className="mt-3 font-mono text-[11px] text-[#f4ece0]/60">{relTime(s.createdAt)} · {hoursLeft(s.expiresAt)}</p>
                   </div>

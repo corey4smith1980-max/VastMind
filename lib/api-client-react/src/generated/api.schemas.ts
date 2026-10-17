@@ -208,7 +208,18 @@ export type MessageType = typeof MessageType[keyof typeof MessageType];
 export const MessageType = {
   text: 'text',
   system: 'system',
+  image: 'image',
+  video: 'video',
+  voice: 'voice',
 } as const;
+
+export interface MediaAttachment {
+  id: string;
+  url: string;
+  contentType: string;
+  size: number;
+  name: string;
+}
 
 export interface Message {
   id: string;
@@ -219,6 +230,7 @@ export interface Message {
   senderAvatarUrl: string | null;
   content: string;
   type: MessageType;
+  media?: MediaAttachment;
   createdAt: string;
   readBy: string[];
 }
@@ -237,6 +249,7 @@ export interface MessageInput {
   content: string;
   /** @nullable */
   replyToId?: string | null;
+  mediaId?: string;
 }
 
 export interface ReadResult {
@@ -430,6 +443,7 @@ export interface Status {
   content: string;
   createdAt: string;
   expiresAt: string;
+  media?: MediaAttachment;
 }
 
 export type StatusList = Status[];
@@ -440,6 +454,59 @@ export interface StatusInput {
      * @maxLength 500
      */
   content: string;
+  mediaId?: string;
+}
+
+export interface PushConfiguration {
+  configured: boolean;
+  publicKey?: string;
+}
+
+export interface PushEndpointInput {
+  /** @maxLength 2000 */
+  endpoint: string;
+}
+
+export type PushSubscriptionInputKeys = {
+  /** @maxLength 128 */
+  p256dh: string;
+  /** @maxLength 64 */
+  auth: string;
+};
+
+export interface PushSubscriptionInput {
+  /** @maxLength 2000 */
+  endpoint: string;
+  keys: PushSubscriptionInputKeys;
+}
+
+export type MediaUploadInputPurpose = typeof MediaUploadInputPurpose[keyof typeof MediaUploadInputPurpose];
+
+
+export const MediaUploadInputPurpose = {
+  chat: 'chat',
+  status: 'status',
+} as const;
+
+export interface MediaUploadInput {
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  /**
+     * @minimum 1
+     * @maximum 26214400
+     */
+  size: number;
+  contentType: string;
+  purpose: MediaUploadInputPurpose;
+  chatId?: string;
+}
+
+export interface MediaUploadTicket {
+  id: string;
+  uploadUrl: string;
 }
 
 export interface BusinessOverview {

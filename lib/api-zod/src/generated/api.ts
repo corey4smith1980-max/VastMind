@@ -307,7 +307,14 @@ export const GetChatMessagesResponse = zod.object({
   "senderName": zod.string(),
   "senderAvatarUrl": zod.string().nullable(),
   "content": zod.string(),
-  "type": zod.enum(['text', 'system']),
+  "type": zod.enum(['text', 'system', 'image', 'video', 'voice']),
+  "media": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}).optional(),
   "createdAt": zod.coerce.date(),
   "readBy": zod.array(zod.string())
 })),
@@ -328,7 +335,8 @@ export const sendMessageBodyContentMax = 4000;
 
 export const SendMessageBody = zod.object({
   "content": zod.string().min(1).max(sendMessageBodyContentMax),
-  "replyToId": zod.string().nullish()
+  "replyToId": zod.string().nullish(),
+  "mediaId": zod.string().optional()
 })
 
 export const SendMessageResponse = zod.object({
@@ -338,7 +346,14 @@ export const SendMessageResponse = zod.object({
   "senderName": zod.string(),
   "senderAvatarUrl": zod.string().nullable(),
   "content": zod.string(),
-  "type": zod.enum(['text', 'system']),
+  "type": zod.enum(['text', 'system', 'image', 'video', 'voice']),
+  "media": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}).optional(),
   "createdAt": zod.coerce.date(),
   "readBy": zod.array(zod.string())
 })
@@ -942,6 +957,101 @@ export const TogglePinnedUpdateResponse = zod.object({
 
 
 /**
+ * @summary Check web push configuration
+ */
+export const GetPushConfigResponse = zod.object({
+  "configured": zod.boolean(),
+  "publicKey": zod.string().optional()
+})
+
+
+/**
+ * @summary Register this browser for private closed-app alerts
+ */
+export const savePushSubscriptionBodyEndpointMax = 2000;
+
+export const savePushSubscriptionBodyKeysP256dhMax = 128;
+
+export const savePushSubscriptionBodyKeysAuthMax = 64;
+
+
+
+export const SavePushSubscriptionBody = zod.object({
+  "endpoint": zod.string().max(savePushSubscriptionBodyEndpointMax),
+  "keys": zod.object({
+  "p256dh": zod.string().max(savePushSubscriptionBodyKeysP256dhMax),
+  "auth": zod.string().max(savePushSubscriptionBodyKeysAuthMax)
+})
+})
+
+export const SavePushSubscriptionResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const removePushSubscriptionBodyEndpointMax = 2000;
+
+
+
+export const RemovePushSubscriptionBody = zod.object({
+  "endpoint": zod.string().max(removePushSubscriptionBodyEndpointMax)
+})
+
+export const RemovePushSubscriptionResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Reserve a private media upload
+ */
+export const requestUploadUrlBodyNameMax = 150;
+
+export const requestUploadUrlBodySizeMax = 26214400;
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
+  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
+  "contentType": zod.string(),
+  "purpose": zod.enum(['chat', 'status']),
+  "chatId": zod.string().optional()
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "id": zod.string(),
+  "uploadUrl": zod.string()
+})
+
+
+/**
+ * @summary Verify and seal uploaded media
+ */
+export const CompleteMediaUploadParams = zod.object({
+  "mediaId": zod.coerce.string()
+})
+
+export const CompleteMediaUploadResponse = zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+})
+
+
+/**
+ * @summary Read media after checking conversation or story permissions
+ */
+export const GetMediaContentParams = zod.object({
+  "mediaId": zod.coerce.string()
+})
+
+export const GetMediaContentResponse = zod.unknown()
+
+
+/**
  * @summary List unexpired text statuses
  */
 export const ListStatusesResponseItem = zod.object({
@@ -958,7 +1068,14 @@ export const ListStatusesResponseItem = zod.object({
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
-  "expiresAt": zod.coerce.date()
+  "expiresAt": zod.coerce.date(),
+  "media": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}).optional()
 })
 export const ListStatusesResponse = zod.array(ListStatusesResponseItem)
 
@@ -971,7 +1088,8 @@ export const createStatusBodyContentMax = 500;
 
 
 export const CreateStatusBody = zod.object({
-  "content": zod.string().min(1).max(createStatusBodyContentMax)
+  "content": zod.string().min(1).max(createStatusBodyContentMax),
+  "mediaId": zod.string().optional()
 })
 
 export const CreateStatusResponse = zod.object({
@@ -988,7 +1106,14 @@ export const CreateStatusResponse = zod.object({
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
-  "expiresAt": zod.coerce.date()
+  "expiresAt": zod.coerce.date(),
+  "media": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}).optional()
 })
 
 

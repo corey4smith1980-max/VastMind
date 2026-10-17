@@ -14,4 +14,5 @@ export interface MessageInput {
   content: string;
   /** @nullable */
   replyToId?: string | null;
+  mediaId?: string;
 }

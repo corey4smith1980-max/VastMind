@@ -14,6 +14,7 @@ import { ConnectionPill } from "@/components/shell/connection-pill";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MeContext } from "@/lib/me";
+import { CallProvider } from "@/components/calling/call-provider";
 import { usePollInterval } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const inChat = pathname.startsWith("/chats") && search.has("c");
 
   return (
-    <MeContext.Provider value={me.data}>
+    <MeContext.Provider value={me.data}><CallProvider>
       <div className="flex h-[100dvh] overflow-hidden bg-background">
         {/* ---------- Desktop rail ---------- */}
         <nav aria-label="Main" className="hidden w-[76px] shrink-0 flex-col items-center gap-1 bg-sidebar py-4 text-sidebar-foreground md:flex">
@@ -142,6 +143,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
       </div>
-    </MeContext.Provider>
+    </CallProvider></MeContext.Provider>
   );
 }

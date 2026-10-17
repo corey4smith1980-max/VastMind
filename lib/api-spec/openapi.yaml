@@ -700,6 +700,103 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ChannelUpdate"
+  /push/config:
+    get:
+      operationId: getPushConfig
+      tags: [notifications]
+      summary: Check web push configuration
+      responses:
+        "200":
+          description: Configuration without private credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushConfiguration"
+  /push/subscription:
+    post:
+      operationId: savePushSubscription
+      tags: [notifications]
+      summary: Register this browser for private closed-app alerts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionInput"
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResult"
+    delete:
+      operationId: removePushSubscription
+      tags: [notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushEndpointInput"
+      responses:
+        "200":
+          description: Unregistered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadResult"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [media]
+      summary: Reserve a private media upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MediaUploadInput"
+      responses:
+        "200":
+          description: Direct upload destination
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaUploadTicket"
+  /storage/uploads/{mediaId}/complete:
+    post:
+      operationId: completeMediaUpload
+      tags: [media]
+      summary: Verify and seal uploaded media
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Verified media
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAttachment"
+  /storage/media/{mediaId}:
+    get:
+      operationId: getMediaContent
+      tags: [media]
+      summary: Read media after checking conversation or story permissions
+      parameters:
+        - in: path
+          name: mediaId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Private media bytes
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
   /statuses:
     get:
       operationId: listStatuses
@@ -976,7 +1073,9 @@ components:
         senderName: { type: string }
         senderAvatarUrl: { type: ["string", "null"] }
         content: { type: string }
-        type: { type: string, enum: [text, system] }
+        type: { type: string, enum: [text, system, image, video, voice] }
+        media:
+          $ref: "#/components/schemas/MediaAttachment"
         createdAt: { type: string, format: date-time }
         readBy:
           type: array
@@ -996,6 +1095,7 @@ components:
       properties:
         content: { type: string, minLength: 1, maxLength: 4000 }
         replyToId: { type: ["string", "null"] }
+        mediaId: { type: string }
     ReadResult:
       type: object
       required: [success]
@@ -1158,6 +1258,8 @@ components:
         content: { type: string }
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
+        media:
+          $ref: "#/components/schemas/MediaAttachment"
     StatusList:
       type: array
       items:
@@ -1167,6 +1269,53 @@ components:
       required: [content]
       properties:
         content: { type: string, minLength: 1, maxLength: 500 }
+        mediaId: { type: string }
+    PushConfiguration:
+      type: object
+      required: [configured]
+      properties:
+        configured: { type: boolean }
+        publicKey: { type: string }
+    PushEndpointInput:
+      type: object
+      required: [endpoint]
+      properties:
+        endpoint: { type: string, maxLength: 2000 }
+    PushSubscriptionInput:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint: { type: string, maxLength: 2000 }
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh: { type: string, maxLength: 128 }
+            auth: { type: string, maxLength: 64 }
+    MediaAttachment:
+      type: object
+      required: [id, url, contentType, size, name]
+      properties:
+        id: { type: string }
+        url: { type: string }
+        contentType: { type: string }
+        size: { type: integer }
+        name: { type: string }
+    MediaUploadInput:
+      type: object
+      required: [name, size, contentType, purpose]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 150 }
+        size: { type: integer, minimum: 1, maximum: 26214400 }
+        contentType: { type: string }
+        purpose: { type: string, enum: [chat, status] }
+        chatId: { type: string }
+    MediaUploadTicket:
+      type: object
+      required: [id, uploadUrl]
+      properties:
+        id: { type: string }
+        uploadUrl: { type: string }
     BusinessOverview:
       type: object
       required: [isOpen, unreadCustomerChats, totalCustomers, responseRate]

@@ -12,6 +12,7 @@ export type ConnectionState = "offline" | "connecting" | "live" | "reconnecting"
 type TypingEntry = { userId: string; name: string; at: number };
 
 type RealtimeCtx = {
+  socket: Socket | null;
   status: ConnectionState;
   presence: Record<string, boolean>;
   typing: Record<string, TypingEntry[]>;
@@ -20,7 +21,7 @@ type RealtimeCtx = {
 };
 
 const Ctx = createContext<RealtimeCtx>({
-  status: "offline", presence: {}, typing: {}, joinChat: () => {}, sendTyping: () => {},
+  socket: null, status: "offline", presence: {}, typing: {}, joinChat: () => {}, sendTyping: () => {},
 });
 
 /** Invalidate every query whose first key segment starts with one of the prefixes. */
@@ -155,7 +156,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     socketRef.current?.emit("typing", { chatId, isTyping });
   }, []);
 
-  const value = useMemo(() => ({ status, presence, typing, joinChat, sendTyping }), [status, presence, typing, joinChat, sendTyping]);
+  const value = useMemo(() => ({ socket:socketRef.current, status, presence, typing, joinChat, sendTyping }), [status, presence, typing, joinChat, sendTyping]);
   return <Ctx.Provider value={value}><BrowserNotificationBridge />{children}</Ctx.Provider>;
 }
 

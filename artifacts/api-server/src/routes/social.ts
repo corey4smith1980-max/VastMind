@@ -5,6 +5,8 @@ import * as schemas from "@workspace/api-zod";
 import { z } from "zod";
 import { query, transaction, provision, profile, summary, blocked, canDiscover, canMessage, membership, chatAllowed, conversation, message, community, postAccess, post, channelAccess, channel, updateShape, notify, uuid, assert, HttpError, onlineUsers, toggleFollow, blockMember, type Query, type Row } from "../lib/social";
 import { changed, evictChat, disconnectUser } from "../lib/realtime";
+import { claimMedia, mediaShape } from "../lib/media";
+import { pushConfiguration, validPushEndpoint } from "../lib/push";
 
 const router=Router();
 router.use(async(req,res,next)=>{
@@ -70,6 +72,20 @@ function route(method:"get"|"post"|"patch"|"put"|"delete",path:string,operation:
     res.status(status).json(data);
   });
 }
+route("get","/push/config","GetPushConfig",async()=>pushConfiguration());
+route("post","/push/subscription","SavePushSubscription",async c=>{
+  assert(pushConfiguration().configured,503,"Closed-app push needs server configuration");
+  assert(validPushEndpoint(c.b.endpoint),400,"Unsupported browser push endpoint");
+  assert(/^[A-Za-z0-9_-]{87,88}$/.test(c.b.keys.p256dh)&&/^[A-Za-z0-9_-]{22,24}$/.test(c.b.keys.auth),400,"Invalid subscription keys");
+  const [count]=await c.q("SELECT count(*)::int AS n FROM push_subscriptions WHERE user_id=$1",[c.u]);
+  assert(count.n<12,400,"Device limit reached. Disable push on an older device first");
+  await c.q(`INSERT INTO push_subscriptions (id,user_id,endpoint,p256dh,auth) VALUES ($1,$2,$3,$4,$5)
+    ON CONFLICT (endpoint) DO UPDATE SET user_id=excluded.user_id,p256dh=excluded.p256dh,auth=excluded.auth`,[uuid(),c.u,c.b.endpoint,c.b.keys.p256dh,c.b.keys.auth]);
+  return {success:true};
+});
+route("delete","/push/subscription","RemovePushSubscription",async c=>{
+  await c.q("DELETE FROM push_subscriptions WHERE endpoint=$1 AND user_id=$2",[c.b.endpoint,c.u]);return {success:true};
+});
 async function chatImpact(c:Context,id:string) { c.chatId=id;c.entity="chats";for(const m of await c.q("SELECT user_id FROM chat_members WHERE chat_id=$1",[id]))c.impact.add(m.user_id); }
 async function communityAdmin(c:Context,id:string) {
   const [m]=await c.q("SELECT * FROM community_members WHERE community_id=$1 AND user_id=$2 AND state='member'",[id,c.u]);
@@ -185,7 +201,9 @@ route("post","/chats/:chatId/messages","SendMessage",async c=>{
   const m=await chatAllowed(c.p.chatId,c.u,c.q);
   if(m.type==="private")for(const target of await c.q("SELECT user_id FROM chat_members WHERE chat_id=$1 AND user_id<>$2",[c.p.chatId,c.u]))await canMessage(c.u,target.user_id,c.q);
   if(c.b.replyToId)assert((await c.q("SELECT id FROM messages WHERE id=$1 AND chat_id=$2",[c.b.replyToId,c.p.chatId])).length,400,"Reply must reference this conversation");
-  const [sent]=await c.q("INSERT INTO messages (id,chat_id,sender_id,content,reply_to_id) VALUES ($1,$2,$3,$4,$5) RETURNING *",[uuid(),c.p.chatId,c.u,c.b.content,c.b.replyToId??null]);
+  const media=await claimMedia(c.b.mediaId,c.u,"chat",c.p.chatId,c.q);
+  const type=media?(media.content_type.startsWith("image/")?"image":media.content_type.startsWith("video/")?"video":"voice"):"text";
+  const [sent]=await c.q("INSERT INTO messages (id,chat_id,sender_id,content,reply_to_id,media_id,type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",[uuid(),c.p.chatId,c.u,c.b.content,c.b.replyToId??null,media?.id??null,type]);
   await c.q("UPDATE chat_members SET last_read_at=$1 WHERE chat_id=$2 AND user_id=$3",[sent.created_at,c.p.chatId,c.u]);
   await chatImpact(c,c.p.chatId);
   for(const target of c.impact)await notify(c.q,target,c.u,"message","New message","You have a new message.");
@@ -310,10 +328,11 @@ route("post","/channels/:channelId/updates/:updateId/pin","TogglePinnedUpdate",a
 });
 route("get","/statuses","ListStatuses",async c=>{
   const rows=await c.q("SELECT s.* FROM statuses s WHERE expires_at>now() ORDER BY created_at DESC LIMIT 100");const result=[];
-  for(const r of rows){const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at});}return result;
+  for(const r of rows){const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)});}return result;
 });
 route("post","/statuses","CreateStatus",async c=>{
-  const [r]=await c.q("INSERT INTO statuses (id,author_id,content,expires_at) VALUES ($1,$2,$3,now()+interval '24 hours') RETURNING *",[uuid(),c.u,c.b.content]);return {id:r.id,author:await summary(c.u,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at};
+  const media=await claimMedia(c.b.mediaId,c.u,"status",null,c.q);
+  const [r]=await c.q("INSERT INTO statuses (id,author_id,content,media_id,expires_at) VALUES ($1,$2,$3,$4,now()+interval '24 hours') RETURNING *",[uuid(),c.u,c.b.content,media?.id??null]);return {id:r.id,author:await summary(c.u,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)};
 },201);
 async function overview(c:Context){
   const chats=await c.q(`SELECT c.id FROM chats c JOIN chat_members m ON m.chat_id=c.id WHERE m.user_id=$1 AND c.type='private' AND NOT EXISTS(SELECT 1 FROM chat_members other JOIN blocks b ON (b.user_id=$1 AND b.target_id=other.user_id) OR (b.target_id=$1 AND b.user_id=other.user_id) WHERE other.chat_id=c.id)`,[c.u]);

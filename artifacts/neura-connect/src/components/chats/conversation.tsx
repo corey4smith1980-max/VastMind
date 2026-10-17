@@ -1,12 +1,12 @@
 "use client";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Search, SendHorizontal, ShieldOff, Users, X, Zap,
+  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Phone, Video, Search, SendHorizontal, ShieldOff, Users, X, Zap,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetChatMessages, getGetChatMessagesQueryKey, useSendMessage, useMarkChatRead, getListChatsQueryKey,
-  useListQuickReplies, getListQuickRepliesQueryKey, type Conversation, type Message,
+  useListQuickReplies, getListQuickRepliesQueryKey, type Conversation, type Message, type MediaAttachment,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,8 @@ import { clock, dayLabel, errMessage, relTime } from "@/lib/format";
 import { useMe } from "@/lib/me";
 import { useInvalidate, useIsOnline, usePollInterval, useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
+import { useCall } from "@/components/calling/call-provider";
+import { MediaPicker, MediaPreview } from "@/components/media-attachment";
 
 const PAGE = 40;
 const byTime = (a: Message, b: Message) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -41,6 +43,7 @@ function Bubble({ m, mine, showName, others }: { m: Message; mine: boolean; show
       {!mine && showName ? <UserAvatar id={m.senderId} name={m.senderName} src={m.senderAvatarUrl} size="sm" className="mt-auto" /> : !mine ? <span className="w-8 shrink-0" /> : null}
       <div className={cn("max-w-[78%] rounded-[1.15rem] px-3.5 py-2 shadow-[0_1px_0_hsl(var(--ink)/.06)] sm:max-w-[64%]", mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md border")}>
         {!mine && showName ? <p className="mb-0.5 text-xs font-semibold text-primary">{m.senderName}</p> : null}
+        {m.media ? <MediaPreview media={m.media} /> : null}
         <p className="whitespace-pre-wrap break-words text-[15px] leading-snug">{m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
           /^https?:\/\//.test(part) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a> : part
         )}</p>
@@ -127,12 +130,14 @@ function SearchPanel({ chatId, onClose }: { chatId: string; onClose: () => void 
 
 // ---------- The conversation pane ----------
 export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack: () => void }) {
+  const [attachment,setAttachment]=useState<MediaAttachment>();
   const me = useMe();
   const qc = useQueryClient();
   const { toast } = useToast();
   const invalidate = useInvalidate();
   const { joinChat, sendTyping, typing } = useRealtime();
   const poll = usePollInterval(15_000);
+  const call = useCall();
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -168,6 +173,7 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
     if (!lastId) return;
     markRef.current({ chatId: chat.id }, {
       onSuccess: () => {
+        setAttachment(undefined);
         qc.invalidateQueries({ queryKey: getListChatsQueryKey() });
         invalidate("/api/notifications", "/api/business");
       },
@@ -209,13 +215,13 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
     typingTimer.current = window.setTimeout(() => { isTypingRef.current = false; sendTyping(chat.id, false); }, 2500);
   }
   function submit() {
-    const content = draft.trim();
+    const content = draft.trim() || (attachment ? (attachment.contentType.startsWith("audio/")?"Voice note":attachment.name) : "");
     if (!content || send.isPending) return;
     nearBottom.current = true;
     setDraft("");
     isTypingRef.current = false;
     sendTyping(chat.id, false);
-    send.mutate({ chatId: chat.id, data: { content } });
+    send.mutate({ chatId: chat.id, data: { content, mediaId:attachment?.id } });
   }
 
   const replies = useListQuickReplies({ query: { queryKey: getListQuickRepliesQueryKey(), staleTime: 60_000 } });
@@ -239,6 +245,8 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
             </span>
           </span>
         </button>
+        <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: true, title: chatTitle(chat, me.id) })} aria-label="Start video call" data-testid="button-video-call"><Video className="h-5 w-5" /></Button>
+        <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: false, title: chatTitle(chat, me.id) })} aria-label="Start voice call" data-testid="button-voice-call"><Phone className="h-5 w-5" /></Button>
         <Button size="icon" variant="ghost" onClick={() => setSearchOpen((s) => !s)} aria-label="Search messages" data-testid="button-search-messages"><Search className="h-5 w-5" /></Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="More options" data-testid="button-chat-menu"><MoreVertical className="h-5 w-5" /></Button></DropdownMenuTrigger>
@@ -308,17 +316,13 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
       </div>
 
       {/* Composer */}
-      <form className="flex items-end gap-2 border-t bg-card p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+      {attachment?<div className="flex items-center justify-between border-t bg-card px-3 py-2 text-xs"><span className="truncate">Ready to send: {attachment.name}</span><Button type="button" variant="ghost" size="icon" aria-label="Remove attachment" onClick={()=>setAttachment(undefined)}><X className="h-4 w-4"/></Button></div>:null}
+      <form className="flex items-end gap-1 border-t bg-card p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:p-3" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <ComposerTools append={(value) => onDraft(`${draft}${draft ? " " : ""}${value}`.slice(0, 4000))} />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span><Button type="button" size="icon" variant="ghost" disabled aria-label="Attachments coming soon"><Paperclip className="h-5 w-5" /></Button></span>
-          </TooltipTrigger>
-          <TooltipContent>Photos, files & voice notes — coming soon</TooltipContent>
-        </Tooltip>
+        <MediaPicker purpose="chat" chatId={chat.id} onChange={setAttachment} />
         <Popover>
           <PopoverTrigger asChild>
-            <Button type="button" size="icon" variant="ghost" aria-label="Quick replies" data-testid="button-quick-replies"><Zap className="h-5 w-5" /></Button>
+            <Button type="button" size="icon" variant="ghost" className="hidden sm:inline-flex" aria-label="Quick replies" data-testid="button-quick-replies"><Zap className="h-5 w-5" /></Button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 rounded-2xl p-2">
             <p className="px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Quick replies</p>
@@ -340,10 +344,10 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
           maxLength={4000}
           placeholder="Type a message"
           aria-label="Message"
-          className="max-h-36 min-h-[44px] flex-1 resize-none rounded-2xl border-0 bg-muted py-3"
+          className="max-h-36 min-h-[44px] min-w-0 flex-1 resize-none rounded-2xl border-0 bg-muted py-3"
           data-testid="input-message"
         />
-        <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-full transition-transform active:scale-90" disabled={!draft.trim()} aria-label="Send" data-testid="button-send">
+        <Button type="submit" size="icon" className="h-11 w-11 shrink-0 rounded-full transition-transform active:scale-90" disabled={(!draft.trim()&&!attachment)||send.isPending} aria-label="Send" data-testid="button-send">
           {send.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
         </Button>
       </form>
