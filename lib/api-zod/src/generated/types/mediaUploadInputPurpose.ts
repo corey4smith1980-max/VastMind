@@ -12,4 +12,5 @@ export type MediaUploadInputPurpose = typeof MediaUploadInputPurpose[keyof typeo
 export const MediaUploadInputPurpose = {
   chat: 'chat',
   status: 'status',
+  post: 'post',
 } as const;

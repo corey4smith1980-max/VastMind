@@ -41,6 +41,7 @@ import type {
   ConversationList,
   GetChatMessagesParams,
   GetFeedParams,
+  GetVideosParams,
   HealthStatus,
   InviteResult,
   JoinResult,
@@ -79,7 +80,8 @@ import type {
   StatusInput,
   StatusList,
   UserFollowResult,
-  UserList
+  UserList,
+  VideoPage
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1866,6 +1868,90 @@ export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError =
 
 
 
+export const getGetVideosUrl = (params?: GetVideosParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/videos?${stringifiedParams}` : `/api/videos`
+}
+
+/**
+ * @summary List public short-video clips for the swipe feed
+ */
+export const getVideos = async (params?: GetVideosParams, options?: Parameters<typeof customFetch>[1]): Promise<VideoPage> => {
+
+  return customFetch<VideoPage>(getGetVideosUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVideosQueryKey = (params?: GetVideosParams,) => {
+    return [
+    `/api/videos`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetVideosQueryOptions = <TData = Awaited<ReturnType<typeof getVideos>>, TError = ErrorType<unknown>>(params?: GetVideosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideosQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideos>>> = ({ signal }) => getVideos(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVideos>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVideosQueryResult = NonNullable<Awaited<ReturnType<typeof getVideos>>>
+export type GetVideosQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List public short-video clips for the swipe feed
+ */
+
+export function useGetVideos<TData = Awaited<ReturnType<typeof getVideos>>, TError = ErrorType<unknown>>(
+ params?: GetVideosParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideos>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVideosQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreatePostUrl = () => {
 
 
@@ -1875,7 +1961,7 @@ export const getCreatePostUrl = () => {
 }
 
 /**
- * @summary Publish a text post or poll
+ * @summary Publish a post, clip, or poll
  */
 export const createPost = async (postInput: PostInput, options?: Parameters<typeof customFetch>[1]): Promise<Post> => {
 
@@ -1941,7 +2027,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreatePostMutationVariables = {data: BodyType<PostInput>}
 
     /**
- * @summary Publish a text post or poll
+ * @summary Publish a post, clip, or poll
  */
 export const useCreatePost = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPost>>, TError,CreatePostMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

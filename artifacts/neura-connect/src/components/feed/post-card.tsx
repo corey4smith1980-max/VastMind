@@ -85,6 +85,22 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{post.content}</p>
 
+      {post.media ? (
+        <div className="mt-4 overflow-hidden rounded-2xl border bg-muted">
+          {post.media.contentType.startsWith("video/") ? (
+            <video src={post.media.url} controls playsInline preload="metadata"
+              className={cn("max-h-[560px] w-full bg-[hsl(192_52%_9%)] object-contain", post.effect === "warm" && "sepia-[.2] saturate-[1.15]", post.effect === "mono" && "grayscale", post.effect === "soft" && "brightness-[1.06] saturate-[.82]")}
+              aria-label={`Video attachment from ${post.author.name}`} data-testid={`video-post-media-${post.id}`} />
+          ) : post.media.contentType.startsWith("image/") ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={post.media.url} alt={post.media.name || `Photo from ${post.author.name}`} loading="lazy"
+              className={cn("max-h-[560px] w-full object-contain", post.effect === "warm" && "sepia-[.2] saturate-[1.15]", post.effect === "mono" && "grayscale", post.effect === "soft" && "brightness-[1.06] saturate-[.82]")}
+              data-testid={`image-post-media-${post.id}`} />
+          ) : null}
+          {post.audioMedia ? <audio src={post.audioMedia.url} controls preload="none" className="w-full" aria-label={`Audio from ${post.audioMedia.name}`} /> : null}
+        </div>
+      ) : null}
+
       {post.pollOptions.length ? (
         <div className="mt-4 space-y-2" role="group" aria-label="Poll">
           {post.pollOptions.map((o) => {

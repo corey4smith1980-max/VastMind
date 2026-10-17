@@ -1,10 +1,10 @@
 /* Push-only service worker. Never caches private pages, API responses, or media. */
 self.addEventListener("push",event=>{
   // Do not use client-controlled URLs or expose message bodies on lock screens.
-  event.waitUntil(self.registration.showNotification("NeuraCoreConnect",{
+  event.waitUntil(self.registration.showNotification("I AM",{
     body:"You have new activity. Open the app to view it.",
     icon:new URL("favicon.svg",self.registration.scope).href,
-    tag:"neura-activity",
+    tag:"iam-activity",
   }));
 });
 self.addEventListener("notificationclick",event=>{

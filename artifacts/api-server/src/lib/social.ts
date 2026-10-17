@@ -169,7 +169,11 @@ export async function post(id:string,viewer:string,q:Query=query) {
     EXISTS(SELECT 1 FROM reactions WHERE post_id=$1 AND user_id=$2) AS reacted`,[id,viewer]);
   const options=await q(`SELECT o.id,o.label,(SELECT count(*)::int FROM votes WHERE option_id=o.id) AS votes,
     EXISTS(SELECT 1 FROM votes WHERE option_id=o.id AND user_id=$2) AS "votedByMe" FROM poll_options o WHERE post_id=$1 ORDER BY id`,[id,viewer]);
-  return {id,author:await summary(p.author_id,viewer,q),content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options};
+  const mediaRows=await q("SELECT id,name,content_type,size FROM media_uploads WHERE id=ANY($1::text[]) AND ready=true",[ [p.media_id,p.audio_media_id].filter(Boolean) ]);
+  const shape=(r:Row)=>r?{id:r.id,url:`/api/storage/media/${r.id}`,name:r.name,contentType:r.content_type,size:Number(r.size)}:null;
+  const mediaId=p.media_id?mediaRows.find(m=>m.id===p.media_id):null;
+  const audioId=p.audio_media_id?mediaRows.find(m=>m.id===p.audio_media_id):null;
+  return {id,author:await summary(p.author_id,viewer,q),content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none"};
 }
 export function updateShape(u:Row) {return {id:u.id,channelId:u.channel_id,content:u.content,pinned:u.pinned,createdAt:u.created_at};}
 export async function channelAccess(id:string,viewer:string,q:Query=query,owner=false) {

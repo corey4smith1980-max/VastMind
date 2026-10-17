@@ -7,6 +7,7 @@ import { query, transaction, provision, profile, summary, blocked, canDiscover, 
 import { changed, evictChat, disconnectUser } from "../lib/realtime";
 import { claimMedia, mediaShape } from "../lib/media";
 import { pushConfiguration, validPushEndpoint } from "../lib/push";
+import { mediaTypes } from "../lib/media";
 
 const router=Router();
 router.use(async(req,res,next)=>{
@@ -247,11 +248,32 @@ route("get","/feed","GetFeed",async c=>{
     ORDER BY p.created_at DESC LIMIT 40`,[c.u,c.s.communityId??null,c.s.before??null,c.s.q??null,c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null]);
   return Promise.all(rows.map(r=>post(r.id,c.u,c.q)));
 });
+route("get","/videos","GetVideos",async c=>{
+  const limit=20;
+  const rows=await c.q(`SELECT p.id,p.created_at FROM posts p LEFT JOIN communities co ON co.id=p.community_id
+    JOIN media_uploads m ON m.id=p.media_id AND m.ready=true
+    WHERE m.content_type LIKE 'video/%' AND ($2::timestamptz IS NULL OR p.created_at<$2)
+    AND (co.id IS NULL OR co.is_private=false OR EXISTS(
+      SELECT 1 FROM community_members cm WHERE cm.community_id=co.id AND cm.user_id=$1 AND cm.state='member'))
+    AND NOT EXISTS(SELECT 1 FROM blocks b WHERE
+      (b.user_id=$1 AND b.target_id IN(p.author_id,co.owner_id)) OR (b.target_id=$1 AND b.user_id IN(p.author_id,co.owner_id)))
+    ORDER BY p.created_at DESC,p.id DESC LIMIT $3`,[c.u,c.s.before??null,limit+1]);
+  const page=rows.slice(0,limit);
+  return {items:await Promise.all(page.map(r=>post(r.id,c.u,c.q))),nextBefore:rows.length>limit?rows[limit-1].created_at:null};
+});
 route("post","/posts","CreatePost",async c=>{
   if(c.b.communityId){const co=await community(c.b.communityId,c.u,c.q);assert(co.membership==="member",403,"Join the community before posting");}
   assert(!c.b.pollOptions?.length || c.b.pollOptions.length>=2,400,"Polls require at least two options");
   if(c.b.pollOptions)assert(new Set(c.b.pollOptions.map((x:string)=>x.trim().toLowerCase())).size===c.b.pollOptions.length && c.b.pollOptions.every((x:string)=>x.trim()),400,"Poll options must be distinct and nonempty");
-  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,content) VALUES ($1,$2,$3,$4)",[id,c.u,c.b.communityId??null,c.b.content]);
+  assert(!c.b.mediaId||!c.b.pollOptions,400,"A video post can't also be a poll");
+  const main=await claimMedia(c.b.mediaId,c.u,"post",null,c.q);
+  const soundtrack=await claimMedia(c.b.audioMediaId,c.u,"post",null,c.q);
+  assert(!soundtrack||main,400,"A soundtrack needs a video");
+  assert(!main||mediaTypes.has(main.content_type),400,"Unsupported media format");
+  assert(!soundtrack||soundtrack.content_type.startsWith("audio/"),400,"Choose an audio track");
+  assert(!main||!main.content_type.startsWith("audio/"),400,"Choose a photo or video clip");
+  assert(!main||!c.b.pollOptions||c.b.pollOptions.length===0,400,"A media post can't be a poll");
+  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,content,media_id,audio_media_id,effect) VALUES ($1,$2,$3,$4,$5,$6,$7)",[id,c.u,c.b.communityId??null,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none"]);
   for(const label of c.b.pollOptions??[])await c.q("INSERT INTO poll_options (id,post_id,label) VALUES ($1,$2,$3)",[uuid(),id,label]);
   await feedImpact(c,c.b.communityId??null);return post(id,c.u,c.q);
 },201);

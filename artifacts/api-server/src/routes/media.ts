@@ -25,8 +25,9 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   assert(parsed.success, 400, "Invalid upload metadata");
   const body = parsed.data!;
+  assert(["chat","status","post"].includes(body.purpose),400,"Unsupported upload purpose");
   assert(mediaTypes.has(body.contentType), 400, "Use JPEG, PNG, WebP, GIF, MP4, WebM, or a supported audio file");
-  assert(body.purpose === "chat" || !body.contentType.startsWith("audio/"), 400, "Stories support photos and videos");
+  assert(body.purpose === "chat" || body.purpose === "post" || !body.contentType.startsWith("audio/"), 400, "Stories support photos and videos");
   const userId = res.locals.mediaUser;
   if (body.purpose === "chat") { assert(body.chatId, 400, "Conversation required"); await chatAllowed(body.chatId!, userId); }
   const [pending] = await query("SELECT count(*)::int AS n FROM media_uploads WHERE owner_id=$1 AND attached=false AND created_at>now()-interval '1 day'", [userId]);
@@ -82,6 +83,14 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
     const [story] = await query("SELECT 1 FROM statuses WHERE media_id=$1 AND expires_at>now()",[m.id]); assert(story,404,"Story expired");
     const [owner] = await query("SELECT * FROM users WHERE id=$1",[m.owner_id]);
     assert(await canDiscover(viewer,owner),404);
+  } else if (m.attached && m.purpose === "post") {
+    const [item]=await query("SELECT author_id,community_id FROM posts WHERE media_id=$1 OR audio_media_id=$1 LIMIT 1",[m.id]);
+    assert(item && item.author_id===m.owner_id,404,"Post media unavailable");
+    if(item.community_id){
+      const [communityAccess]=await query(`SELECT c.is_private,coalesce(cm.state,'none') AS state FROM communities c
+        LEFT JOIN community_members cm ON cm.community_id=c.id AND cm.user_id=$2 WHERE c.id=$1`,[item.community_id,viewer]);
+      assert(communityAccess&&(!communityAccess.is_private||communityAccess.state==="member"),404,"Post media unavailable");
+    }
   } else assert(m.owner_id===viewer,403,"Media access denied");
   const file = await storage.getObjectEntityFile(m.object_path);
   const size = Number(m.size);

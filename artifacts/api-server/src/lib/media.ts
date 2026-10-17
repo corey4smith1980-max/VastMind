@@ -5,7 +5,7 @@ export const storage = new ObjectStorageService();
 export const MEDIA_LIMIT = 25 * 1024 * 1024;
 export const mediaTypes = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif",
-  "video/mp4", "video/webm", "audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav",
+  "video/mp4", "video/webm", "video/quicktime", "audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav",
 ]);
 
 // Check bytes, not only the client-supplied extension or Content-Type.
@@ -19,7 +19,7 @@ export function matchesMediaType(bytes: Buffer, type: string) {
   if (type === "audio/ogg") return ascii(0,4) === "OggS";
   if (type === "audio/mpeg") return ascii(0,3) === "ID3" || (bytes[0] === 255 && (bytes[1] & 224) === 224);
   if (type.endsWith("/webm")) return bytes.subarray(0,4).equals(Buffer.from([26,69,223,163]));
-  if (type.endsWith("/mp4")) return ascii(4,8) === "ftyp";
+  if (type.endsWith("/mp4") || type==="video/quicktime") return ascii(4,8) === "ftyp";
   return false;
 }
 

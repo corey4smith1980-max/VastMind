@@ -5,7 +5,9 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { MediaAttachment } from './mediaAttachment';
 import type { PollOption } from './pollOption';
+import type { PostEffect } from './postEffect';
 import type { UserSummary } from './userSummary';
 
 export interface Post {
@@ -21,4 +23,7 @@ export interface Post {
   /** @nullable */
   communityName: string | null;
   pollOptions: PollOption[];
+  media: MediaAttachment | null;
+  audioMedia: MediaAttachment | null;
+  effect: PostEffect;
 }

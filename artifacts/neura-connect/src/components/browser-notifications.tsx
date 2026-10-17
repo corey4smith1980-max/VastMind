@@ -28,7 +28,7 @@ export function BrowserNotificationBridge() {
     const latest = data.data.find((n) => !n.read && !previous.has(n.id));
     if (!latest) return;
     try {
-      const notification = new Notification("NeuraCoreConnect", { body: "You have new activity. Open the app to view it.", tag: "neura-new-activity" });
+      const notification = new Notification("I AM", { body: "You have new activity. Open the app to view it.", tag: "iam-new-activity" });
       notification.onclick = () => { window.focus(); notification.close(); };
     } catch {
       // Some mobile browsers expose Notification but require service-worker push.

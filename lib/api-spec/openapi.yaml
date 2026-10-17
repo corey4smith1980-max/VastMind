@@ -399,11 +399,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PostList"
+  /videos:
+    get:
+      operationId: getVideos
+      tags: [feed]
+      summary: List public short-video clips for the swipe feed
+      parameters:
+        - in: query
+          name: before
+          required: false
+          schema: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Videos and the next paging cursor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoPage"
   /posts:
     post:
       operationId: createPost
       tags: [feed]
-      summary: Publish a text post or poll
+      summary: Publish a post, clip, or poll
       requestBody:
         required: true
         content:
@@ -983,7 +1000,7 @@ components:
         showLastSeen: { type: boolean }
     UserSummary:
       type: object
-      required: [id, name, username, avatarUrl, online, mutualCommunities]
+      required: [id, name, username, avatarUrl, online, mutualCommunities, following]
       properties:
         id: { type: string }
         name: { type: string }
@@ -1109,7 +1126,7 @@ components:
         inviteUrl: { type: string }
     Post:
       type: object
-      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, pollOptions]
+      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, pollOptions, media, audioMedia, effect]
       properties:
         id: { type: string }
         author:
@@ -1125,6 +1142,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PollOption"
+        media:
+          anyOf:
+            - $ref: "#/components/schemas/MediaAttachment"
+            - type: "null"
+        audioMedia:
+          anyOf:
+            - $ref: "#/components/schemas/MediaAttachment"
+            - type: "null"
+        effect: { type: string, enum: [none, warm, mono, soft] }
     PollOption:
       type: object
       required: [id, label, votes, votedByMe]
@@ -1137,6 +1163,14 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Post"
+    VideoPage:
+      type: object
+      required: [items, nextBefore]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Post" }
+        nextBefore: { type: ["string", "null"], format: date-time }
     PostInput:
       type: object
       required: [content]
@@ -1147,6 +1181,9 @@ components:
           type: array
           maxItems: 6
           items: { type: string, minLength: 1, maxLength: 120 }
+        mediaId: { type: string }
+        audioMediaId: { type: string }
+        effect: { type: string, enum: [none, warm, mono, soft] }
     ReactionInput:
       type: object
       required: [reaction]
@@ -1308,7 +1345,7 @@ components:
         name: { type: string, minLength: 1, maxLength: 150 }
         size: { type: integer, minimum: 1, maximum: 26214400 }
         contentType: { type: string }
-        purpose: { type: string, enum: [chat, status] }
+        purpose: { type: string, enum: [chat, status, post] }
         chatId: { type: string }
     MediaUploadTicket:
       type: object

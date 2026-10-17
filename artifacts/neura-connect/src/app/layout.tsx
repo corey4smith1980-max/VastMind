@@ -11,8 +11,8 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
-  title: "NeuraCoreConnect — your people, on one line",
-  description: "Chats, groups, communities, channels and small-business inboxes for the people you actually know.",
+  title: "I AM — your people, on one line",
+  description: "I AM brings private chats, groups, short videos, communities, channels, and business conversations together.",
   icons: { icon: `${base}/favicon.svg` },
 };
 

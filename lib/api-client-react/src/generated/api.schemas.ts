@@ -108,7 +108,7 @@ export interface UserSummary {
   avatarUrl: string | null;
   online: boolean;
   mutualCommunities: number;
-  following?: boolean;
+  following: boolean;
   /** @nullable */
   lastSeenAt?: string | null;
 }
@@ -261,6 +261,16 @@ export interface InviteResult {
   inviteUrl?: string;
 }
 
+export type PostEffect = typeof PostEffect[keyof typeof PostEffect];
+
+
+export const PostEffect = {
+  none: 'none',
+  warm: 'warm',
+  mono: 'mono',
+  soft: 'soft',
+} as const;
+
 export interface PollOption {
   id: string;
   label: string;
@@ -281,9 +291,28 @@ export interface Post {
   /** @nullable */
   communityName: string | null;
   pollOptions: PollOption[];
+  media: MediaAttachment | null;
+  audioMedia: MediaAttachment | null;
+  effect: PostEffect;
 }
 
 export type PostList = Post[];
+
+export interface VideoPage {
+  items: Post[];
+  /** @nullable */
+  nextBefore: string | null;
+}
+
+export type PostInputEffect = typeof PostInputEffect[keyof typeof PostInputEffect];
+
+
+export const PostInputEffect = {
+  none: 'none',
+  warm: 'warm',
+  mono: 'mono',
+  soft: 'soft',
+} as const;
 
 export interface PostInput {
   /**
@@ -299,6 +328,9 @@ export interface PostInput {
      * @items.maxLength 120
      */
   pollOptions?: string[];
+  mediaId?: string;
+  audioMediaId?: string;
+  effect?: PostInputEffect;
 }
 
 export type ReactionInputReaction = typeof ReactionInputReaction[keyof typeof ReactionInputReaction];
@@ -486,6 +518,7 @@ export type MediaUploadInputPurpose = typeof MediaUploadInputPurpose[keyof typeo
 export const MediaUploadInputPurpose = {
   chat: 'chat',
   status: 'status',
+  post: 'post',
 } as const;
 
 export interface MediaUploadInput {
@@ -599,6 +632,10 @@ limit?: number;
 export type GetFeedParams = {
 q?: string;
 communityId?: string;
+before?: string;
+};
+
+export type GetVideosParams = {
 before?: string;
 };
 

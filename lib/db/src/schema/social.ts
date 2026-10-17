@@ -37,7 +37,7 @@ export const messages = pgTable("messages", { id: id(), chatId: text("chat_id").
 ]);
 export const communities = pgTable("communities",{id:id(),ownerId:uid("owner_id"),name:text("name").notNull(),description:text("description").notNull(),category:text("category").notNull(),isPrivate:boolean("is_private").notNull(),createdAt:created()});
 export const communityMembers = pgTable("community_members",{communityId:text("community_id").notNull().references(()=>communities.id,{onDelete:"cascade"}),userId:uid("user_id"),role:text("role").notNull().default("member"),state:text("state").notNull().default("member")},t=>[primaryKey({columns:[t.communityId,t.userId]})]);
-export const posts = pgTable("posts",{id:id(),authorId:uid("author_id"),communityId:text("community_id").references(()=>communities.id,{onDelete:"cascade"}),content:text("content").notNull(),createdAt:created()}, t => [
+export const posts = pgTable("posts",{id:id(),authorId:uid("author_id"),communityId:text("community_id").references(()=>communities.id,{onDelete:"cascade"}),content:text("content").notNull(),mediaId:text("media_id"),audioMediaId:text("audio_media_id"),effect:text("effect").notNull().default("none"),createdAt:created()}, t => [
   index("posts_content_search").using("gin", sql`to_tsvector('simple', ${t.content})`),
 ]);
 export const reactions = pgTable("reactions",{postId:text("post_id").notNull().references(()=>posts.id,{onDelete:"cascade"}),userId:uid("user_id"),reaction:text("reaction").notNull()},t=>[primaryKey({columns:[t.postId,t.userId]})]);

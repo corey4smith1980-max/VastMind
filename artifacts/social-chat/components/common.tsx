@@ -35,7 +35,7 @@ export function AppHeader({ label, action, onAction }: { label?: string; action?
         <View style={[styles.brandMark, { backgroundColor: colors.lime }]}>
           <Feather name="message-circle" size={17} color={colors.forest} />
         </View>
-        <Text style={[styles.brandName, { color: colors.forest }]}>NeuraCoreConnect</Text>
+        <Text style={[styles.brandName, { color: colors.forest }]}>I AM</Text>
       </View>
       {action && onAction ? (
         <Pressable accessibilityRole="button" accessibilityLabel={label ?? action} onPress={onAction} style={styles.iconPress}>
