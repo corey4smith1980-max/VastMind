@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { basePath } from "@/lib/base";
 import { errMessage, relTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { activeCue, useCaptionsPref, useWatchSession } from "./video-kit";
+import { activeCue, useCaptionsPref, useVideoPlayback, useWatchSession } from "./video-kit";
 
 const effectClass = { none: "", warm: "sepia-[.2] saturate-[1.15]", mono: "grayscale", soft: "brightness-[1.06] saturate-[.82]" };
 
@@ -63,6 +63,8 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
   const [stats, setStats] = useState({ reacted: post.reacted, reactions: post.reactionsCount, comments: post.commentsCount });
   const [ccOn, toggleCc] = useCaptionsPref();
   const session = useWatchSession(post.id, active);
+  const playback = useVideoPlayback(post.media, active);
+  const soundtrack = useVideoPlayback(post.audioMedia, active && playing && !muted);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const hasCaptions = !!post.captions?.length;
@@ -81,7 +83,13 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
     if (!element) return;
     if (active) void element.play().catch(() => setPlaying(false));
     else { element.pause(); audioRef.current?.pause(); }
-  }, [active]);
+  }, [active, playback.url]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (active && playing && !muted && audio && soundtrack.url) void audio.play().catch(() => {});
+    else audio?.pause();
+  }, [active, playing, muted, soundtrack.url]);
 
   if (!post.media) return null;
   const togglePlay = () => {
@@ -107,7 +115,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
   const profileHref = `/profile/${encodeURIComponent(post.author.id)}`;
 
   return <article className="relative flex h-full min-h-0 snap-start items-center justify-center overflow-hidden bg-[hsl(192_52%_9%)]" data-testid={`reel-${post.id}`} data-reel-id={post.id} onMouseEnter={onActive}>
-    <video ref={videoRef} src={post.media.url} muted={muted} playsInline loop preload={active ? "auto" : "metadata"} className={cn("absolute inset-0 h-full w-full object-contain", effectClass[post.effect])} aria-label={`Video by ${post.author.name}`}
+    <video ref={videoRef} src={playback.url ?? undefined} muted={muted} playsInline loop preload={active ? "auto" : "none"} className={cn("absolute inset-0 h-full w-full object-contain", effectClass[post.effect])} aria-label={`Video by ${post.author.name}`}
       onPlay={() => { setPlaying(true); session.setPlaying(true); if (!muted && audioRef.current) void audioRef.current.play().catch(() => {}); }}
       onPause={() => { setPlaying(false); session.setPlaying(false); audioRef.current?.pause(); }}
       onEnded={() => session.markCompleted()}
@@ -117,7 +125,8 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
         lastTime.current = v.currentTime;
         if (hasCaptions) setTime(v.currentTime);
       }} />
-    {post.audioMedia ? <audio ref={audioRef} src={post.audioMedia.url} muted={muted} loop preload={active ? "auto" : "none"} /> : null}
+     {playback.error ? <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-[hsl(192_52%_9%/.8)] p-6 text-center text-white"><button onClick={playback.retry} className="rounded-full bg-white/15 px-4 py-3 text-sm font-semibold">Video unavailable. Tap to retry.</button></div> : null}
+     {post.audioMedia && soundtrack.url ? <audio ref={audioRef} src={soundtrack.url} muted={muted} loop preload={active ? "auto" : "none"} /> : null}
     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[hsl(192_55%_5%/.94)] via-transparent to-[hsl(192_55%_5%/.13)]" />
     <button className="absolute inset-0 z-[1] cursor-pointer" onClick={togglePlay} aria-label={playing ? "Pause video" : "Play video"} data-testid={`button-play-${post.id}`} />
     {!playing && active ? <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 z-[2] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur"><Play className="ml-1 h-6 w-6 fill-current" /></span> : null}

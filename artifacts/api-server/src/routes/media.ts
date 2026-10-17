@@ -93,6 +93,23 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
     }
   } else assert(m.owner_id===viewer,403,"Media access denied");
   const file = await storage.getObjectEntityFile(m.object_path);
+  // Web/native video elements cannot attach a Clerk bearer header to every
+  // byte-range request. After the same visibility checks above, mint a
+  // private, read-only URL for range playback; it expires independently.
+  if (req.query.playback === "1") {
+    const expiresAt = Date.now() + 15 * 60_000;
+    const [url] = await file.getSignedUrl({
+      version: "v4",
+      action: "read",
+      expires: expiresAt,
+      responseDisposition: "inline",
+      responseType: m.content_type,
+    });
+    assert(url.startsWith("https://"), 500, "Private playback URL unavailable");
+    res.set({ "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" })
+      .json({ url, expiresAt });
+    return;
+  }
   const size = Number(m.size);
   res.set({"Content-Type":m.content_type,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","Accept-Ranges":"bytes","Content-Disposition":"inline"});
   // Byte ranges allow mobile browsers to seek without downloading entire videos.

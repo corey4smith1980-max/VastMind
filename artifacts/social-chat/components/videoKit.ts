@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import { useAuth } from '@clerk/expo';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetVideosQueryKey, useGetVideos, useRecordVideoEngagement, type CaptionCue, type GetVideosFeed, type GetVideosParams, type MediaAttachment, type Post } from '@workspace/api-client-react';
@@ -14,7 +14,7 @@ export function errorStatus(error: unknown): number | undefined {
 }
 export const errorText = (e: unknown) => e instanceof Error ? e.message : 'Please try again.';
 
-/** Private media: bearer header on native, short-lived blob URL on web. Token never leaves the request. */
+/** Get a short-lived private read URL after auth; players can then seek with byte-range requests. */
 export type AuthedSource = { uri: string; headers?: Record<string, string> };
 export function useAuthedMedia(media: MediaAttachment | null | undefined, enabled = true) {
   const { getToken } = useAuth();
@@ -22,20 +22,23 @@ export function useAuthedMedia(media: MediaAttachment | null | undefined, enable
   const id = media?.id, url = media?.url;
   useEffect(() => {
     if (!id || !url || !enabled) return;
-    let alive = true, objectUrl: string | undefined;
-    (async () => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = async () => {
       const token = await getToken();
       if (!token) throw new Error('signed out');
-      if (Platform.OS === 'web') {
-        const response = await fetch(`${apiOrigin}${url}`, { headers: { Authorization: `Bearer ${token}` } });
-        if (!response.ok) throw new Error('unavailable');
-        const blob = await response.blob();
-        if (!alive) return;
-        objectUrl = URL.createObjectURL(blob);
-        setState({ id, source: { uri: objectUrl }, error: false });
-      } else if (alive) setState({ id, source: { uri: `${apiOrigin}${url}`, headers: { Authorization: `Bearer ${token}` } }, error: false });
-    })().catch(() => { if (alive) setState({ id, source: null, error: true }); });
-    return () => { alive = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+      const separator = url.includes('?') ? '&' : '?';
+      const response = await fetch(`${apiOrigin}${url}${separator}playback=1`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+      if (!response.ok) throw new Error('unavailable');
+      const result = await response.json() as { url?: unknown; expiresAt?: unknown };
+      if (typeof result.url !== 'string' || typeof result.expiresAt !== 'number' || !result.url.startsWith('https://')) throw new Error('unavailable');
+      if (!alive) return;
+      setState({ id, source: { uri: result.url }, error: false });
+      const renewIn = Math.max(30_000, Math.min(13 * 60_000, result.expiresAt - Date.now() - 60_000));
+      timer = setTimeout(() => { if (alive) void load().catch(() => setState({ id, source: null, error: true })); }, renewIn);
+    };
+    void load().catch(() => { if (alive) setState({ id, source: null, error: true }); });
+    return () => { alive = false; if (timer) clearTimeout(timer); };
   }, [id, url, enabled, getToken]);
   if (!state || state.id !== id) return { source: null, error: false };
   return { source: state.source, error: state.error };

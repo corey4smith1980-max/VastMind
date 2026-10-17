@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useVideoPlayback } from "@/components/videos/video-kit";
 
 const MAX_BYTES = 25 * 1024 * 1024;
 const MAX_SECONDS = 90;
@@ -78,6 +79,7 @@ export function ClipComposer({ onClose }: { onClose: (published?: boolean) => vo
   const [stage, setStage] = useState<"" | "uploading" | "rendering" | "transcribing" | "publishing">("");
   const [stageError, setStageError] = useState("");
   const [view, setView] = useState<"source" | "result">("source");
+  const renderedPlayback = useVideoPlayback(rendered?.media, mode === "pick" && view === "result");
 
   const canRender = caps.data?.rendering === true;
   const canTranscribe = caps.data?.transcription === true;
@@ -280,7 +282,8 @@ export function ClipComposer({ onClose }: { onClose: (published?: boolean) => vo
                   : <button onClick={startRecording} className="grid h-16 w-16 place-items-center rounded-full border-4 border-white" aria-label="Start recording" data-testid="button-start-recording"><Circle className="h-11 w-11 fill-[hsl(12_82%_52%)] text-[hsl(12_82%_52%)]" /></button>}
                 <Button variant="secondary" size="sm" className="rounded-full" onClick={closeCamera}>Cancel</Button>
               </div>
-            </> : source ? (view === "result" && rendered ? <video key={rendered.media.id} src={rendered.media.url} controls playsInline className="absolute inset-0 h-full w-full object-contain" aria-label="Rendered preview" data-testid="video-rendered-preview" />
+            </> : source ? (view === "result" && rendered ? renderedPlayback.url ? <video key={rendered.media.id} src={renderedPlayback.url} controls playsInline className="absolute inset-0 h-full w-full object-contain" aria-label="Rendered preview" data-testid="video-rendered-preview" />
+              : <p role={renderedPlayback.error ? "alert" : "status"} className="max-w-[260px] p-5 text-center text-white/80">{renderedPlayback.error ? "The preview couldn't load." : "Preparing your private preview…"}</p>
               : <video key={sourceUrl} src={sourceUrl} controls muted playsInline className={cn("absolute inset-0 h-full w-full object-contain", mirror && "-scale-x-100", previewEffect[effect])} aria-label="Source clip" onLoadedMetadata={(e) => { e.currentTarget.currentTime = start; }} />)
             : <div className="max-w-[270px] p-5 text-center">
               <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-white/20 bg-white/10"><Film className="h-7 w-7" /></div>

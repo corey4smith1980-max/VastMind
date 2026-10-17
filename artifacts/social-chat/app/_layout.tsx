@@ -37,6 +37,8 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="channel/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="creator/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="video-studio" options={{ headerShown: false }} />
     </Stack>
   );
 }

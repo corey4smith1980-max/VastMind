@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { ArrowLeft, Film, Loader2, Lock, Play, UserX, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetCreatorQueryKey, useGetCreator, useToggleUserFollow } from "@workspace/api-client-react";
+import { getGetCreatorQueryKey, useGetCreator, useToggleUserFollow, type Post } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { ReelStack } from "@/components/videos/reel-stack";
@@ -14,6 +14,16 @@ import { errMessage } from "@/lib/format";
 import { useMe } from "@/lib/me";
 
 const effectClass = { none: "", warm: "sepia-[.2] saturate-[1.15]", mono: "grayscale", soft: "brightness-[1.06] saturate-[.82]" };
+
+function ClipTile({ post, onPlay }: { post: Post; onPlay: () => void }) {
+  return (
+    <button onClick={onPlay} className="group relative aspect-[9/14] overflow-hidden rounded-xl bg-[hsl(192_50%_12%)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Play clip: ${post.content.slice(0, 80)}`} data-testid={`tile-clip-${post.id}`}>
+      <span className={`absolute inset-0 grid place-items-center text-white/75 ${effectClass[post.effect]}`} aria-hidden><Film className="h-8 w-8" /></span>
+      <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+      <span className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 text-xs font-semibold text-white"><Play className="h-3.5 w-3.5 shrink-0 fill-current" /><span className="truncate">{post.content}</span></span>
+    </button>
+  );
+}
 
 export default function CreatorProfilePage() {
   const params = useParams<{ userId: string }>();
@@ -65,11 +75,7 @@ export default function CreatorProfilePage() {
         {clips.isError && clips.items.length === 0 ? <div role="alert" className="rounded-2xl border p-6 text-center text-sm">{errorStatus(clips.error) === 403 ? "Their clips are only visible to people they've chosen." : <>Couldn't load clips. <button onClick={clips.retry} className="underline">Try again</button></>}</div> : null}
         {!clips.isLoading && !clips.isError && clips.items.length === 0 ? <div className="rounded-2xl border border-dashed p-10 text-center"><Film className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 font-display text-xl">No clips you can see yet</p><p className="mt-1 text-sm text-muted-foreground">{isMe ? "Share one from the Clips tab." : "When they share one with you, it shows up here."}</p></div> : null}
         {clips.items.length > 0 ? <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-          {clips.items.map((post) => <button key={post.id} onClick={() => setPlaying(post.id)} className="group relative aspect-[9/14] overflow-hidden rounded-xl bg-[hsl(192_50%_12%)] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Play clip: ${post.content.slice(0, 80)}`} data-testid={`tile-clip-${post.id}`}>
-            <video src={`${post.media!.url}#t=0.5`} muted playsInline preload="metadata" className={`pointer-events-none h-full w-full object-cover ${effectClass[post.effect]}`} aria-hidden />
-            <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
-            <span className="absolute bottom-2 left-2 right-2 flex items-center gap-1.5 text-xs font-semibold text-white"><Play className="h-3.5 w-3.5 shrink-0 fill-current" /><span className="truncate">{post.content}</span></span>
-          </button>)}
+          {clips.items.map((post) => <ClipTile key={post.id} post={post} onPlay={() => setPlaying(post.id)} />)}
         </div> : null}
         {clips.items.length > 0 && clips.hasMore ? <div className="mt-6 text-center"><Button variant="outline" className="rounded-full" onClick={clips.loadNext} disabled={clips.isFetching}>{clips.isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Show more clips</Button></div> : null}
       </section>

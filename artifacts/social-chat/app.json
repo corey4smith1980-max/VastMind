@@ -31,7 +31,15 @@
         }
       ],
       "expo-video",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow VastMind to use the camera when you record a clip or story.",
+          "microphonePermission": "Allow VastMind to record sound with your video clips.",
+          "photosPermission": "Choose videos from your library to create VastMind clips and stories."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

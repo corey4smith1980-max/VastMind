@@ -15,6 +15,7 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="chats"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="business"><NativeTabs.Trigger.Icon sf={{ default: 'storefront', selected: 'storefront.fill' }} /><NativeTabs.Trigger.Label>Business</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="channels"><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="videos"><NativeTabs.Trigger.Icon sf={{ default: 'play.rectangle', selected: 'play.rectangle.fill' }} /><NativeTabs.Trigger.Label>Videos</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -45,6 +46,7 @@ function ClassicTabLayout() {
       <Tabs.Screen name="chats" options={tabOptions('Chats', 'message-circle')} />
       <Tabs.Screen name="business" options={tabOptions('Business', 'briefcase')} />
       <Tabs.Screen name="channels" options={tabOptions('Channels', 'radio')} />
+      <Tabs.Screen name="videos" options={tabOptions('Videos', 'play-circle')} />
     </Tabs>
   );
 }

@@ -80,8 +80,11 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
     AND p.id=ANY($2::text[])
     AND ($3::text<>'following' OR EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id))
     ORDER BY array_position($2::text[],p.id)`, [viewer, pageIds, feed]) : [];
-  return { items: await Promise.all(rows.map(row => post(row.id, viewer, q))),
-    nextBefore: offset + 20 < ids.length ? `${sessionId}:${offset + 20}` : null };
+  // Preserve serial use of transaction-bound query clients and avoid sharing one
+  // PostgreSQL client across concurrent post-mapping queries.
+  const items = [];
+  for (const row of rows) items.push(await post(row.id, viewer, q));
+  return { items, nextBefore: offset + 20 < ids.length ? `${sessionId}:${offset + 20}` : null };
 }
 
 export function validateCaptions(cues: { start: number; end: number; text: string }[]) {

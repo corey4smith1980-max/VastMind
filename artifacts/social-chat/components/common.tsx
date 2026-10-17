@@ -9,7 +9,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 export function VastMindMark({ size = 30 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" accessibilityElementsHidden>
+    <Svg width={size} height={size} viewBox="0 0 64 64" {...(Platform.OS === 'web' ? {} : { accessibilityElementsHidden: true })}>
       <Rect width={64} height={64} rx={18} fill="#10262b" />
       <Path d="M19 21l13 23 13-23" fill="none" stroke="#f4ece0" strokeWidth={6.5} strokeLinecap="round" strokeLinejoin="round" />
       <Circle cx={19} cy={21} r={5} fill="#e8562b" />

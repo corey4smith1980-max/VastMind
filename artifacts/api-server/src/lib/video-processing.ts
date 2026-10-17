@@ -214,7 +214,7 @@ export async function transcribeClip(user: string, mediaId: string) {
         form.append("model", "gpt-4o-mini-transcribe");
         form.append("response_format", "json");
         const response = await fetch(`${base.replace(/\/$/, "")}/audio/transcriptions`, {
-          method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form, signal: AbortSignal.timeout(20_000),
+          method: "POST", headers: { Authorization: `Bearer ${key}` }, body: form, signal: AbortSignal.timeout(10_000),
         });
         assert(response.ok, 502, "Automatic captions are temporarily unavailable. Retry or add captions manually");
         const data = await response.json() as { text?: unknown };

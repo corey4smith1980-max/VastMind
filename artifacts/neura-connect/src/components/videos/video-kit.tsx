@@ -1,7 +1,8 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetVideosQueryKey, useGetVideos, useRecordVideoEngagement, type CaptionCue, type GetVideosFeed, type GetVideosParams, type Post } from "@workspace/api-client-react";
+import { getGetVideosQueryKey, useGetVideos, useRecordVideoEngagement, type CaptionCue, type GetVideosFeed, type GetVideosParams, type MediaAttachment, type Post } from "@workspace/api-client-react";
 
 export function isClip(post: Post) {
   return !!post.media?.contentType.toLowerCase().startsWith("video/");
@@ -15,6 +16,45 @@ export function activeCue(cues: CaptionCue[] | undefined, time: number) {
 export function errorStatus(error: unknown): number | undefined {
   if (error && typeof error === "object" && "status" in error && typeof (error as { status: unknown }).status === "number") return (error as { status: number }).status;
   return undefined;
+}
+
+/** Fetch only a short-lived read URL here; video elements can then request byte ranges directly. */
+export function useVideoPlayback(media: MediaAttachment | null | undefined, enabled = true) {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const [attempt, setAttempt] = useState(0);
+  const [state, setState] = useState<{ id: string; url: string | null; error: boolean } | null>(null);
+  const id = media?.id, mediaUrl = media?.url;
+  useEffect(() => {
+    if (!id || !mediaUrl || !enabled || !isLoaded || !isSignedIn) return;
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    setState({ id, url: null, error: false });
+    const load = async () => {
+      try {
+        const token = await getToken();
+        if (!token) throw new Error("Sign in again to view this clip.");
+        const endpoint = new URL(mediaUrl, window.location.origin);
+        endpoint.searchParams.set("playback", "1");
+        const response = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        if (!response.ok) throw new Error("Video access expired. Try refreshing.");
+        const body = await response.json() as { url?: unknown; expiresAt?: unknown };
+        if (typeof body.url !== "string" || typeof body.expiresAt !== "number" || new URL(body.url).protocol !== "https:") {
+          throw new Error("Video is temporarily unavailable.");
+        }
+        if (!alive) return;
+        setState({ id, url: body.url, error: false });
+        const renewIn = Math.max(30_000, Math.min(13 * 60_000, body.expiresAt - Date.now() - 60_000));
+        timer = setTimeout(() => { if (alive) void load(); }, renewIn);
+      } catch {
+        if (alive) setState({ id, url: null, error: true });
+      }
+    };
+    void load();
+    return () => { alive = false; if (timer) clearTimeout(timer); };
+  }, [id, mediaUrl, enabled, isLoaded, isSignedIn, getToken, attempt]);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  const current = state?.id === id ? state : null;
+  return { url: current?.url ?? null, error: !!current?.error, retry };
 }
 
 /** Captions preference shared by every clip on this device. */
