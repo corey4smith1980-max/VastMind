@@ -5,7 +5,16 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { GetVideosFeed } from './getVideosFeed';
 
 export type GetVideosParams = {
-before?: Date;
+/**
+ * @maxLength 160
+ */
+before?: string;
+feed?: GetVideosFeed;
+/**
+ * @maxLength 160
+ */
+creatorId?: string;
 };

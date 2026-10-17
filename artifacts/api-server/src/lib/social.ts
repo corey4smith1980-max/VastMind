@@ -173,7 +173,7 @@ export async function post(id:string,viewer:string,q:Query=query) {
   const shape=(r:Row|null|undefined)=>r?{id:r.id,url:`/api/storage/media/${r.id}`,name:r.name,contentType:r.content_type,size:Number(r.size)}:null;
   const mediaId=p.media_id?mediaRows.find(m=>m.id===p.media_id):null;
   const audioId=p.audio_media_id?mediaRows.find(m=>m.id===p.audio_media_id):null;
-  return {id,author:await summary(p.author_id,viewer,q),content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none"};
+  return {id,author:await summary(p.author_id,viewer,q),content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none",captions:p.captions||[]};
 }
 export function updateShape(u:Row) {return {id:u.id,channelId:u.channel_id,content:u.content,pinned:u.pinned,createdAt:u.created_at};}
 export async function channelAccess(id:string,viewer:string,q:Query=query,owner=false) {

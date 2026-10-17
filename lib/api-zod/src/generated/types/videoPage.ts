@@ -10,5 +10,5 @@ import type { Post } from './post';
 export interface VideoPage {
   items: Post[];
   /** @nullable */
-  nextBefore: Date | null;
+  nextBefore: string | null;
 }

@@ -278,6 +278,21 @@ export interface PollOption {
   votedByMe: boolean;
 }
 
+export interface CaptionCue {
+  /**
+     * @minimum 0
+     * @maximum 90
+     */
+  start: number;
+  /**
+     * @minimum 0
+     * @maximum 90
+     */
+  end: number;
+  /** @maxLength 500 */
+  text: string;
+}
+
 export interface Post {
   id: string;
   author: UserSummary;
@@ -294,6 +309,19 @@ export interface Post {
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;
   effect: PostEffect;
+  captions?: CaptionCue[];
+}
+
+export interface CreatorProfile {
+  user: UserSummary;
+  bio: string;
+  followersCount: number;
+  followingCount: number;
+  clipsCount: number;
+}
+
+export interface SuccessResult {
+  success: boolean;
 }
 
 export type PostList = Post[];
@@ -331,6 +359,8 @@ export interface PostInput {
   mediaId?: string;
   audioMediaId?: string;
   effect?: PostInputEffect;
+  /** @maxItems 60 */
+  captions?: CaptionCue[];
 }
 
 export type ReactionInputReaction = typeof ReactionInputReaction[keyof typeof ReactionInputReaction];
@@ -636,7 +666,121 @@ before?: string;
 };
 
 export type GetVideosParams = {
+/**
+ * @maxLength 160
+ */
 before?: string;
+feed?: GetVideosFeed;
+/**
+ * @maxLength 160
+ */
+creatorId?: string;
+};
+
+export type GetVideosFeed = typeof GetVideosFeed[keyof typeof GetVideosFeed];
+
+
+export const GetVideosFeed = {
+  'for-you': 'for-you',
+  following: 'following',
+  latest: 'latest',
+} as const;
+
+export type RecordVideoEngagementBody = {
+  /**
+     * @minimum 0
+     * @maximum 90000
+     */
+  watchMs: number;
+  completed: boolean;
+};
+
+export type GetVideoCapabilities200MusicCatalog = typeof GetVideoCapabilities200MusicCatalog[keyof typeof GetVideoCapabilities200MusicCatalog];
+
+
+export const GetVideoCapabilities200MusicCatalog = {
+  'upload-only': 'upload-only',
+} as const;
+
+export type GetVideoCapabilities200 = {
+  rendering: boolean;
+  transcription: boolean;
+  musicCatalog: GetVideoCapabilities200MusicCatalog;
+};
+
+export type RenderVideoBodySpeed = typeof RenderVideoBodySpeed[keyof typeof RenderVideoBodySpeed];
+
+
+export const RenderVideoBodySpeed = {
+  '05': 0.5,
+  NUMBER_1: 1,
+  '15': 1.5,
+  NUMBER_2: 2,
+} as const;
+
+export type RenderVideoBodyAspect = typeof RenderVideoBodyAspect[keyof typeof RenderVideoBodyAspect];
+
+
+export const RenderVideoBodyAspect = {
+  original: 'original',
+  portrait: 'portrait',
+  square: 'square',
+} as const;
+
+export type RenderVideoBodyEffect = typeof RenderVideoBodyEffect[keyof typeof RenderVideoBodyEffect];
+
+
+export const RenderVideoBodyEffect = {
+  none: 'none',
+  warm: 'warm',
+  mono: 'mono',
+  soft: 'soft',
+} as const;
+
+export type RenderVideoBody = {
+  /** @maxLength 160 */
+  mediaId: string;
+  /** @maxLength 160 */
+  audioMediaId?: string;
+  /**
+     * @minimum 0
+     * @maximum 89.9
+     */
+  start: number;
+  /**
+     * @minimum 0.1
+     * @maximum 90
+     */
+  end: number;
+  speed?: RenderVideoBodySpeed;
+  aspect?: RenderVideoBodyAspect;
+  effect?: RenderVideoBodyEffect;
+  mirror?: boolean;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  originalVolume?: number;
+  /**
+     * @minimum 0
+     * @maximum 1
+     */
+  musicVolume?: number;
+};
+
+export type RenderVideo200 = {
+  media: MediaAttachment;
+  durationSeconds: number;
+};
+
+export type TranscribeVideoBody = {
+  /** @maxLength 160 */
+  mediaId: string;
+};
+
+export type TranscribeVideo200 = {
+  captions: CaptionCue[];
+  text: string;
 };
 
 export type ListCommunitiesParams = {

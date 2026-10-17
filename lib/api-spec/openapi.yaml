@@ -408,7 +408,13 @@ paths:
         - in: query
           name: before
           required: false
-          schema: { type: string, format: date-time }
+          schema: { type: string, maxLength: 160 }
+        - in: query
+          name: feed
+          schema: { type: string, enum: [for-you, following, latest] }
+        - in: query
+          name: creatorId
+          schema: { type: string, maxLength: 160 }
       responses:
         "200":
           description: Videos and the next paging cursor
@@ -416,6 +422,129 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VideoPage"
+  /creators/{userId}:
+    get:
+      operationId: getCreator
+      tags: [feed]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Privacy-checked creator profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreatorProfile" }
+  /videos/{postId}/engagement:
+    post:
+      operationId: recordVideoEngagement
+      tags: [feed]
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [watchMs, completed]
+              properties:
+                watchMs: { type: integer, minimum: 0, maximum: 90000 }
+                completed: { type: boolean }
+      responses:
+        "200":
+          description: Engagement saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResult" }
+  /videos/history:
+    delete:
+      operationId: resetVideoHistory
+      tags: [feed]
+      responses:
+        "200":
+          description: Viewing history and recommendation sessions cleared
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SuccessResult" }
+  /video-tools/capabilities:
+    get:
+      operationId: getVideoCapabilities
+      tags: [feed]
+      responses:
+        "200":
+          description: Available video processing services
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rendering, transcription, musicCatalog]
+                properties:
+                  rendering: { type: boolean }
+                  transcription: { type: boolean }
+                  musicCatalog: { type: string, enum: [upload-only] }
+  /video-tools/render:
+    post:
+      operationId: renderVideo
+      tags: [feed]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId, start, end]
+              properties:
+                mediaId: { type: string, maxLength: 160 }
+                audioMediaId: { type: string, maxLength: 160 }
+                start: { type: number, minimum: 0, maximum: 89.9 }
+                end: { type: number, minimum: 0.1, maximum: 90 }
+                speed: { type: number, enum: [0.5, 1, 1.5, 2], default: 1 }
+                aspect: { type: string, enum: [original, portrait, square], default: original }
+                effect: { type: string, enum: [none, warm, mono, soft], default: none }
+                mirror: { type: boolean, default: false }
+                originalVolume: { type: number, minimum: 0, maximum: 1, default: 1 }
+                musicVolume: { type: number, minimum: 0, maximum: 1, default: 0.5 }
+      responses:
+        "200":
+          description: Rendered private video upload ready for publishing as a post
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [media, durationSeconds]
+                properties:
+                  media: { $ref: "#/components/schemas/MediaAttachment" }
+                  durationSeconds: { type: number }
+  /video-tools/captions:
+    post:
+      operationId: transcribeVideo
+      tags: [feed]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mediaId]
+              properties:
+                mediaId: { type: string, maxLength: 160 }
+      responses:
+        "200":
+          description: AI-generated timed captions; review before posting
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [captions, text]
+                properties:
+                  captions: { type: array, items: { $ref: "#/components/schemas/CaptionCue" } }
+                  text: { type: string }
   /posts:
     post:
       operationId: createPost
@@ -1151,6 +1280,30 @@ components:
             - $ref: "#/components/schemas/MediaAttachment"
             - type: "null"
         effect: { type: string, enum: [none, warm, mono, soft] }
+        captions:
+          type: array
+          items: { $ref: "#/components/schemas/CaptionCue" }
+    CaptionCue:
+      type: object
+      required: [start, end, text]
+      properties:
+        start: { type: number, minimum: 0, maximum: 90 }
+        end: { type: number, minimum: 0, maximum: 90 }
+        text: { type: string, maxLength: 500 }
+    CreatorProfile:
+      type: object
+      required: [user, bio, followersCount, followingCount, clipsCount]
+      properties:
+        user: { $ref: "#/components/schemas/UserSummary" }
+        bio: { type: string }
+        followersCount: { type: integer }
+        followingCount: { type: integer }
+        clipsCount: { type: integer }
+    SuccessResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
     PollOption:
       type: object
       required: [id, label, votes, votedByMe]
@@ -1170,7 +1323,7 @@ components:
         items:
           type: array
           items: { $ref: "#/components/schemas/Post" }
-        nextBefore: { type: ["string", "null"], format: date-time }
+        nextBefore: { type: ["string", "null"] }
     PostInput:
       type: object
       required: [content]
@@ -1184,6 +1337,10 @@ components:
         mediaId: { type: string }
         audioMediaId: { type: string }
         effect: { type: string, enum: [none, warm, mono, soft] }
+        captions:
+          type: array
+          maxItems: 60
+          items: { $ref: "#/components/schemas/CaptionCue" }
     ReactionInput:
       type: object
       required: [reaction]

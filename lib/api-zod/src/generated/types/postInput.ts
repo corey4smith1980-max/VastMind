@@ -5,6 +5,7 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { CaptionCue } from './captionCue';
 import type { PostInputEffect } from './postInputEffect';
 
 export interface PostInput {
@@ -24,4 +25,6 @@ export interface PostInput {
   mediaId?: string;
   audioMediaId?: string;
   effect?: PostInputEffect;
+  /** @maxItems 60 */
+  captions?: CaptionCue[];
 }

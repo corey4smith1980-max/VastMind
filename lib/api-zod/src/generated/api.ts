@@ -512,6 +512,16 @@ export const GetFeedQueryParams = zod.object({
   "before": zod.date().optional()
 })
 
+export const getFeedResponseCaptionsItemStartMin = 0;
+export const getFeedResponseCaptionsItemStartMax = 90;
+
+export const getFeedResponseCaptionsItemEndMin = 0;
+export const getFeedResponseCaptionsItemEndMax = 90;
+
+export const getFeedResponseCaptionsItemTextMax = 500;
+
+
+
 export const GetFeedResponseItem = zod.object({
   "id": zod.string(),
   "author": zod.object({
@@ -551,7 +561,12 @@ export const GetFeedResponseItem = zod.object({
   "size": zod.number().int(),
   "name": zod.string()
 }),zod.null()]),
-  "effect": zod.enum(['none', 'warm', 'mono', 'soft'])
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(getFeedResponseCaptionsItemStartMin).max(getFeedResponseCaptionsItemStartMax),
+  "end": zod.number().min(getFeedResponseCaptionsItemEndMin).max(getFeedResponseCaptionsItemEndMax),
+  "text": zod.string().max(getFeedResponseCaptionsItemTextMax)
+})).optional()
 })
 export const GetFeedResponse = zod.array(GetFeedResponseItem)
 
@@ -559,9 +574,27 @@ export const GetFeedResponse = zod.array(GetFeedResponseItem)
 /**
  * @summary List public short-video clips for the swipe feed
  */
+export const getVideosQueryBeforeMax = 160;
+
+export const getVideosQueryCreatorIdMax = 160;
+
+
+
 export const GetVideosQueryParams = zod.object({
-  "before": zod.date().optional()
+  "before": zod.coerce.string().max(getVideosQueryBeforeMax).optional(),
+  "feed": zod.enum(['for-you', 'following', 'latest']).optional(),
+  "creatorId": zod.coerce.string().max(getVideosQueryCreatorIdMax).optional()
 })
+
+export const getVideosResponseItemsItemCaptionsItemStartMin = 0;
+export const getVideosResponseItemsItemCaptionsItemStartMax = 90;
+
+export const getVideosResponseItemsItemCaptionsItemEndMin = 0;
+export const getVideosResponseItemsItemCaptionsItemEndMax = 90;
+
+export const getVideosResponseItemsItemCaptionsItemTextMax = 500;
+
+
 
 export const GetVideosResponse = zod.object({
   "items": zod.array(zod.object({
@@ -603,9 +636,144 @@ export const GetVideosResponse = zod.object({
   "size": zod.number().int(),
   "name": zod.string()
 }),zod.null()]),
-  "effect": zod.enum(['none', 'warm', 'mono', 'soft'])
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(getVideosResponseItemsItemCaptionsItemStartMin).max(getVideosResponseItemsItemCaptionsItemStartMax),
+  "end": zod.number().min(getVideosResponseItemsItemCaptionsItemEndMin).max(getVideosResponseItemsItemCaptionsItemEndMax),
+  "text": zod.string().max(getVideosResponseItemsItemCaptionsItemTextMax)
+})).optional()
 })),
-  "nextBefore": zod.coerce.date().nullable()
+  "nextBefore": zod.string().nullable()
+})
+
+
+export const GetCreatorParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetCreatorResponse = zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "bio": zod.string(),
+  "followersCount": zod.number().int(),
+  "followingCount": zod.number().int(),
+  "clipsCount": zod.number().int()
+})
+
+
+export const RecordVideoEngagementParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const recordVideoEngagementBodyWatchMsMin = 0;
+export const recordVideoEngagementBodyWatchMsMax = 90000;
+
+
+
+export const RecordVideoEngagementBody = zod.object({
+  "watchMs": zod.number().int().min(recordVideoEngagementBodyWatchMsMin).max(recordVideoEngagementBodyWatchMsMax),
+  "completed": zod.boolean()
+})
+
+export const RecordVideoEngagementResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const ResetVideoHistoryResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const GetVideoCapabilitiesResponse = zod.object({
+  "rendering": zod.boolean(),
+  "transcription": zod.boolean(),
+  "musicCatalog": zod.enum(['upload-only'])
+})
+
+
+export const renderVideoBodyMediaIdMax = 160;
+
+export const renderVideoBodyAudioMediaIdMax = 160;
+
+export const renderVideoBodyStartMin = 0;
+export const renderVideoBodyStartMax = 89.9;
+
+export const renderVideoBodyEndMin = 0.1;
+export const renderVideoBodyEndMax = 90;
+
+export const renderVideoBodySpeedDefault = 1;
+export const renderVideoBodyAspectDefault = `original`;
+export const renderVideoBodyEffectDefault = `none`;
+export const renderVideoBodyMirrorDefault = false;
+export const renderVideoBodyOriginalVolumeDefault = 1;
+export const renderVideoBodyOriginalVolumeMin = 0;
+export const renderVideoBodyOriginalVolumeMax = 1;
+
+export const renderVideoBodyMusicVolumeDefault = 0.5;
+export const renderVideoBodyMusicVolumeMin = 0;
+export const renderVideoBodyMusicVolumeMax = 1;
+
+
+
+export const RenderVideoBody = zod.object({
+  "mediaId": zod.string().max(renderVideoBodyMediaIdMax),
+  "audioMediaId": zod.string().max(renderVideoBodyAudioMediaIdMax).optional(),
+  "start": zod.number().min(renderVideoBodyStartMin).max(renderVideoBodyStartMax),
+  "end": zod.number().min(renderVideoBodyEndMin).max(renderVideoBodyEndMax),
+  "speed": zod.union([zod.literal(0.5),zod.literal(1),zod.literal(1.5),zod.literal(2)]).default(renderVideoBodySpeedDefault),
+  "aspect": zod.enum(['original', 'portrait', 'square']).default(renderVideoBodyAspectDefault),
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']).default(renderVideoBodyEffectDefault),
+  "mirror": zod.boolean().default(renderVideoBodyMirrorDefault),
+  "originalVolume": zod.number().min(renderVideoBodyOriginalVolumeMin).max(renderVideoBodyOriginalVolumeMax).default(renderVideoBodyOriginalVolumeDefault),
+  "musicVolume": zod.number().min(renderVideoBodyMusicVolumeMin).max(renderVideoBodyMusicVolumeMax).default(renderVideoBodyMusicVolumeDefault)
+})
+
+export const RenderVideoResponse = zod.object({
+  "media": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}),
+  "durationSeconds": zod.number()
+})
+
+
+export const transcribeVideoBodyMediaIdMax = 160;
+
+
+
+export const TranscribeVideoBody = zod.object({
+  "mediaId": zod.string().max(transcribeVideoBodyMediaIdMax)
+})
+
+export const transcribeVideoResponseCaptionsItemStartMin = 0;
+export const transcribeVideoResponseCaptionsItemStartMax = 90;
+
+export const transcribeVideoResponseCaptionsItemEndMin = 0;
+export const transcribeVideoResponseCaptionsItemEndMax = 90;
+
+export const transcribeVideoResponseCaptionsItemTextMax = 500;
+
+
+
+export const TranscribeVideoResponse = zod.object({
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(transcribeVideoResponseCaptionsItemStartMin).max(transcribeVideoResponseCaptionsItemStartMax),
+  "end": zod.number().min(transcribeVideoResponseCaptionsItemEndMin).max(transcribeVideoResponseCaptionsItemEndMax),
+  "text": zod.string().max(transcribeVideoResponseCaptionsItemTextMax)
+})),
+  "text": zod.string()
 })
 
 
@@ -618,6 +786,16 @@ export const createPostBodyPollOptionsItemMax = 120;
 
 export const createPostBodyPollOptionsMax = 6;
 
+export const createPostBodyCaptionsItemStartMin = 0;
+export const createPostBodyCaptionsItemStartMax = 90;
+
+export const createPostBodyCaptionsItemEndMin = 0;
+export const createPostBodyCaptionsItemEndMax = 90;
+
+export const createPostBodyCaptionsItemTextMax = 500;
+
+export const createPostBodyCaptionsMax = 60;
+
 
 
 export const CreatePostBody = zod.object({
@@ -626,8 +804,23 @@ export const CreatePostBody = zod.object({
   "pollOptions": zod.array(zod.string().min(1).max(createPostBodyPollOptionsItemMax)).max(createPostBodyPollOptionsMax).optional(),
   "mediaId": zod.string().optional(),
   "audioMediaId": zod.string().optional(),
-  "effect": zod.enum(['none', 'warm', 'mono', 'soft']).optional()
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']).optional(),
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(createPostBodyCaptionsItemStartMin).max(createPostBodyCaptionsItemStartMax),
+  "end": zod.number().min(createPostBodyCaptionsItemEndMin).max(createPostBodyCaptionsItemEndMax),
+  "text": zod.string().max(createPostBodyCaptionsItemTextMax)
+})).max(createPostBodyCaptionsMax).optional()
 })
+
+export const createPostResponseCaptionsItemStartMin = 0;
+export const createPostResponseCaptionsItemStartMax = 90;
+
+export const createPostResponseCaptionsItemEndMin = 0;
+export const createPostResponseCaptionsItemEndMax = 90;
+
+export const createPostResponseCaptionsItemTextMax = 500;
+
+
 
 export const CreatePostResponse = zod.object({
   "id": zod.string(),
@@ -668,7 +861,12 @@ export const CreatePostResponse = zod.object({
   "size": zod.number().int(),
   "name": zod.string()
 }),zod.null()]),
-  "effect": zod.enum(['none', 'warm', 'mono', 'soft'])
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(createPostResponseCaptionsItemStartMin).max(createPostResponseCaptionsItemStartMax),
+  "end": zod.number().min(createPostResponseCaptionsItemEndMin).max(createPostResponseCaptionsItemEndMax),
+  "text": zod.string().max(createPostResponseCaptionsItemTextMax)
+})).optional()
 })
 
 
@@ -753,6 +951,16 @@ export const VoteOnPollBody = zod.object({
   "optionId": zod.string()
 })
 
+export const voteOnPollResponseCaptionsItemStartMin = 0;
+export const voteOnPollResponseCaptionsItemStartMax = 90;
+
+export const voteOnPollResponseCaptionsItemEndMin = 0;
+export const voteOnPollResponseCaptionsItemEndMax = 90;
+
+export const voteOnPollResponseCaptionsItemTextMax = 500;
+
+
+
 export const VoteOnPollResponse = zod.object({
   "id": zod.string(),
   "author": zod.object({
@@ -792,7 +1000,12 @@ export const VoteOnPollResponse = zod.object({
   "size": zod.number().int(),
   "name": zod.string()
 }),zod.null()]),
-  "effect": zod.enum(['none', 'warm', 'mono', 'soft'])
+  "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "captions": zod.array(zod.object({
+  "start": zod.number().min(voteOnPollResponseCaptionsItemStartMin).max(voteOnPollResponseCaptionsItemStartMax),
+  "end": zod.number().min(voteOnPollResponseCaptionsItemEndMin).max(voteOnPollResponseCaptionsItemEndMax),
+  "text": zod.string().max(voteOnPollResponseCaptionsItemTextMax)
+})).optional()
 })
 
 

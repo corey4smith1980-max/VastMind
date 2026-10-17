@@ -12,7 +12,7 @@ import { useColors } from "@/hooks/useColors";
 
 const absolute = (path: string) => `https://${process.env.EXPO_PUBLIC_DOMAIN}${path}`;
 
-export async function uploadDeviceMedia(uri: string, name: string, contentType: string, purpose: "chat"|"status", chatId?: string, webFile?: globalThis.File) {
+export async function uploadDeviceMedia(uri: string, name: string, contentType: string, purpose: "chat"|"status"|"post", chatId?: string, webFile?: globalThis.File) {
   // Native File is a streaming Blob supported by expo/fetch. Bytes never pass
   // through our JSON API or PostgreSQL.
   const file=Platform.OS==="web"?(webFile||await (await fetch(uri)).blob()):new NativeFile(uri);
