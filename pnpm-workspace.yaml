@@ -43,6 +43,10 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  # Patch vulnerable transitive copies without upgrading framework/SDK majors.
+  'next>postcss': 8.5.30
+  'brace-expansion@^5.0.0': 5.0.12
+  source-map-js: 1.2.2
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'

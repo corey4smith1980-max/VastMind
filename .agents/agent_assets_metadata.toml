@@ -14,3 +14,17 @@ mtime_ms = 1792204795162
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:be6a33d6-f87d-4827-8af3-dcc9f57fa7a7/61e4ccef-504a-45e6-adbd-9d6e114526e7/8fe8d355-5c3b-4abd-8139-ca47ae433c38"
 storage_version_token = "1792204843144214"
 content_type = "text/html"
+
+[[outputs]]
+id = "qdagizqH6OoNjs7ne2Zko"
+uri = "file://artifacts/neura-connect/public/vastmind-logo-full.svg"
+type = "image"
+title = "VastMind logo"
+description = "Scalable logo with the new VastMind mark and wordmark."
+logical_id = "417cde16-f535-4ba9-94ff-7e6c9958b2af"
+content_hash = "sha256:964a1a3b28a2ef20133cffa7ce9d51eebdc7f410296b181a0ea5f5ac5b0581ff"
+size = 479
+mtime_ms = 1792205853729
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:be6a33d6-f87d-4827-8af3-dcc9f57fa7a7/417cde16-f535-4ba9-94ff-7e6c9958b2af/52efc4a6-9ced-4618-9fb0-33fbbf67d39c"
+storage_version_token = "1792206107626531"
+content_type = "image/svg+xml"

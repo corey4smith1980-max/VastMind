@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "I AM",
+    "name": "VastMind",
     "slug": "social-chat",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,7 +10,13 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/vastmind-adaptive-foreground.png",
+        "monochromeImage": "./assets/images/vastmind-monochrome.png",
+        "backgroundColor": "#10262b"
+      }
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -20,7 +26,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#f8f4ec",
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/vastmind-splash.png",
           "resizeMode": "contain"
         }
       ],

@@ -1,6 +1,6 @@
-# I AM
+# VastMind
 
-I AM (formerly NeuraCoreConnect) is Gather's cross-platform companion for private messaging, community feeds, short videos, channels, and everyday business conversations.
+VastMind (formerly I AM / NeuraCoreConnect) is Gather's cross-platform companion for private messaging, community feeds, short videos, channels, and everyday business conversations.
 
 ## Run & Operate
 

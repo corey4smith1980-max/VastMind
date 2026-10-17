@@ -8,6 +8,7 @@ import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useColors } from '@/hooks/useColors';
+import { AppBrand } from '@/components/common';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -86,7 +87,7 @@ function AuthForm() {
   };
   const input = { padding: 15, borderWidth: 1, borderColor: colors.border, borderRadius: 14, color: colors.foreground, backgroundColor: colors.card };
   return <KeyboardAwareScrollViewCompat contentContainerStyle={{ padding: 24, paddingTop: Platform.OS === 'web' ? 80 : insets.top + 40, paddingBottom: insets.bottom + 34, gap: 18 }} style={{ backgroundColor: colors.background }}>
-    <Text style={{ fontSize: 27, fontWeight: '700', color: colors.foreground }}>I AM</Text>
+    <AppBrand size={40} fontSize={27} />
     <Text style={{ color: colors.mutedForeground }}>Your people, conversations and communities. One account across web and mobile.</Text>
     <Text style={{ color: colors.foreground, fontSize: 20 }}>{verify ? 'Verify your email' : register ? 'Create your account' : 'Welcome back'}</Text>
     {!verify && <View style={{ gap: 10 }}>

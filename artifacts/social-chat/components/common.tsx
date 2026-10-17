@@ -5,6 +5,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { useRouter } from 'expo-router';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+
+export function VastMindMark({ size = 30 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 64 64" accessibilityElementsHidden>
+      <Rect width={64} height={64} rx={18} fill="#10262b" />
+      <Path d="M19 21l13 23 13-23" fill="none" stroke="#f4ece0" strokeWidth={6.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Circle cx={19} cy={21} r={5} fill="#e8562b" />
+      <Circle cx={45} cy={21} r={5} fill="#f5c04a" />
+    </Svg>
+  );
+}
+
+export function AppBrand({ size = 30, fontSize = 19 }: { size?: number; fontSize?: number }) {
+  const colors = useColors();
+  return (
+    <View style={styles.brandRow} accessibilityRole="header" accessibilityLabel="VastMind">
+      <VastMindMark size={size} />
+      <Text style={[styles.brandName, { color: colors.forest, fontSize }]}>VastMind</Text>
+    </View>
+  );
+}
 
 export function PageFrame({ children }: { children: React.ReactNode }) {
   const colors = useColors();
@@ -31,12 +53,7 @@ export function AppHeader({ label, action, onAction }: { label?: string; action?
   const router = useRouter();
   return (
     <View style={styles.header}>
-      <View style={styles.brandRow}>
-        <View style={[styles.brandMark, { backgroundColor: colors.lime }]}>
-          <Feather name="message-circle" size={17} color={colors.forest} />
-        </View>
-        <Text style={[styles.brandName, { color: colors.forest }]}>I AM</Text>
-      </View>
+      <AppBrand />
       {action && onAction ? (
         <Pressable accessibilityRole="button" accessibilityLabel={label ?? action} onPress={onAction} style={styles.iconPress}>
           <Feather name={action} size={21} color={colors.forest} />

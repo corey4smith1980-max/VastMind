@@ -122,7 +122,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: { start: { title: "Pick up the line", subtitle: "Sign in to your chats, circles and channels" } },
-        signUp: { start: { title: "Join I AM", subtitle: "Your people, on one line — free to start" } },
+        signUp: { start: { title: "Join VastMind", subtitle: "Your people, on one line — free to start" } },
       }}
       routerPush={(to) => router.push(stripBase(to))}
       routerReplace={(to) => router.replace(stripBase(to))}

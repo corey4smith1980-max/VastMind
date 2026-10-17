@@ -11,9 +11,18 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
-  title: "I AM — your people, on one line",
-  description: "I AM brings private chats, groups, short videos, communities, channels, and business conversations together.",
-  icons: { icon: `${base}/favicon.svg` },
+  title: "VastMind — your people, on one line",
+  applicationName: "VastMind",
+  description: "VastMind brings private chats, groups, short videos, communities, channels, and business conversations together.",
+  manifest: `${base}/manifest.webmanifest`,
+  appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "default" },
+  icons: {
+    icon: [
+      { url: `${base}/favicon.svg?v=vastmind`, type: "image/svg+xml" },
+      { url: `${base}/favicon-32.png`, type: "image/png", sizes: "32x32" },
+    ],
+    apple: { url: `${base}/apple-touch-icon.png`, sizes: "180x180" },
+  },
 };
 
 export const viewport: Viewport = {

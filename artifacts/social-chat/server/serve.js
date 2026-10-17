@@ -12,6 +12,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { assertSafePath, httpError, serveStaticFile } = require('./static-files');
 
 const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
@@ -63,92 +64,137 @@ function toScriptString(value) {
     .replaceAll('&', '\\u0026');
 }
 
-function serveManifest(platform, res) {
-  const manifestPath = path.join(STATIC_ROOT, platform, 'manifest.json');
-
-  if (!fs.existsSync(manifestPath)) {
-    res.writeHead(404, { 'content-type': 'application/json' });
-    res.end(
-      JSON.stringify({ error: `Manifest not found for platform: ${platform}` }),
-    );
-    return;
-  }
-
-  const manifest = fs.readFileSync(manifestPath, 'utf-8');
-  res.writeHead(200, {
-    'content-type': 'application/json',
+async function serveManifest(root, platform, req, res) {
+  if (platform !== 'ios' && platform !== 'android') throw httpError(400);
+  await serveStaticFile(root, `/${platform}/manifest.json`, req, res, 'application/json', {
     'expo-protocol-version': '1',
     'expo-sfv-version': '0',
+    'cache-control': 'no-store',
   });
-  res.end(manifest);
 }
 
-function serveLandingPage(req, res, landingPageTemplate, appName) {
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const protocol = forwardedProto || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers['host'];
+function serveLandingPage(req, res, landingPageTemplate, appName, mount, origin) {
+  const { protocol, host } = origin;
   const baseUrl = `${protocol}://${host}`;
-  const expsUrl = `exps://${host}${basePath}`;
+  const expsUrl = `exps://${host}${mount}`;
 
   const html = landingPageTemplate
-    .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
+    .replace(/BASE_URL_PLACEHOLDER/g, escapeHtml(baseUrl))
     .replace(/EXPS_URL_ATTRIBUTE_PLACEHOLDER/g, escapeHtml(expsUrl))
     .replace(/EXPS_URL_JSON_PLACEHOLDER/g, toScriptString(expsUrl))
     .replace(/APP_NAME_PLACEHOLDER/g, escapeHtml(appName));
 
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-  res.end(html);
+  res.writeHead(200, {
+    'content-type': 'text/html; charset=utf-8',
+    'content-length': Buffer.byteLength(html),
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+  });
+  res.end(req.method === 'HEAD' ? undefined : html);
 }
 
-function serveStaticFile(urlPath, res) {
-  const safePath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, '');
-  const filePath = path.join(STATIC_ROOT, safePath);
-
-  if (!filePath.startsWith(STATIC_ROOT)) {
-    res.writeHead(403);
-    res.end('Forbidden');
-    return;
+function validateHost(host) {
+  if (typeof host !== 'string' || !host || host.length > 253 ||
+      !/^[a-zA-Z0-9.:\[\]-]+$/.test(host)) throw httpError(400);
+  try {
+    const parsed = new URL(`https://${host}`);
+    if (!parsed.hostname) throw httpError(400);
+    return parsed.host;
+  } catch {
+    throw httpError(400);
   }
-
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    res.writeHead(404);
-    res.end('Not Found');
-    return;
-  }
-
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-  const content = fs.readFileSync(filePath);
-  res.writeHead(200, { 'content-type': contentType });
-  res.end(content);
 }
 
-const landingPageTemplate = fs.readFileSync(TEMPLATE_PATH, 'utf-8');
-const appName = getAppName();
+function requestOrigin(req) {
+  const directHost = validateHost(req.headers.host);
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  if ((forwardedHost !== undefined && typeof forwardedHost !== 'string') ||
+      (forwardedProto !== undefined && typeof forwardedProto !== 'string')) throw httpError(400);
+  const host = forwardedHost === undefined ? directHost : validateHost(forwardedHost.split(',')[0].trim());
+  const protocol = forwardedProto === undefined ? 'https' : forwardedProto.split(',')[0].trim().toLowerCase();
+  if (protocol !== 'https' && protocol !== 'http') throw httpError(400);
+  return { host, protocol };
+}
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url || '/', `http://${req.headers.host}`);
-  let pathname = url.pathname;
-
-  if (basePath && pathname.startsWith(basePath)) {
-    pathname = pathname.slice(basePath.length) || '/';
+function requestPath(req) {
+  const raw = req.url || '/';
+  // Accept origin-form URLs only; never use an untrusted Host as the parse base.
+  if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('#')) throw httpError(400);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(raw.split('?')[0]);
+  } catch {
+    throw httpError(400);
   }
+  assertSafePath(pathname);
+  return pathname;
+}
 
-  if (pathname === '/' || pathname === '/manifest') {
-    const platform = req.headers['expo-platform'];
-    if (platform === 'ios' || platform === 'android') {
-      return serveManifest(platform, res);
-    }
-
-    if (pathname === '/') {
-      return serveLandingPage(req, res, landingPageTemplate, appName);
-    }
+function respondError(error, res) {
+  if (res.destroyed) return;
+  if (res.headersSent) { res.destroy(); return; }
+  const status = error.status ||
+    (['ENOENT', 'ENOTDIR'].includes(error.code) ? 404 :
+      ['EACCES', 'EPERM', 'ELOOP'].includes(error.code) ? 403 : 500);
+  const message = { 400: 'Bad Request', 403: 'Forbidden', 404: 'Not Found', 405: 'Method Not Allowed' }[status] || 'Internal Server Error';
+  if (status >= 500) {
+    // Do not log member input, filesystem paths, or full exception messages.
+    process.stderr.write(`${JSON.stringify({ event: 'static_request_failed', code: error.code || 'UNEXPECTED' })}\n`);
   }
+  res.writeHead(status, {
+    'content-type': 'text/plain; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    ...(status === 405 ? { allow: 'GET, HEAD' } : {}),
+  });
+  res.end(message);
+}
 
-  serveStaticFile(pathname, res);
-});
+// Export a factory so input-handling tests use a separate ephemeral server/tree.
+function createAppServer({ staticRoot = STATIC_ROOT, templatePath = TEMPLATE_PATH, mount = basePath } = {}) {
+  const landingPageTemplate = fs.readFileSync(templatePath, 'utf-8');
+  const appName = getAppName();
+  mount = mount.replace(/\/+$/, '');
+  return http.createServer({
+    headersTimeout: 10_000,
+    requestTimeout: 15_000,
+    keepAliveTimeout: 5_000,
+    maxHeaderSize: 16 * 1024,
+  }, async (req, res) => {
+    try {
+      const origin = requestOrigin(req);
+      let pathname = requestPath(req);
+      if (req.method !== 'GET' && req.method !== 'HEAD') throw httpError(405);
+      if (mount) {
+        if (pathname !== mount && !pathname.startsWith(`${mount}/`)) throw httpError(404);
+        pathname = pathname.slice(mount.length) || '/';
+      }
+      if (pathname === '/' || pathname === '/manifest') {
+        const platform = req.headers['expo-platform'];
+        if (platform !== undefined) return await serveManifest(staticRoot, platform, req, res);
+        if (pathname === '/') return serveLandingPage(req, res, landingPageTemplate, appName, mount, origin);
+      }
+      const contentType = MIME_TYPES[path.extname(pathname).toLowerCase()] || 'application/octet-stream';
+      await serveStaticFile(staticRoot, pathname, req, res, contentType);
+    } catch (error) {
+      // Parsing, missing/racing files, and aborted streams are request failures,
+      // not uncaught exceptions that terminate all members' application access.
+      respondError(error, res);
+    }
+  });
+}
 
-const port = parseInt(process.env.PORT || '3000', 10);
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Serving static Expo build on port ${port}`);
-});
+if (require.main === module) {
+  const port = parseInt(process.env.PORT || '3000', 10);
+  const server = createAppServer();
+  server.listen(port, '0.0.0.0', () => {
+    process.stdout.write(`Serving static Expo build on port ${port}\n`);
+  });
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, () => server.close(() => process.exit(0)));
+  }
+}
+
+module.exports = { createAppServer };

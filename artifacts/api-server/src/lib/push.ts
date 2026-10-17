@@ -40,7 +40,7 @@ export async function deliverPush() {
         if(!validPushEndpoint(d.endpoint))return;
         try {
           await webpush.sendNotification({endpoint:d.endpoint,keys:{p256dh:d.p256dh,auth:d.auth}},
-            JSON.stringify({title:"NeuraCoreConnect",body:"You have new activity. Open the app to view it."}),
+            JSON.stringify({title:"VastMind",body:"You have new activity. Open the app to view it."}),
             {TTL:300,urgency:"normal",timeout:5000});
         }catch(error) {
           const status=(error as {statusCode?:number}).statusCode;

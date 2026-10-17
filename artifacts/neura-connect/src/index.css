@@ -447,7 +447,7 @@
   }
 }
 
-/* ---------- I AM signature details ---------- */
+/* ---------- VastMind signature details ---------- */
 .font-display { font-family: var(--font-display-face), serif; letter-spacing: -0.02em; }
 .grain::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: .06; mix-blend-mode: multiply;
