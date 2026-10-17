@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I AM — Production Readiness Assessment</title>
+<style>
+:root{color-scheme:light;--ink:#142c32;--muted:#54646a;--paper:#f6f3ec;--line:#d8dfdd;--accent:#bc3c21}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:1080px;margin:auto;padding:56px 26px 80px}header{padding-bottom:30px;border-bottom:3px solid var(--ink)}h1{font-size:clamp(2.2rem,6vw,3.8rem);line-height:1.1;margin:12px 0 20px;letter-spacing:-.04em}h2{font-size:1.7rem;margin:44px 0 14px}h3{margin:26px 0 8px;font-size:1.18rem}p{margin:10px 0}.eyebrow{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--accent)}.muted,small{color:var(--muted)}.verdict{background:#fff0e9;border-left:5px solid var(--accent);padding:19px 23px;margin-top:24px}.verdict strong{font-size:1.25rem}
+nav{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}a{color:#24576a;text-underline-offset:3px}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;background:#fffdf9;font-size:.92rem;margin:16px 0}th,td{border-bottom:1px solid var(--line);padding:13px 15px;text-align:left;vertical-align:top}th{background:#e9eeeb;font-size:.8rem;text-transform:uppercase;letter-spacing:.035em}td:first-child{font-weight:650;min-width:145px}.tag{font-size:.75rem;font-weight:800;white-space:nowrap}.pass{color:#166044}.hold{color:#9f321d}.partial{color:#866000}code{font-size:.86em;background:#eaece8;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}ul,ol{padding-left:24px}li{margin:8px 0}.evidence{border-left:3px solid #b9cbc7;padding-left:17px;color:var(--muted);font-size:.9rem}.note{background:#eaf0ef;padding:15px 20px;border-radius:7px}footer{margin-top:45px;border-top:1px solid var(--line);padding-top:16px;font-size:.86rem;color:var(--muted)}
+@media print{body{background:white;font-size:10pt}main{padding:12px;max-width:none}nav{display:none}h2,h3{break-after:avoid}tr,.verdict{break-inside:avoid}a{color:inherit}table{font-size:9pt}}
+</style>
+</head>
+<body><main>
+<header>
+<div class="eyebrow">I AM / Web + mobile / Engineering assessment</div>
+<h1>Production readiness</h1>
+<p>Evidence snapshot: <strong>17 October 2026</strong>. Scope: repository review, workspace type checks, security scanners, deployment metadata, public endpoint probes, and one isolated server-failure reproduction.</p>
+<div class="verdict"><strong>Decision: HOLD unrestricted public launch.</strong><p>This is a real, professionally structured cross-platform application foundation, not a mock-only interface. It is not yet a verified production-grade multi-social platform. A restricted beta should follow—not bypass—the immediate security and release gates below.</p></div>
+</header>
+<nav aria-label="Report sections"><a href="#verified">Verified evidence</a><a href="#gates">Launch gates</a><a href="#security">Security findings</a><a href="#checklist">Product checklist</a><a href="#sequence">Recommended order</a></nav>
+
+<section id="verified"><h2>1. What the evidence supports</h2>
+<ul>
+<li><strong>Real shared infrastructure:</strong> Next.js web, Expo mobile, Express/Socket.IO API, Clerk identity, PostgreSQL social data, and private App Storage media.</li>
+<li><strong>Current workspace type checks passed:</strong> shared libraries, API, web, mobile, mockup sandbox, and scripts passed <code>pnpm run typecheck</code> during this assessment.</li>
+<li><strong>Recent unchanged-source build evidence:</strong> the immediately preceding verification passed the Next.js production build, API build, and four API tests. Those tests cover generated input validation, relational authorization/privacy, unsafe media metadata/signatures and push endpoints, and single-use owner/conversation-bound uploads. Four test cases do not mean every feature is covered.</li>
+<li><strong>Startup fix validated locally:</strong> the production web mount URL returned HTTP 200 without following redirects after the URL-canonicalization fix. This is not a successful republish.</li>
+<li><strong>Access-control protections found:</strong> parameterized database queries, authenticated social routes, transaction-based writes, per-member rate limits, blocking/privacy checks, and private media authorization. Uploaded files are verified and sealed before attachment.</li>
+</ul>
+<p class="note">No application source, dependencies, credentials, or deployment configuration were changed during this assessment. The server-failure test ran against a separate temporary local process, not the live service. No new signed-in browser or physical-device testing was performed.</p>
+</section>
+
+<section id="gates"><h2>2. Prioritized launch gates</h2>
+<p><strong>P0:</strong> resolve before unrestricted public launch. <strong>P1:</strong> required before claiming the full requested product or scaling its real-time features. These are engineering priorities, not formal security severity ratings.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Priority</th><th>Blocker / evidence</th><th>Pass criteria</th></tr></thead>
+<tbody>
+<tr><td>P0 · Availability</td><td><strong>Malformed input crashes the standalone Expo landing server.</strong> A malformed Host value produced <code>ERR_INVALID_URL</code>, connection reset, and process exit code 1 in an isolated local reproduction. URL construction is not guarded.</td><td>Validate request URLs/hosts; return a controlled 4xx response; keep the process alive. Add regression cases for malformed URLs/headers and file-read failures. Confirm hosting-edge behavior separately.</td></tr>
+<tr><td>P0 · Security gate</td><td><strong>Dependency findings need remediation or documented applicability decisions:</strong> 1 critical, 8 high, 6 moderate advisories. Static scanning reported two high potential filesystem-path findings. The privacy scanner failed, so that check is incomplete.</td><td>Triage runtime versus tooling dependencies; upgrade compatible direct parents first; resolve applicable high/critical risks or document justified exclusions. Review path containment and obtain a completed privacy scan or equivalent review. Do not force breaking upgrades without compatibility checks.</td></tr>
+<tr><td>P0 · Release</td><td><strong>The latest publish is still failed.</strong> The production web path <code>/neura-connect/</code> currently returns 404, although the site root and API health endpoint return 200. Deployment metadata shows a previous successful release, not a successful release of the latest web changes.</td><td>After security fixes, publish successfully; verify the web mount, sign-in/callbacks, authenticated messaging and private media in production. Confirm schema changes safely and verify rollback/restore procedures.</td></tr>
+<tr><td>P0 · Realtime reliability</td><td><strong>Current Autoscale release configuration and process-local coordination do not establish reliable multi-instance operation.</strong> Presence and call rooms are in memory; no shared Socket.IO adapter was found. Push delivery also depends on a running server worker.</td><td>Choose an explicitly bounded always-running single-instance beta topology, or implement and verify multi-instance coordination, appropriate Socket.IO routing/transport behavior, and durable worker execution. Test reconnects, restarts, and users landing on different instances.</td></tr>
+<tr><td>P0 · Acceptance evidence</td><td><strong>No complete cross-device, signed-in release acceptance pass.</strong> Google/Apple availability, chat recovery, native media, stories/voice recording, permission-denied flows, and new clips are not collectively verified.</td><td>Test actual iOS and Android devices plus desktop/mobile browsers with separate accounts. Cover blocking, membership removal, message/media access, interrupted uploads, reconnection, account recovery and sign-out isolation.</td></tr>
+<tr><td>P1 · Feature parity</td><td><strong>Creator profiles and native short-video parity remain incomplete.</strong> Web reel links target a profile route that does not exist. The native short-video surface has not been added.</td><td>Working creator profiles, paginated creator clips, consistent follows, and native recording/upload/playback and social interactions, with privacy checks and real-device acceptance.</td></tr>
+<tr><td>P1 · Calls / alerts</td><td><strong>Native calls and native push are not implemented.</strong> Web push and TURN require configuration. Production secret-presence checks found no VAPID or TURN secret set. Web calls use a peer mesh capped at six, not the requested SFU fallback.</td><td>Configure and test web push and a production relay; implement native capabilities if included in launch promises. Verify background/closed-app behavior and restrictive-network calls. Supply an SFU design if it remains a requirement.</td></tr>
+<tr><td>P1 · Trust operations</td><td><strong>Operational moderation and data-lifecycle readiness are not demonstrated.</strong> Report submission/storage exists; a review/enforcement workflow, account deletion/export, and exercised recovery procedures were not found or verified.</td><td>Provide a staffed report-handling and enforcement path, appropriate user-data controls and policies, retention rules, and a verified recovery procedure. Review legal obligations for the intended audience and markets.</td></tr>
+</tbody></table></div>
+<p class="evidence">Key source evidence: <code>artifacts/social-chat/server/serve.js:129–148</code>; <code>artifacts/api-server/src/lib/realtime.ts</code>; <code>artifacts/api-server/src/lib/calls.ts</code>; <code>artifacts/api-server/src/lib/push.ts</code>; <code>artifacts/api-server/src/routes/social.ts</code>; <code>artifacts/neura-connect/src/components/videos/reel-card.tsx</code>.</p>
+</section>
+
+<section id="security"><h2>3. Security: findings, not assumptions</h2>
+<div class="table-wrap"><table><thead><tr><th>Check</th><th>Result</th><th>Interpretation</th></tr></thead><tbody>
+<tr><td>Dependency audit</td><td><span class="tag hold">COMPLETED · 15 ADVISORIES</span></td><td>1 critical / 8 high / 6 moderate / 0 low. This is an advisory count, not fifteen confirmed exploitable application flaws.</td></tr>
+<tr><td>Static code scan</td><td><span class="tag partial">COMPLETED · 2 HIGH FLAGS</span></td><td>Both flags are in the Expo static server. Source review found existing controls; neither filesystem-path exploit was confirmed by this assessment.</td></tr>
+<tr><td>Privacy/dataflow scan</td><td><span class="tag hold">INCOMPLETE</span></td><td>The tool failed with <code>HOUNDDOG_SCHEMA_MISMATCH</code>. No clean privacy result can be claimed.</td></tr>
+<tr><td>Manual local probe</td><td><span class="tag hold">SERVER EXIT CONFIRMED</span></td><td>A separate malformed-URL reliability issue was reproduced. Public reachability through the hosting proxy has not been established.</td></tr>
+</tbody></table></div>
+<h3>Highest-priority dependency triage</h3>
+<ul>
+<li><strong>proxy-addr 2.0.7:</strong> critical advisory, fixed version reported as 2.0.8; present through the Express API. The reported exploit needs a particular trusted-proxy IPv6 subnet misconfiguration. No such configuration was found in the inspected application. This is not a confirmed IP-spoofing exploit in I AM.</li>
+<li><strong>PostCSS 8.4.31:</strong> multiple high/moderate advisories in the Next.js dependency chain. Another newer direct PostCSS dependency does not remove this older transitive copy. Applicability depends on attacker-controlled CSS or source-map processing; an exposed untrusted-CSS processing feature was not found.</li>
+<li><strong>brace-expansion / braces:</strong> high denial-of-service advisories. Some copies are tooling-only; <code>braces</code> is also in the API proxy middleware dependency chain. Determine whether any untrusted pattern reaches those paths before judging exposure.</li>
+<li><strong>node-forge 1.4.0 and uuid 7.0.3:</strong> high advisories were traced to Expo CLI/config tooling. Their presence does not establish a flaw in the application's sign-in or message processing. The scan did not supply a fixed node-forge version; use upstream guidance rather than assuming a safe update exists.</li>
+<li><strong>source-map-js 1.2.1:</strong> high denial-of-service advisory; fixed version reported as 1.2.2. Review all transitive copies and whether untrusted maps are accepted.</li>
+</ul>
+<h3>Static flags that need precise review</h3>
+<p><code>serve.js:77</code> reads a manifest path formed from a platform value. Its caller whitelists <code>ios</code>/<code>android</code>, which substantially constrains the flagged input. <code>serve.js:121</code> reads a static path; normalization and a prefix guard exist. The scanner flags merit containment tests and review, not an unsupported claim that arbitrary file disclosure has been demonstrated.</p>
+<h3>Privacy boundary</h3>
+<p>Private chats and media have server-side access controls. The reviewed implementation does <strong>not</strong> establish WhatsApp-style end-to-end encryption: message contents are handled and stored by the server. Do not market the app as end-to-end encrypted without a separate, verified cryptographic design.</p>
+</section>
+
+<section id="checklist"><h2>4. Web and mobile checklist</h2>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Assessment</th><th>Remaining evidence / work</th></tr></thead><tbody>
+<tr><td>Architecture</td><td class="pass">Real shared foundation</td><td>Next.js 15 / React 19, Expo, Express, Socket.IO, Clerk, PostgreSQL and App Storage. This differs from the requested Next.js 16/Supabase stack; that difference alone does not make an application non-production-grade.</td></tr>
+<tr><td>Authentication</td><td class="partial">Integrated; release verification incomplete</td><td>Replit-managed Clerk and production Clerk secret presence confirmed. Google/Apple enablement, native callbacks, recovery and published sign-in still need acceptance checks.</td></tr>
+<tr><td>Chats and communities</td><td class="partial">Implemented foundation</td><td>Real persisted conversations, membership controls, presence, feed/community/channel actions. Cross-device and reconnection behavior need a release acceptance pass; complete requested feature parity is not certified.</td></tr>
+<tr><td>Media and stories</td><td class="partial">Protected upload foundation</td><td>Metadata/signature checks, immutable sealed files, membership/visibility checks and 24-hour stories exist. Full native recording/stories and denied/interrupted permission paths remain unverified.</td></tr>
+<tr><td>Short videos</td><td class="partial">Web implementation; mobile incomplete</td><td>Real clip API, vertical feed, captions/effects, uploaded audio, reactions/comments/follows. Creator routes are missing. The 90-second duration check is client-side; server media validation, processing and new video ACL scenarios need hardening/testing.</td></tr>
+<tr><td>Calls and voice rooms</td><td class="partial">Web-only limited mesh</td><td>Up to six participants, server membership checks and optional TURN configuration. Native support, configured relay, restrictive-network validation and SFU fallback are absent/unverified.</td></tr>
+<tr><td>Push notifications</td><td class="hold">Not launch-complete</td><td>Web opt-in and server delivery code exist; required VAPID secrets were absent. Native push is not implemented. Verify delivery after application closure on each intended platform.</td></tr>
+<tr><td>Moderation and safety</td><td class="partial">Blocking/report intake exists</td><td>Report review, enforcement, appeals/abuse handling and user-generated video safety operations require completion or documented operator procedures.</td></tr>
+<tr><td>Performance and scaling</td><td class="partial">Unproven at intended scale</td><td>Load test before capacity claims. All social mutations currently take the same database advisory lock, which serializes writes. Review query fan-out and video processing/thumbnails/low-bandwidth delivery. Any concurrency redesign must preserve authorization guarantees.</td></tr>
+<tr><td>Accessibility and usability</td><td class="partial">Design implementation; not certified</td><td>Responsive UI and accessibility labels exist. No complete keyboard, screen-reader, contrast, reduced-motion or 3G performance audit was performed.</td></tr>
+<tr><td>Monitoring and recovery</td><td class="partial">Logging exists; operations unverified</td><td>Structured request logs exist. Error alerting, service objectives, synthetic checks, load results, and an exercised backup/restore procedure were not established by this review. This is not a claim that the hosting platform lacks those capabilities.</td></tr>
+<tr><td>Distribution</td><td class="hold">Latest web release not live</td><td>Existing public root and API health return 200; the web mount returns 404. Expo bundle builds are not the same as validated native App Store/Play Store releases.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="sequence"><h2>5. Recommended work order</h2>
+<ol>
+<li><strong>Harden availability and triage security:</strong> fix the confirmed server exit, add malformed-input and path-containment regression checks, address applicable dependency advisories, and complete the privacy review.</li>
+<li><strong>Choose a reliable beta topology:</strong> make an explicit always-running single-instance decision or add/test shared real-time coordination and durable worker scheduling. Do not claim scalable multi-instance messaging from an in-memory implementation.</li>
+<li><strong>Close the release gate:</strong> publish after the above checks, then verify real published URLs, authentication, database compatibility and protected media. Do not bypass a failed health check.</li>
+<li><strong>Complete device acceptance and promised launch features:</strong> separate-account web/iOS/Android testing, creator profiles, native video/calling/push if advertised, and permission/interruption/reconnection scenarios.</li>
+<li><strong>Establish safety and operational ownership:</strong> moderation, data lifecycle, alerting, recovery drills, and performance targets measured against an agreed user/traffic budget.</li>
+</ol>
+<p><strong>Release rule:</strong> mark each gate “passed” only with reproducible evidence. No percentage-complete score or production certification is assigned; missing evidence is not a pass.</p>
+<p class="evidence">Platform guidance consulted: <a href="https://docs.replit.com/features/publishing/deployment-types">Replit deployment types</a>. Reserved VM is intended for always-on workloads/persistent connections; Autoscale scales with requests and may scale to zero. Database persistence does not make process-local presence or call-room state durable.</p>
+</section>
+<footer>This is a point-in-time engineering readiness assessment, not a penetration-test certification, legal compliance opinion, SLA, or guarantee of future uptime. No secrets or user records are included. Application hardening and publishing remain separate actions.</footer>
+</main></body></html>

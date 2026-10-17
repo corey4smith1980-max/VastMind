@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "SYZiauJMgReNM-5Cq09FI"
+uri = "file://reports/iam-launch-readiness.html"
+type = "html"
+title = "I AM — Production Readiness Assessment"
+description = "Evidence-backed web and mobile checklist, prioritized launch blockers, security findings with applicability caveats, and pass criteria for a public release."
+logical_id = "61e4ccef-504a-45e6-adbd-9d6e114526e7"
+content_hash = "sha256:581e2c55f82abf46b057341205484e643e26db8fbe9feed492831bb8fc60fd1b"
+size = 19311
+mtime_ms = 1792204795162
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:be6a33d6-f87d-4827-8af3-dcc9f57fa7a7/61e4ccef-504a-45e6-adbd-9d6e114526e7/8fe8d355-5c3b-4abd-8139-ca47ae433c38"
+storage_version_token = "1792204843144214"
+content_type = "text/html"
