@@ -5,12 +5,24 @@ import { randomUUID } from "node:crypto";
 import { RequestUploadUrlBody, RequestUploadUrlResponse, CompleteMediaUploadParams, CompleteMediaUploadResponse, GetMediaContentParams } from "@workspace/api-zod";
 import { assert, query, provision, transaction, chatAllowed, blocked, canDiscover } from "../lib/social";
 import { storage, mediaTypes, MEDIA_LIMIT, matchesMediaType, mediaShape } from "../lib/media";
+import { issueMediaPlaybackTicket, verifyMediaPlaybackTicket } from "../lib/media-playback";
 import { logger } from "../lib/logger";
 
 const router = Router();
 router.use("/storage", async (req, res, next) => {
   const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Authentication required" }); return; }
+  if (!userId) {
+    const mediaMatch = req.method === "GET" && /^\/media\/([0-9a-f-]+)$/i.exec(req.path);
+    const params = mediaMatch ? GetMediaContentParams.safeParse({ mediaId: mediaMatch[1] }) : null;
+    const ticketViewer = params?.success
+      ? verifyMediaPlaybackTicket(req.query.ticket, params.data.mediaId, process.env.SESSION_SECRET ?? "")
+      : null;
+    if (!ticketViewer) { res.status(401).json({ error: "Authentication required" }); return; }
+    res.locals.mediaUser = (await provision(ticketViewer)).id;
+    res.locals.mediaPlaybackTicket = true;
+    next();
+    return;
+  }
   // Cookie-authenticated writes must originate on this application's host.
   if (req.method !== "GET" && req.headers.origin && !req.headers.authorization) {
     const host = String(req.headers["x-forwarded-host"] || req.headers.host).split(",")[0].trim();
@@ -93,19 +105,17 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
     }
   } else assert(m.owner_id===viewer,403,"Media access denied");
   const file = await storage.getObjectEntityFile(m.object_path);
-  // Web/native video elements cannot attach a Clerk bearer header to every
-  // byte-range request. After the same visibility checks above, mint a
-  // private, read-only URL for range playback; it expires independently.
+  // Video elements cannot attach Clerk's bearer header to each range request.
+  // Issue an app-signed ticket instead of a GCS signed URL: Replit App Storage
+  // credentials do not provide the IAM signing operation Google requires.
   if (req.query.playback === "1") {
-    const expiresAt = Date.now() + 15 * 60_000;
-    const [url] = await file.getSignedUrl({
-      version: "v4",
-      action: "read",
-      expires: expiresAt,
-      responseDisposition: "inline",
-      responseType: m.content_type,
-    });
-    assert(url.startsWith("https://"), 500, "Private playback URL unavailable");
+    assert(!res.locals.mediaPlaybackTicket, 401, "Sign in to refresh media access");
+    const { token, expiresAt } = issueMediaPlaybackTicket(
+      m.id,
+      viewer,
+      process.env.SESSION_SECRET ?? "",
+    );
+    const url = `${req.baseUrl}${req.path}?ticket=${encodeURIComponent(token)}`;
     res.set({ "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" })
       .json({ url, expiresAt });
     return;

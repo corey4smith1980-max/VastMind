@@ -38,11 +38,15 @@ export function useVideoPlayback(media: MediaAttachment | null | undefined, enab
         const response = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
         if (!response.ok) throw new Error("Video access expired. Try refreshing.");
         const body = await response.json() as { url?: unknown; expiresAt?: unknown };
-        if (typeof body.url !== "string" || typeof body.expiresAt !== "number" || new URL(body.url).protocol !== "https:") {
+        if (typeof body.url !== "string" || typeof body.expiresAt !== "number") {
+          throw new Error("Video is temporarily unavailable.");
+        }
+        const playbackUrl = new URL(body.url, endpoint.origin);
+        if (playbackUrl.protocol !== "https:" || playbackUrl.origin !== endpoint.origin) {
           throw new Error("Video is temporarily unavailable.");
         }
         if (!alive) return;
-        setState({ id, url: body.url, error: false });
+        setState({ id, url: playbackUrl.toString(), error: false });
         const renewIn = Math.max(30_000, Math.min(13 * 60_000, body.expiresAt - Date.now() - 60_000));
         timer = setTimeout(() => { if (alive) void load(); }, renewIn);
       } catch {

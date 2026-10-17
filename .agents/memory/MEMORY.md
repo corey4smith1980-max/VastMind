@@ -3,3 +3,4 @@
 - [Shared client React alignment](react-peer-alignment.md) — Web, Expo, and shared React Query hooks must resolve the same compatible React context.
 - [Publish path checks](publish-path-checks.md) — Path-mounted apps can build successfully but fail startup when proxy and framework URL canonicalization disagree.
 - [Expo native build port](expo-native-build-port.md) — Probe the configured Metro port and verify its status response; port 8081 is used by the component preview here.
+- [Android build environment](android-build-environment.md) — Use JDK 17, workspace Gradle caches, and paused app workflows to avoid native-build SIGBUS, quota, and OOM failures.

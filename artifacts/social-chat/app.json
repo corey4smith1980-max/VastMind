@@ -11,6 +11,7 @@
       "supportsTablet": false
     },
     "android": {
+      "package": "com.vastmind.social",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/vastmind-adaptive-foreground.png",
         "monochromeImage": "./assets/images/vastmind-monochrome.png",

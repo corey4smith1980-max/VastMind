@@ -31,9 +31,11 @@ export function useAuthedMedia(media: MediaAttachment | null | undefined, enable
       const response = await fetch(`${apiOrigin}${url}${separator}playback=1`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
       if (!response.ok) throw new Error('unavailable');
       const result = await response.json() as { url?: unknown; expiresAt?: unknown };
-      if (typeof result.url !== 'string' || typeof result.expiresAt !== 'number' || !result.url.startsWith('https://')) throw new Error('unavailable');
+      if (typeof result.url !== 'string' || typeof result.expiresAt !== 'number') throw new Error('unavailable');
+      const playbackUrl = new URL(result.url, apiOrigin);
+      if (playbackUrl.protocol !== 'https:' || playbackUrl.origin !== new URL(apiOrigin).origin) throw new Error('unavailable');
       if (!alive) return;
-      setState({ id, source: { uri: result.url }, error: false });
+      setState({ id, source: { uri: playbackUrl.toString() }, error: false });
       const renewIn = Math.max(30_000, Math.min(13 * 60_000, result.expiresAt - Date.now() - 60_000));
       timer = setTimeout(() => { if (alive) void load().catch(() => setState({ id, source: null, error: true })); }, renewIn);
     };
