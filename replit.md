@@ -1,6 +1,6 @@
-# NeuraCoreConnect
+# I AM
 
-NeuraCoreConnect is Gather's cross-platform companion for private messaging, community feeds, channels, and everyday business conversations.
+I AM (formerly NeuraCoreConnect) is Gather's cross-platform companion for private messaging, community feeds, short videos, channels, and everyday business conversations.
 
 ## Run & Operate
 
@@ -18,6 +18,7 @@ NeuraCoreConnect is Gather's cross-platform companion for private messaging, com
 - Web lives under `/neura-connect/`; the API is served at `/api`.
 - Web and mobile use the same Clerk accounts and PostgreSQL-backed API.
 - Available text-first features include one-to-one and group chats, message history/search, receipts/presence, feed posts and polls, comments/reactions, communities and member moderation, channels, text statuses, blocking/reporting, privacy controls, business quick replies, and mutual-community people suggestions.
+- The web Videos page adds cursor-paged clips, captions, visual presets, member-provided audio tracks, follows, reactions, and comments. Creator profile links still need a matching profile route; the native short-video surface has not been added. Do not claim the full TikTok-style scope or signed-in video flows are verified.
 - Media sharing now uses private Replit App Storage: photo/video chat attachments, recorded voice notes, and 24-hour image/video stories. Web and Expo clients share upload metadata and media authorization.
 - Web calling uses membership-checked Socket.IO signalling and WebRTC. Voice/video chat calls and audio-only community rooms support up to 6 participants. Calls require microphone/camera permission. Native Expo calling is not implemented.
 - Closed-app web push has an opt-in service worker, device subscriptions, and a server notification worker. It remains disabled until `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are configured in Secrets. Native-device push is not implemented.

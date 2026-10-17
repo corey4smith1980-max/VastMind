@@ -1,10 +1,14 @@
-// Next.js config for NeuraCoreConnect.
+// Next.js config for I AM.
 // Only the Clerk *publishable* key and proxy URL are exposed to the browser.
 const basePath = (process.env.BASE_PATH || "/neura-connect").replace(/\/$/, "");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   basePath,
+  // The artifact is mounted at /neura-connect/ and its startup probe uses that
+  // exact URL. Keep Next's canonical URL consistent instead of redirecting
+  // back to the slashless mount point during the production health check.
+  trailingSlash: true,
   reactStrictMode: true,
   // Clerk's development handshake uses sensitive URL parameters.
   logging: { incomingRequests: false },
