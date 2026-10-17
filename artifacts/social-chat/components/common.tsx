@@ -4,6 +4,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
+import { useRouter } from 'expo-router';
 
 export function PageFrame({ children }: { children: React.ReactNode }) {
   const colors = useColors();
@@ -27,20 +28,20 @@ export function PageFrame({ children }: { children: React.ReactNode }) {
 
 export function AppHeader({ label, action, onAction }: { label?: string; action?: React.ComponentProps<typeof Feather>['name']; onAction?: () => void }) {
   const colors = useColors();
+  const router = useRouter();
   return (
     <View style={styles.header}>
       <View style={styles.brandRow}>
         <View style={[styles.brandMark, { backgroundColor: colors.lime }]}>
           <Feather name="message-circle" size={17} color={colors.forest} />
         </View>
-        <Text style={[styles.brandName, { color: colors.forest }]}>gather</Text>
-        {label ? <Text style={[styles.headerLabel, { color: colors.mutedForeground }]}>{label}</Text> : null}
+        <Text style={[styles.brandName, { color: colors.forest }]}>NeuraCoreConnect</Text>
       </View>
       {action && onAction ? (
         <Pressable accessibilityRole="button" accessibilityLabel={label ?? action} onPress={onAction} style={styles.iconPress}>
           <Feather name={action} size={21} color={colors.forest} />
         </Pressable>
-      ) : null}
+      ) : <Pressable accessibilityLabel="Profile settings" onPress={() => router.push('/profile')}><Feather name="user" size={20} color={colors.foreground} /></Pressable>}
     </View>
   );
 }
@@ -73,13 +74,13 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
 }
 
 export function StorageNotice() {
-  const { storageError } = useAppStore();
+  const { error, loading, refresh } = useAppStore();
   const colors = useColors();
-  if (!storageError) return null;
+  if (!error && !loading) return null;
   return (
     <View style={[styles.storageNotice, { backgroundColor: colors.coral }]}>
       <Feather name="alert-circle" size={15} color={colors.primaryForeground} />
-      <Text style={[styles.storageText, { color: colors.primaryForeground }]}>Changes may not stay saved on this device.</Text>
+      <Pressable onPress={() => void refresh()}><Text style={[styles.storageText, { color: colors.primaryForeground }]}>{error ? `${error} Tap to retry.` : 'Loading your account…'}</Text></Pressable>
     </View>
   );
 }
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   brandMark: { height: 30, width: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  brandName: { fontSize: 21, fontWeight: '800', letterSpacing: -1 },
+  brandName: { fontSize: 19, fontWeight: '800', letterSpacing: -1 },
   headerLabel: { fontSize: 13, marginLeft: 4 },
   iconPress: { padding: 7 },
   avatar: { alignItems: 'center', justifyContent: 'center' },

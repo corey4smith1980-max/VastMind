@@ -108,6 +108,13 @@ export interface UserSummary {
   avatarUrl: string | null;
   online: boolean;
   mutualCommunities: number;
+  following?: boolean;
+  /** @nullable */
+  lastSeenAt?: string | null;
+}
+
+export interface UserFollowResult {
+  following: boolean;
 }
 
 export type UserList = UserSummary[];
@@ -328,6 +335,7 @@ export const CommunityMembership = {
 
 export interface Community {
   id: string;
+  ownerId: string;
   name: string;
   description: string;
   category: string;
@@ -488,6 +496,18 @@ export interface Notification {
 
 export type NotificationList = Notification[];
 
+export type CommentList = Comment[];
+
+export type ChannelUpdateList = ChannelUpdate[];
+
+export interface PollVoteInput {
+  optionId: string;
+}
+
+export interface MembershipDecisionInput {
+  approve: boolean;
+}
+
 export type SearchUsersParams = {
 /**
  * @minLength 1
@@ -500,6 +520,7 @@ q?: string;
 };
 
 export type GetChatMessagesParams = {
+q?: string;
 before?: string;
 /**
  * @minimum 1

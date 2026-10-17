@@ -7,6 +7,7 @@
  */
 
 export type GetChatMessagesParams = {
+q?: string;
 before?: Date;
 /**
  * @minimum 1

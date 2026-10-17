@@ -27,7 +27,7 @@ export default function ChatsScreen() {
       <StorageNotice />
       <View style={styles.headingRow}>
         <View><Eyebrow>YOUR INBOX</Eyebrow><Text style={[styles.heading, { color: colors.forest }]}>Chats <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text></View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open a conversation" onPress={() => router.push('/chat/maya-chen')} style={[styles.newChat, { backgroundColor: colors.lime }]}><Feather name="plus" size={20} color={colors.forest} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')} style={[styles.newChat, { backgroundColor: colors.lime }]}><Feather name="plus" size={20} color={colors.forest} /></Pressable>
       </View>
       <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Feather name="search" size={17} color={colors.mutedForeground} />
@@ -53,7 +53,7 @@ export default function ChatsScreen() {
           </Pressable>
         ))}
       </View>
-      <View style={[styles.encryptionNote, { backgroundColor: colors.secondary }]}><Feather name="lock" size={13} color={colors.forest} /><Text style={[styles.encryptionText, { color: colors.mutedForeground }]}>Your conversations stay on this device.</Text></View>
+      <View style={[styles.encryptionNote, { backgroundColor: colors.secondary }]}><Feather name="refresh-cw" size={13} color={colors.forest} /><Text style={[styles.encryptionText, { color: colors.mutedForeground }]}>Inbox refreshes every 10 seconds.</Text></View>
     </PageFrame>
   );
 }

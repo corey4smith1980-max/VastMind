@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/neura-connect/"
+title = "NeuraCoreConnect"
+description = "The Next.js web companion for private chats, communities, channels, and everyday business conversations."
+version = "1.0.0"
+id = "artifacts/neura-connect"
+router = "path"
+
+[[services]]
+name = "web"
+paths = ["/neura-connect/", "/neura-connect/_next/webpack-hmr"]
+localPort = 22088
+
+[services.development]
+run = "pnpm --filter @workspace/neura-connect run dev"
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/neura-connect", "run", "build"]
+
+[services.production.run]
+args = ["pnpm", "--filter", "@workspace/neura-connect", "run", "serve"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/neura-connect/"
+
+[services.env]
+PORT = "22088"
+BASE_PATH = "/neura-connect/"

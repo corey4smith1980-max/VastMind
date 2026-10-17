@@ -112,9 +112,20 @@ export const SearchUsersResponseItem = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
+
+
+export const UnblockUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UnblockUserResponse = zod.object({
+  "blocked": zod.boolean()
+})
 
 
 /**
@@ -126,6 +137,47 @@ export const BlockUserParams = zod.object({
 
 export const BlockUserResponse = zod.object({
   "blocked": zod.boolean()
+})
+
+
+export const ListBlockedUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+})
+export const ListBlockedUsersResponse = zod.array(ListBlockedUsersResponseItem)
+
+
+/**
+ * @summary Discover people ranked by shared communities
+ */
+export const GetSuggestedPeopleResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+})
+export const GetSuggestedPeopleResponse = zod.array(GetSuggestedPeopleResponseItem)
+
+
+/**
+ * @summary Follow or unfollow a member
+ */
+export const ToggleUserFollowParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ToggleUserFollowResponse = zod.object({
+  "following": zod.boolean()
 })
 
 
@@ -170,7 +222,9 @@ export const ListChatsResponseItem = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -212,7 +266,9 @@ export const CreateChatResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -238,6 +294,7 @@ export const getChatMessagesQueryLimitMax = 100;
 
 
 export const GetChatMessagesQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
   "before": zod.date().optional(),
   "limit": zod.coerce.number().int().min(1).max(getChatMessagesQueryLimitMax).default(getChatMessagesQueryLimitDefault)
 })
@@ -323,7 +380,9 @@ export const AddChatMemberResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -357,7 +416,9 @@ export const RemoveChatMemberResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -395,6 +456,38 @@ export const CreateChatInviteResponse = zod.object({
 })
 
 
+export const AcceptChatInviteParams = zod.object({
+  "inviteCode": zod.coerce.string()
+})
+
+export const AcceptChatInviteResponse = zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['private', 'group']),
+  "name": zod.string().nullable(),
+  "isPrivate": zod.boolean(),
+  "inviteCode": zod.string().nullish(),
+  "members": zod.array(zod.object({
+  "user": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "role": zod.enum(['owner', 'admin', 'member']),
+  "joinedAt": zod.coerce.date()
+})),
+  "memberCount": zod.number().int(),
+  "lastMessage": zod.string().nullable(),
+  "lastMessageAt": zod.coerce.date().nullable(),
+  "unreadCount": zod.number().int(),
+  "createdAt": zod.coerce.date()
+})
+
+
 /**
  * @summary Get the member feed
  */
@@ -412,7 +505,9 @@ export const GetFeedResponseItem = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -456,7 +551,9 @@ export const CreatePostResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -491,6 +588,29 @@ export const TogglePostReactionResponse = zod.object({
 })
 
 
+export const ListPostCommentsParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const ListPostCommentsResponseItem = zod.object({
+  "id": zod.string(),
+  "postId": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListPostCommentsResponse = zod.array(ListPostCommentsResponseItem)
+
+
 /**
  * @summary Comment on a post
  */
@@ -515,10 +635,48 @@ export const AddPostCommentResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date()
+})
+
+
+export const VoteOnPollParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const VoteOnPollBody = zod.object({
+  "optionId": zod.string()
+})
+
+export const VoteOnPollResponse = zod.object({
+  "id": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "content": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "reactionsCount": zod.number().int(),
+  "reacted": zod.boolean(),
+  "commentsCount": zod.number().int(),
+  "communityId": zod.string().nullable(),
+  "communityName": zod.string().nullable(),
+  "pollOptions": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "votes": zod.number().int(),
+  "votedByMe": zod.boolean()
+}))
 })
 
 
@@ -532,6 +690,7 @@ export const ListCommunitiesQueryParams = zod.object({
 
 export const ListCommunitiesResponseItem = zod.object({
   "id": zod.string(),
+  "ownerId": zod.string(),
   "name": zod.string(),
   "description": zod.string(),
   "category": zod.string(),
@@ -566,6 +725,7 @@ export const CreateCommunityBody = zod.object({
 
 export const CreateCommunityResponse = zod.object({
   "id": zod.string(),
+  "ownerId": zod.string(),
   "name": zod.string(),
   "description": zod.string(),
   "category": zod.string(),
@@ -589,6 +749,38 @@ export const JoinCommunityResponse = zod.object({
 })
 
 
+export const ListCommunityRequestsParams = zod.object({
+  "communityId": zod.coerce.string()
+})
+
+export const ListCommunityRequestsResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
+})
+export const ListCommunityRequestsResponse = zod.array(ListCommunityRequestsResponseItem)
+
+
+export const DecideCommunityRequestParams = zod.object({
+  "communityId": zod.coerce.string(),
+  "userId": zod.coerce.string()
+})
+
+export const DecideCommunityRequestBody = zod.object({
+  "approve": zod.boolean()
+})
+
+export const DecideCommunityRequestResponse = zod.object({
+  "membership": zod.enum(['none', 'member', 'requested', 'followed']),
+  "memberCount": zod.number().int()
+})
+
+
 /**
  * @summary Browse channels
  */
@@ -606,7 +798,9 @@ export const ListChannelsResponseItem = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "subscriberCount": zod.number().int(),
   "followed": zod.boolean(),
@@ -655,7 +849,9 @@ export const CreateChannelResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "subscriberCount": zod.number().int(),
   "followed": zod.boolean(),
@@ -688,6 +884,20 @@ export const ToggleChannelFollowResponse = zod.object({
   "membership": zod.enum(['none', 'member', 'requested', 'followed']),
   "memberCount": zod.number().int()
 })
+
+
+export const ListChannelUpdatesParams = zod.object({
+  "channelId": zod.coerce.string()
+})
+
+export const ListChannelUpdatesResponseItem = zod.object({
+  "id": zod.string(),
+  "channelId": zod.string(),
+  "content": zod.string(),
+  "pinned": zod.boolean(),
+  "createdAt": zod.coerce.date()
+})
+export const ListChannelUpdatesResponse = zod.array(ListChannelUpdatesResponseItem)
 
 
 /**
@@ -742,7 +952,9 @@ export const ListStatusesResponseItem = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -770,7 +982,9 @@ export const CreateStatusResponse = zod.object({
   "username": zod.string(),
   "avatarUrl": zod.string().nullable(),
   "online": zod.boolean(),
-  "mutualCommunities": zod.number().int()
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean().optional(),
+  "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),

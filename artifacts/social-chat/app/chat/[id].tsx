@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useGetChatMessages, getGetChatMessagesQueryKey, Message as ApiMessage } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Avatar } from '@/components/common';
+import { Avatar, StorageNotice } from '@/components/common';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { Message } from '@/types';
@@ -13,24 +15,39 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, sendMessage, markConversationRead } = useAppStore();
+  const { state, profile, sendMessage, markConversationRead } = useAppStore();
+  const [before, setBefore] = useState<string | undefined>();
+  const [older, setOlder] = useState<ApiMessage[]>([]);
+  const history = useGetChatMessages(id, { before, limit: 50 }, { query: { queryKey: getGetChatMessagesQueryKey(id, { before, limit: 50 }), refetchInterval: before ? false : 4000 } });
+  const latest = useGetChatMessages(id, { limit: 50 }, { query: { queryKey: getGetChatMessagesQueryKey(id, { limit: 50 }), refetchInterval: 4000 } });
   const conversation = state.conversations.find((item) => item.id === id);
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (conversation) markConversationRead(conversation.id);
-  }, [conversation?.id]);
+  }, [conversation?.id, latest.data?.items[0]?.id, latest.data?.items.length]);
+
+  useEffect(() => {
+    if (before && history.data) {
+      setOlder(current => [...new Map([...current, ...history.data.items].map(m => [m.id, m])).values()]);
+    }
+  }, [history.data, before]);
 
   if (!conversation) {
     return <View style={[styles.missing, { backgroundColor: colors.background }]}><Text style={[styles.missingTitle, { color: colors.forest }]}>Conversation not found</Text><Pressable onPress={() => router.back()}><Text style={[styles.backText, { color: colors.forest }]}>Go back</Text></Pressable></View>;
   }
 
-  const send = () => {
-    if (!draft.trim()) return;
-    sendMessage(conversation.id, draft);
-    setDraft('');
+  const send = async () => {
+    if (!draft.trim() || sending) return;
+    setSending(true);
+    const sent = await sendMessage(conversation.id, draft);
+    if (sent) setDraft('');
+    setSending(false);
   };
-  const messages = [...conversation.messages].reverse();
+  const messages: Message[] = [...new Map([...older, ...(latest.data?.items ?? [])].map(m => [m.id, m])).values()]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(m => ({ id: m.id, text: m.content, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString() }));
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: colors.background }]} behavior="padding" keyboardVerticalOffset={0}>
@@ -39,6 +56,8 @@ export default function ChatDetailScreen() {
         <Avatar initials={conversation.initials} size={40} tone={conversation.category === 'customer' ? 'lime' : conversation.category === 'group' ? 'gold' : 'coral'} online={conversation.online} />
         <View style={styles.headerText}><View style={styles.nameRow}><Text style={[styles.name, { color: colors.forest }]}>{conversation.name}</Text>{conversation.verified ? <Feather name="check-circle" size={14} color={colors.blue} /> : null}</View><Text style={[styles.status, { color: colors.mutedForeground }]}>{conversation.category === 'group' ? 'Group conversation' : conversation.online ? 'Active now' : 'Tap for contact info'}</Text></View>
       </View>
+      <StorageNotice />
+      <Pressable onPress={() => { void latest.refetch(); void history.refetch(); }}><Text style={{ color: latest.error || history.error ? colors.destructive : colors.mutedForeground, padding: 10 }}>{latest.error || history.error ? 'Connection failed — tap to retry' : latest.isPending ? 'Loading messages…' : latest.isFetching ? 'Checking for new messages…' : 'Updates checked every 4 seconds'}</Text></Pressable>
       <FlatList<Message>
         data={messages}
         inverted
@@ -54,13 +73,12 @@ export default function ChatDetailScreen() {
             </View>
           </View>
         )}
-        ListHeaderComponent={<View style={styles.listEnd}><Text style={[styles.datePill, { backgroundColor: colors.secondary, color: colors.mutedForeground }]}>Today</Text></View>}
+        ListFooterComponent={history.data?.nextBefore ? <Pressable onPress={() => setBefore(history.data?.nextBefore ?? undefined)}><Text style={{ color: colors.primary, padding: 16 }}>Load earlier messages</Text></Pressable> : null}
       />
       <View style={[styles.composerWrap, { backgroundColor: colors.background, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
-        {conversation.category === 'customer' ? <View style={styles.quickActions}><Pressable onPress={() => setDraft('Thanks for reaching out! ')} style={[styles.quickChip, { backgroundColor: colors.secondary }]}><Feather name="zap" size={12} color={colors.forest} /><Text style={[styles.quickChipText, { color: colors.forest }]}>Quick reply</Text></Pressable></View> : null}
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TextInput accessibilityLabel="Write a message" testID="message-input" placeholder="Write a message…" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={setDraft} onSubmitEditing={send} returnKeyType="send" style={[styles.input, { color: colors.foreground }]} />
-          <Pressable accessibilityLabel="Send message" testID="send-message" onPress={send} disabled={!draft.trim()} style={[styles.sendButton, { backgroundColor: draft.trim() ? colors.lime : colors.secondary }]}><Feather name="arrow-up" size={18} color={draft.trim() ? colors.forest : colors.mutedForeground} /></Pressable>
+          <Pressable accessibilityLabel={sending ? 'Sending message' : 'Send message'} testID="send-message" onPress={send} disabled={sending || !draft.trim()} style={[styles.sendButton, { backgroundColor: draft.trim() ? colors.lime : colors.secondary }]}><Feather name={sending ? 'clock' : 'arrow-up'} size={18} color={draft.trim() ? colors.forest : colors.mutedForeground} /></Pressable>
         </View>
       </View>
     </KeyboardAvoidingView>

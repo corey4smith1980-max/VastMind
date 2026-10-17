@@ -18,6 +18,7 @@ export default function ChannelsScreen() {
     <PageFrame>
       <AppHeader label="communities" />
       <StorageNotice />
+      <Pressable onPress={() => router.push('/new-channel')}><Text style={{ color: colors.primary, marginBottom: 16 }}>Create a channel</Text></Pressable>
       <Eyebrow>PUBLIC CHANNELS</Eyebrow>
       <Text style={[styles.title, { color: colors.forest }]}>Find your people.</Text>
       <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Follow the conversations and communities you care about.</Text>
@@ -37,8 +38,8 @@ export default function ChannelsScreen() {
             <Pressable key={channel.id} onPress={() => router.push(`/channel/${channel.id}`)} style={[styles.channelCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.channelTop}><Avatar initials={channel.initials} size={48} tone={channel.color} /><View style={styles.channelMeta}><Text style={[styles.channelName, { color: colors.forest }]}>{channel.name}</Text><Text style={[styles.channelCategory, { color: colors.mutedForeground }]}>{channel.category} · {channel.followers} members</Text></View><Feather name="chevron-right" size={17} color={colors.mutedForeground} /></View>
               <Text numberOfLines={2} style={[styles.description, { color: colors.mutedForeground }]}>{channel.description}</Text>
-              <View style={[styles.updatePreview, { backgroundColor: colors.secondary }]}><Text numberOfLines={2} style={[styles.updateText, { color: colors.foreground }]}>{latest.text}</Text></View>
-              <View style={styles.channelFooter}><Text style={[styles.updateTime, { color: colors.mutedForeground }]}>{latest.time}</Text><Pressable onPress={(event) => { event.stopPropagation(); toggleChannelFollow(channel.id); }} style={[styles.followButton, { backgroundColor: channel.followed ? colors.secondary : colors.lime }]}><Text style={[styles.followText, { color: colors.forest }]}>{channel.followed ? 'Following' : 'Follow'}</Text></Pressable></View>
+              <View style={[styles.updatePreview, { backgroundColor: colors.secondary }]}><Text numberOfLines={2} style={[styles.updateText, { color: colors.foreground }]}>{latest?.text ?? 'No updates yet'}</Text></View>
+              <View style={styles.channelFooter}><Text style={[styles.updateTime, { color: colors.mutedForeground }]}>{latest?.time ?? ''}</Text><Pressable onPress={async (event) => { event.stopPropagation(); await toggleChannelFollow(channel.id); }} style={[styles.followButton, { backgroundColor: channel.followed ? colors.secondary : colors.lime }]}><Text style={[styles.followText, { color: colors.forest }]}>{channel.followed ? 'Following' : 'Follow'}</Text></Pressable></View>
             </Pressable>
           );
         })}

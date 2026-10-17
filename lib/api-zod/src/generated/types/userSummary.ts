@@ -14,4 +14,7 @@ export interface UserSummary {
   avatarUrl: string | null;
   online: boolean;
   mutualCommunities: number;
+  following?: boolean;
+  /** @nullable */
+  lastSeenAt?: Date | null;
 }

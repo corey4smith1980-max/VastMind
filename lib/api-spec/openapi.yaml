@@ -109,6 +109,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserList"
   /users/{userId}/block:
+    delete:
+      operationId: unblockUser
+      tags: [users]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Member unblocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResult"
     post:
       operationId: blockUser
       tags: [users]
@@ -122,6 +134,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BlockResult"
+  /users/blocked:
+    get:
+      operationId: listBlockedUsers
+      tags: [users]
+      responses:
+        "200":
+          description: Blocked members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+  /users/suggestions:
+    get:
+      operationId: getSuggestedPeople
+      tags: [users]
+      summary: Discover people ranked by shared communities
+      responses:
+        "200":
+          description: Suggested members
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+  /users/{userId}/follow:
+    post:
+      operationId: toggleUserFollow
+      tags: [users]
+      summary: Follow or unfollow a member
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Updated follow relationship
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserFollowResult"
   /users/{userId}/reports:
     post:
       operationId: reportUser
@@ -184,6 +233,10 @@ paths:
       summary: List messages in a conversation
       parameters:
         - $ref: "#/components/parameters/ChatId"
+        - in: query
+          name: q
+          schema:
+            type: string
         - in: query
           name: before
           required: false
@@ -301,6 +354,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InviteResult"
+  /invites/{inviteCode}/join:
+    post:
+      operationId: acceptChatInvite
+      tags: [chats]
+      parameters:
+        - in: path
+          name: inviteCode
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Joined conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
   /feed:
     get:
       operationId: getFeed
@@ -369,6 +438,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/ReactionResult"
   /posts/{postId}/comments:
+    get:
+      operationId: listPostComments
+      tags: [feed]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+      responses:
+        "200":
+          description: Post comments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentList"
     post:
       operationId: addPostComment
       tags: [feed]
@@ -388,6 +469,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Comment"
+  /posts/{postId}/vote:
+    post:
+      operationId: voteOnPoll
+      tags: [feed]
+      parameters:
+        - $ref: "#/components/parameters/PostId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollVoteInput"
+      responses:
+        "200":
+          description: Updated poll post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
   /communities:
     get:
       operationId: listCommunities
@@ -446,6 +546,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JoinResult"
+  /communities/{communityId}/requests:
+    get:
+      operationId: listCommunityRequests
+      tags: [communities]
+      parameters:
+        - in: path
+          name: communityId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Pending membership requests, visible to the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserList"
+  /communities/{communityId}/requests/{userId}:
+    post:
+      operationId: decideCommunityRequest
+      tags: [communities]
+      parameters:
+        - in: path
+          name: communityId
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MembershipDecisionInput"
+      responses:
+        "200":
+          description: Membership decision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinResult"
   /channels:
     get:
       operationId: listChannels
@@ -500,6 +639,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/JoinResult"
   /channels/{channelId}/updates:
+    get:
+      operationId: listChannelUpdates
+      tags: [channels]
+      parameters:
+        - in: path
+          name: channelId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Channel history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelUpdateList"
     post:
       operationId: publishChannelUpdate
       tags: [channels]
@@ -740,6 +894,13 @@ components:
         avatarUrl: { type: ["string", "null"] }
         online: { type: boolean }
         mutualCommunities: { type: integer }
+        following: { type: boolean }
+        lastSeenAt: { type: ["string", "null"], format: date-time }
+    UserFollowResult:
+      type: object
+      required: [following]
+      properties:
+        following: { type: boolean }
     UserList:
       type: array
       items:
@@ -914,9 +1075,10 @@ components:
         content: { type: string, minLength: 1, maxLength: 2000 }
     Community:
       type: object
-      required: [id, name, description, category, isPrivate, memberCount, membership, createdAt]
+      required: [id, ownerId, name, description, category, isPrivate, memberCount, membership, createdAt]
       properties:
         id: { type: string }
+        ownerId: { type: string }
         name: { type: string }
         description: { type: string }
         category: { type: string }
@@ -1049,4 +1211,22 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Notification"
+    CommentList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Comment"
+    ChannelUpdateList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ChannelUpdate"
+    PollVoteInput:
+      type: object
+      required: [optionId]
+      properties:
+        optionId: { type: string }
+    MembershipDecisionInput:
+      type: object
+      required: [approve]
+      properties:
+        approve: { type: boolean }
 

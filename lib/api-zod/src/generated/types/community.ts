@@ -9,6 +9,7 @@ import type { CommunityMembership } from './communityMembership';
 
 export interface Community {
   id: string;
+  ownerId: string;
   name: string;
   description: string;
   category: string;

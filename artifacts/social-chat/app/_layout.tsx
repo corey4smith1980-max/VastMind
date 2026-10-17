@@ -14,6 +14,16 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppStoreProvider } from '@/state/AppStore';
+import { ClerkProvider } from '@clerk/expo';
+import { tokenCache } from '@clerk/expo/token-cache';
+import { setBaseUrl } from '@workspace/api-client-react';
+import { AuthGate } from '@/components/AuthGate';
+import { Text } from 'react-native';
+
+const domain = process.env.EXPO_PUBLIC_DOMAIN;
+if (domain) setBaseUrl(`https://${domain}`);
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const proxyUrl = process.env.EXPO_PUBLIC_CLERK_PROXY_URL || undefined;
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -45,18 +55,21 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) return null;
+  if (!publishableKey || !domain) return <Text>Missing authentication or API configuration. Set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY and EXPO_PUBLIC_DOMAIN, then rebuild.</Text>;
 
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <ClerkProvider publishableKey={publishableKey} proxyUrl={proxyUrl} tokenCache={tokenCache}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <AppStoreProvider>
+              <AuthGate><AppStoreProvider>
                 <RootLayoutNav />
-              </AppStoreProvider>
+              </AppStoreProvider></AuthGate>
             </KeyboardProvider>
           </GestureHandlerRootView>
+          </ClerkProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
