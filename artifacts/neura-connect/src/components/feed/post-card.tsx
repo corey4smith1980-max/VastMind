@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { EyeOff, Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, SendHorizontal, ThumbsUp, Check } from "lucide-react";
+import { EyeOff, Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, Share2, SendHorizontal, ThumbsUp, Check } from "lucide-react";
 import {
   useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
   type Post, type ReactionInputReaction,
@@ -32,7 +32,7 @@ function Comments({ postId }: { postId: string }) {
   const list = useListPostComments(postId, { query: { queryKey: getListPostCommentsQueryKey(postId) } });
   const add = useAddPostComment({
     mutation: {
-      onSuccess: () => { setText(""); invalidate(`/api/posts/${postId}/comments`, "/api/feed"); },
+      onSuccess: () => { setText(""); invalidate(`/api/posts/${postId}/comments`, "/api/feed", "/api/videos"); },
       onError: (e) => toast({ title: "Comment failed", description: errMessage(e), variant: "destructive" }),
     },
   });
@@ -67,10 +67,10 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [open, setOpen] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
   const react = useTogglePostReaction({
-    mutation: { onSuccess: () => invalidate("/api/feed"), onError: (e) => toast({ title: "Reaction failed", description: errMessage(e), variant: "destructive" }) },
+    mutation: { onSuccess: () => invalidate("/api/feed", "/api/videos"), onError: (e) => toast({ title: "Reaction failed", description: errMessage(e), variant: "destructive" }) },
   });
   const vote = useVoteOnPoll({
-    mutation: { onSuccess: () => invalidate("/api/feed"), onError: (e) => toast({ title: "Vote failed", description: errMessage(e), variant: "destructive" }) },
+    mutation: { onSuccess: () => invalidate("/api/feed", "/api/videos"), onError: (e) => toast({ title: "Vote failed", description: errMessage(e), variant: "destructive" }) },
   });
   const totalVotes = post.pollOptions.reduce((s, o) => s + o.votes, 0);
   const voted = post.pollOptions.some((o) => o.votedByMe);
@@ -143,6 +143,10 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setOpen((o) => !o)} aria-expanded={open} data-testid={`button-comments-${post.id}`}>
           <MessageCircle className="mr-1 h-4 w-4" /> {post.commentsCount}
         </Button>
+        <Button variant="ghost" size="sm" className="ml-auto rounded-full" aria-label="Share post" data-testid={`button-share-${post.id}`} onClick={async () => {
+          const url = `${window.location.origin}/videos?q=${encodeURIComponent(post.content.slice(0, 40))}`;
+          try { if (navigator.share) await navigator.share({ text: post.content.slice(0, 140), url }); else { await navigator.clipboard.writeText(url); toast({ title: "Link copied" }); } } catch { /* share dismissed */ }
+        }}><Share2 className="h-4 w-4" /></Button>
       </footer>
       {open ? <Comments postId={post.id} /> : null}
     </article>

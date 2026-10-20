@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { passkey } from "@better-auth/passkey";
@@ -27,10 +27,11 @@ function getCanonicalOrigin(): string {
 }
 
 const canonicalOrigin = getCanonicalOrigin();
-const authSecret = process.env.VASTMIND_AUTH_SECRET ?? process.env.SESSION_SECRET;
-if (!authSecret || authSecret.length < 32) {
+const rootSecret = process.env.VASTMIND_AUTH_SECRET ?? process.env.SESSION_SECRET;
+if (!rootSecret || rootSecret.length < 32) {
   throw new Error("A 32-character VASTMIND_AUTH_SECRET or SESSION_SECRET is required.");
 }
+const authSecret = createHmac("sha256", rootSecret).update("vastmind-auth-session-v1").digest("hex");
 
 const tokenHash = (value: string) => createHash("sha256").update(value).digest("hex");
 
@@ -38,6 +39,7 @@ const tokenHash = (value: string) => createHash("sha256").update(value).digest("
 // address remains internal to the required auth schema and never sends email.
 export const vastMindAuth = betterAuth({
   appName: "VastMind",
+  telemetry: { enabled: false },
   baseURL: canonicalOrigin,
   basePath: "/api/auth",
   secret: authSecret,
@@ -54,6 +56,14 @@ export const vastMindAuth = betterAuth({
   emailAndPassword: { enabled: false },
   trustedOrigins: [canonicalOrigin],
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
+  databaseHooks: {
+    session: {
+      create: {
+        // Authentication does not need a stored device fingerprint or IP.
+        before: async (session) => ({ data: { ...session, ipAddress: null, userAgent: null } }),
+      },
+    },
+  },
   plugins: [
     passkey({
       rpID: new URL(canonicalOrigin).hostname,
@@ -64,7 +74,7 @@ export const vastMindAuth = betterAuth({
         requireSession: false,
         resolveUser: async ({ context }) => {
           if (!context || context.length > 256) throw new Error("Registration is unavailable.");
-          const [intent] = await pool.query(
+          const { rows: [intent] } = await pool.query(
             `SELECT user_id, username FROM passkey_registration_intent
              WHERE token_hash=$1 AND expires_at > now() AND used_at IS NULL`,
             [tokenHash(context)],
@@ -76,25 +86,19 @@ export const vastMindAuth = betterAuth({
             displayName: `${intent.username}@vastmind.com`,
           };
         },
-        afterVerification: async ({ context, user, ctx }) => {
-          if (!context || context.length > 256) throw new Error("Registration is unavailable.");
-          const [intent] = await pool.query(
+        afterVerification: async ({ context, user, verification }) => {
+          if (!verification.registrationInfo?.userVerified) throw new Error("Verify your device to register a passkey.");
+          // Session-authenticated members may add a second passkey without a
+          // public registration intent; the plugin checks session ownership.
+          if (!context) return;
+          if (context.length > 256) throw new Error("Registration is unavailable.");
+          const { rows: [intent] } = await pool.query(
             `SELECT user_id, username, display_name, recovery_public_key
              FROM passkey_registration_intent
              WHERE token_hash=$1 AND expires_at > now() AND used_at IS NULL`,
             [tokenHash(context)],
           );
           if (!intent || intent.user_id !== user.id) throw new Error("Registration is unavailable or expired.");
-
-          const [existingAuthUser] = await pool.query('SELECT id FROM "user" WHERE id=$1', [intent.user_id]);
-          if (!existingAuthUser) {
-            await ctx.context.internalAdapter.createUser({
-              id: intent.user_id,
-              name: intent.display_name,
-              email: `${intent.user_id}@users.vastmind.invalid`,
-              emailVerified: false,
-            });
-          }
 
           const client = await pool.connect();
           try {
@@ -105,6 +109,13 @@ export const vastMindAuth = betterAuth({
               [tokenHash(context)],
             );
             if (!claimed.rowCount) throw new Error("Registration was already used or expired.");
+            // Persist the identity, public profile and recovery verification key
+            // together. Better Auth still owns credential and session creation.
+            await client.query(
+              `INSERT INTO "user" (id, name, email, email_verified)
+               VALUES ($1,$2,$3,false) ON CONFLICT (id) DO NOTHING`,
+              [intent.user_id, intent.display_name, `${intent.user_id}@users.vastmind.invalid`],
+            );
             await client.query(
               `INSERT INTO users (id, name, username, email)
                VALUES ($1, $2, $3, NULL)
@@ -127,6 +138,11 @@ export const vastMindAuth = betterAuth({
           return { userId: intent.user_id };
         },
       },
+      authentication: {
+        afterVerification: async ({ verification }) => {
+          if (!verification.authenticationInfo.userVerified) throw new Error("Verify your device to sign in.");
+        },
+      },
     }),
   ],
 });
@@ -142,10 +158,9 @@ export function requestHeaders(req: Request): Headers {
 
 /** Resolve either a legacy Clerk account or a new VastMind passkey session. */
 export async function authenticatedUserId(req: Request): Promise<string | null> {
-  const clerkUserId = getAuth(req).userId;
-  if (clerkUserId) return clerkUserId;
   const session = await vastMindAuth.api.getSession({ headers: requestHeaders(req) });
-  return session?.user.id ?? null;
+  if (session?.user.id) return session.user.id;
+  return getAuth(req).userId ?? null;
 }
 
 /** Create an opaque, expiring passkey-registration intent. */
@@ -155,6 +170,7 @@ export async function createRegistrationIntent(input: {
   displayName: string;
   recoveryPublicKey: string;
 }): Promise<string> {
+  await pool.query("DELETE FROM passkey_registration_intent WHERE expires_at < now() - interval '1 day'");
   const rawToken = randomBytes(32).toString("base64url");
   await pool.query(
     `INSERT INTO passkey_registration_intent

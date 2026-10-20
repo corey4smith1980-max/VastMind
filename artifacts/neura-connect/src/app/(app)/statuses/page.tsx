@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CircleDashed, ChevronLeft, ChevronRight, Hourglass, Loader2, Plus, X } from "lucide-react";
-import { useListStatuses, getListStatusesQueryKey, useCreateStatus, type Status, type MediaAttachment } from "@workspace/api-client-react";
+import { useCreateStatus, type Status, type MediaAttachment } from "@workspace/api-client-react";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,10 +11,11 @@ import { PageHeader } from "@/components/page-header";
 import { PageScroll } from "@/components/page-scroll";
 import { CardSkeleton, EmptyState, ErrorState } from "@/components/states";
 import { UserAvatar } from "@/components/user-avatar";
+import { StatusRing, useActiveStatuses } from "@/components/status/status-ring";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage, relTime } from "@/lib/format";
 import { useMe } from "@/lib/me";
-import { useInvalidate, usePollInterval } from "@/lib/realtime";
+import { useInvalidate } from "@/lib/realtime";
 
 const STORY_DURATION = 5000;
 
@@ -57,8 +58,7 @@ export default function StatusesPage() {
   const [viewing, setViewing] = useState<Status[] | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const poll = usePollInterval(60_000);
-  const list = useListStatuses({ query: { queryKey: getListStatusesQueryKey(), refetchInterval: poll } });
+  const list = useActiveStatuses();
   const create = useCreateStatus({
     mutation: {
       onSuccess: () => {
@@ -66,7 +66,7 @@ export default function StatusesPage() {
         setAttachment(undefined);
         setBackgroundStyle("midnight");
         invalidate("/api/statuses");
-        toast({ title: "Your status is up for 24 hours" });
+        toast({ title: "Your status is live", description: "Friends can see it for the next 24 hours." });
       },
       onError: (error) => toast({ title: "Couldn't post status", description: errMessage(error), variant: "destructive" }),
     },
@@ -74,12 +74,12 @@ export default function StatusesPage() {
 
   const groups = useMemo(() => {
     const grouped = new Map<string, Status[]>();
-    for (const status of list.data ?? []) {
+    for (const status of list.active) {
       grouped.set(status.author.id, [...(grouped.get(status.author.id) ?? []), status]);
     }
     for (const statuses of grouped.values()) statuses.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     return Array.from(grouped.values()).sort((a, b) => (a[0].author.id === me.id ? -1 : b[0].author.id === me.id ? 1 : 0));
-  }, [list.data, me.id]);
+  }, [list.active, me.id]);
 
   const current = viewing?.[storyIndex];
 
@@ -223,11 +223,11 @@ export default function StatusesPage() {
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Around you</p>
             <h2 id="recent-statuses-heading" className="mt-1 font-display text-2xl font-semibold">Recent moments</h2>
           </div>
-          {list.data?.length ? <span className="text-xs text-muted-foreground">{list.data.length} updates</span> : null}
+          {groups.length ? <span className="text-xs text-muted-foreground">{groups.reduce((n, g) => n + g.length, 0)} active updates</span> : null}
         </div>
         {list.isLoading ? <CardSkeleton count={2} /> : null}
         {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-        {list.data?.length === 0 ? <EmptyState icon={CircleDashed} title="A quiet moment" body="When friends share what they're up to, their updates will appear here." /> : null}
+        {list.data && groups.length === 0 ? <EmptyState icon={CircleDashed} title="A quiet moment" body="When friends share what they're up to, their updates will appear here." /> : null}
         <ul className="grid gap-3 sm:grid-cols-2">
           {groups.map((group, index) => {
             const latest = group[group.length - 1];
@@ -236,23 +236,20 @@ export default function StatusesPage() {
             return (
               <li key={latest.author.id} className="rise" style={{ animationDelay: `${index * 45}ms` }}>
                 <button type="button" onClick={() => openStories(group)}
-                  aria-label={`View ${isMine ? "your" : `${latest.author.name}'s`} ${group.length} status ${group.length === 1 ? "update" : "updates"}`}
+                  aria-label={`View ${isMine ? "your" : `${latest.author.name}'s`} ${group.length} active status ${group.length === 1 ? "update" : "updates"}`}
                   className="group flex w-full items-center gap-4 rounded-[1.35rem] border border-border/70 bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   data-testid={`button-status-${latest.author.id}`}>
-                  <span className="relative shrink-0 p-1">
-                    <svg viewBox="0 0 60 60" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
-                      <circle cx="30" cy="30" r="27" fill="none" stroke="hsl(var(--muted))" strokeWidth="2.5" />
-                      <circle cx="30" cy="30" r="27" fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" strokeDasharray={`${pct * 170} 170`} />
-                    </svg>
+                  <StatusRing active>
                     <UserAvatar id={latest.author.id} name={latest.author.name} src={latest.author.avatarUrl} size="lg" />
-                  </span>
+                  </StatusRing>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
                       <span className="truncate font-semibold">{isMine ? "You" : latest.author.name}</span>
                       {group.length > 1 ? <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{group.length} updates</span> : null}
                     </span>
                     <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">{latest.content}</span>
-                    <span className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"><Hourglass className="h-3 w-3" aria-hidden="true" />{hoursLeft(latest.expiresAt)}</span>
+                    <span className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"><span className="rounded-full bg-[hsl(214_90%_58%/.12)] px-1.5 py-0.5 font-semibold uppercase tracking-wider text-[hsl(214_80%_45%)]">Active</span><Hourglass className="h-3 w-3" aria-hidden="true" />{hoursLeft(latest.expiresAt)}</span>
+                    <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true"><span className="block h-full rounded-full bg-gradient-to-r from-[hsl(188_92%_52%)] to-[hsl(262_80%_64%)]" style={{ width: `${pct * 100}%` }} /></span>
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </button>

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/vastmind-auth";
 import { Link2, Loader2 } from "lucide-react";
 import { useAcceptChatInvite } from "@workspace/api-client-react";
 import { BrandMark, Wordmark } from "@/components/brand";

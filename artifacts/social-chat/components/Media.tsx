@@ -23,22 +23,34 @@ export async function uploadDeviceMedia(uri: string, name: string, contentType: 
   return completeMediaUpload(ticket.id);
 }
 
-export function MobileMediaPicker({purpose,chatId,onChange,disabled}:{purpose:"chat"|"status"|"product";chatId?:string;onChange:(m:MediaAttachment)=>void;disabled?:boolean}) {
+const IMAGE_TYPES=["image/jpeg","image/png","image/webp","image/gif"];
+export function MobileMediaPicker({purpose,chatId,onChange,disabled,imagesOnly,onUploadingChange,label}:{purpose:"chat"|"status"|"product"|"post";chatId?:string;onChange:(m:MediaAttachment)=>void;disabled?:boolean;imagesOnly?:boolean;onUploadingChange?:(uploading:boolean)=>void;label?:string}) {
   const colors=useColors();
   const [busy,setBusy]=useState(false);
+  const mounted=useRef(true);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+  const onlyImages=imagesOnly||purpose==="product";
   async function pick() {
     setBusy(true);
+    let uploading=false;
     try{
-      const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:purpose==="product"?["images"]:["images","videos"],quality:0.8,videoMaxDuration:60});
+      const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:onlyImages?["images"]:["images","videos"],quality:0.8,videoMaxDuration:60});
       if(result.canceled)return;
       const asset=result.assets[0];
       const mime=asset.mimeType|| (asset.type==="video"?"video/mp4":"image/jpeg");
-      if(!(purpose==="product"?["image/jpeg","image/png","image/webp","image/gif"].includes(mime):["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm"].includes(mime)))throw new Error(purpose==="product"?"Choose a JPEG, PNG, WebP or GIF product photo.":"Choose a JPEG, PNG, WebP, GIF, MP4 or WebM file. Export HEIC photos or MOV videos first.");
-      onChange(await uploadDeviceMedia(asset.uri,asset.fileName||`media.${mime.split("/")[1]}`,mime,purpose,chatId,asset.file));
-    }catch(e){Alert.alert("Couldn't upload media",e instanceof Error?e.message:"Please try again.");}
-    finally{setBusy(false);}
+      if(!(onlyImages?IMAGE_TYPES.includes(mime):[...IMAGE_TYPES,"video/mp4","video/webm"].includes(mime)))throw new Error(onlyImages?"Choose a JPEG, PNG, WebP or GIF photo. Export HEIC photos first.":"Choose a JPEG, PNG, WebP, GIF, MP4 or WebM file. Export HEIC photos or MOV videos first.");
+      uploading=true;onUploadingChange?.(true);
+      const media=await uploadDeviceMedia(asset.uri,asset.fileName||`media.${mime.split("/")[1]}`,mime,purpose,chatId,asset.file);
+      if(mounted.current)onChange(media);
+    }catch(e){if(mounted.current)Alert.alert(onlyImages?"Couldn't upload photo":"Couldn't upload media",e instanceof Error?e.message:"Please try again.");}
+    finally{if(mounted.current){setBusy(false);if(uploading)onUploadingChange?.(false);}}
   }
-  return <Pressable accessibilityLabel={purpose==="product"?"Upload product photo":"Attach photo or video"} disabled={busy||disabled} onPress={pick} style={{padding:10,minWidth:44,minHeight:44}}>
+  const a11y=purpose==="product"?"Upload product photo":label??(onlyImages?"Attach photo":"Attach photo or video");
+  if(label)return <Pressable accessibilityRole="button" accessibilityLabel={a11y} accessibilityState={{busy,disabled:busy||!!disabled}} disabled={busy||disabled} onPress={pick} style={{flexDirection:"row",alignItems:"center",gap:8,minHeight:44,opacity:disabled?0.5:1}}>
+    {busy?<ActivityIndicator color={colors.primary}/>:<Feather name="image" size={18} color={colors.primary}/>}
+    <Text style={{color:colors.primary,fontWeight:"700"}}>{busy?"Uploading photo…":label}</Text>
+  </Pressable>;
+  return <Pressable accessibilityLabel={a11y} disabled={busy||disabled} onPress={pick} style={{padding:10,minWidth:44,minHeight:44}}>
     {busy?<ActivityIndicator color={colors.primary}/>:<Feather name="paperclip" size={20} color={colors.primary}/>}
   </Pressable>;
 }

@@ -375,7 +375,8 @@ export const PostInputEffect = {
 
 export interface PostInput {
   /**
-     * @minLength 1
+     * Caption or poll question. May be empty only for an ordinary photo post; polls require a question.
+     * @minLength 0
      * @maxLength 5000
      */
   content: string;
@@ -387,6 +388,7 @@ export interface PostInput {
      * @items.maxLength 120
      */
   pollOptions?: string[];
+  /** A ready, owned post upload. Photos may accompany polls; video and audio may not. */
   mediaId?: string;
   audioMediaId?: string;
   effect?: PostInputEffect;
@@ -1727,6 +1729,18 @@ feed?: GetVideosFeed;
  * @maxLength 160
  */
 creatorId?: string;
+/**
+ * Include text, photo and poll posts alongside clips in one timeline.
+ */
+includePosts?: boolean;
+/**
+ * @maxLength 200
+ */
+q?: string;
+/**
+ * @maxLength 160
+ */
+communityId?: string;
 };
 
 export type GetVideosFeed = typeof GetVideosFeed[keyof typeof GetVideosFeed];

@@ -1,12 +1,13 @@
 "use client";
-import { SignUp } from "@clerk/react";
+import { useSearchParams } from "next/navigation";
 import { AuthFrame } from "@/components/auth-frame";
-import { basePath } from "@/lib/base";
+import { SignupFlow } from "@/components/vastmind-access";
 
 export default function SignUpPage() {
+  const migrate = useSearchParams()?.get("migrate") === "1";
   return (
     <AuthFrame quote="Start with the people you already know. Everything else can wait.">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} fallbackRedirectUrl={`${basePath}/chats`} />
+      <SignupFlow migrate={migrate} />
     </AuthFrame>
   );
 }

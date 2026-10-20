@@ -1,8 +1,8 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "@clerk/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { getGetVideosQueryKey, useGetVideos, useRecordVideoEngagement, type CaptionCue, type GetVideosFeed, type GetVideosParams, type MediaAttachment, type Post } from "@workspace/api-client-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "@/lib/vastmind-auth";
+import { useRecordVideoEngagement, type CaptionCue, type MediaAttachment, type Post } from "@workspace/api-client-react";
+export { usePagedSocialTimeline as usePagedVideos } from "@workspace/api-client-react";
 
 export function isClip(post: Post) {
   return !!post.media?.contentType.toLowerCase().startsWith("video/");
@@ -32,10 +32,16 @@ export function useVideoPlayback(media: MediaAttachment | null | undefined, enab
     const load = async () => {
       try {
         const token = await getToken();
-        if (!token) throw new Error("Sign in again to view this clip.");
         const endpoint = new URL(mediaUrl, window.location.origin);
+        if (endpoint.origin !== window.location.origin) throw new Error("Invalid media origin.");
         endpoint.searchParams.set("playback", "1");
-        const response = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+        // VastMind passkeys authenticate through an HttpOnly same-origin cookie;
+        // only the temporary legacy Clerk bridge supplies a bearer token.
+        const response = await fetch(endpoint, {
+          credentials: "same-origin",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error("Video access expired. Try refreshing.");
         const body = await response.json() as { url?: unknown; expiresAt?: unknown };
         if (typeof body.url !== "string" || typeof body.expiresAt !== "number") {
@@ -114,48 +120,3 @@ export function useWatchSession(postId: string, active: boolean) {
   return { setPlaying, markCompleted };
 }
 
-type Base = { feed?: GetVideosFeed; creatorId?: string };
-
-/** Cursor-paged clip list. The opaque cursor resets whenever feed or creator changes. */
-export function usePagedVideos(base: Base, enabled = true) {
-  const baseKey = JSON.stringify(base);
-  const queryClient = useQueryClient();
-  const [state, setState] = useState<{ key: string; before?: string; items: Post[] }>({ key: baseKey, items: [] });
-  if (state.key !== baseKey) setState({ key: baseKey, items: [] });
-  const before = state.key === baseKey ? state.before : undefined;
-  const params = useMemo<GetVideosParams>(() => ({ ...(JSON.parse(baseKey) as Base), ...(before ? { before } : {}) }), [baseKey, before]);
-  const query = useGetVideos(params, { query: { queryKey: getGetVideosQueryKey(params), enabled } });
-
-  useEffect(() => {
-    if (!query.data) return;
-    const page = query.data.items.filter(isClip);
-    setState((s) => {
-      if (s.key !== baseKey || (s.before ?? null) !== (params.before ?? null)) return s;
-      if (!s.before) return { ...s, items: page };
-      const seen = new Set(s.items.map((p) => p.id));
-      return { ...s, items: [...s.items, ...page.filter((p) => !seen.has(p.id))] };
-    });
-  }, [query.data, baseKey, params.before]);
-
-  const cursor = query.data?.nextBefore ?? null;
-  const loadNext = useCallback(() => {
-    if (cursor && !query.isFetching) setState((s) => (s.before === cursor ? s : { ...s, before: cursor }));
-  }, [cursor, query.isFetching]);
-  const refresh = useCallback(() => {
-    setState({ key: baseKey, items: [] });
-    void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey() });
-  }, [baseKey, queryClient]);
-
-  return {
-    items: state.key === baseKey ? state.items : [],
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error,
-    isFetching: query.isFetching,
-    loadingMore: query.isFetching && !!before,
-    hasMore: !!cursor,
-    loadNext,
-    refresh,
-    retry: () => void query.refetch(),
-  };
-}

@@ -4513,7 +4513,7 @@ export const getGetVideosUrl = (params?: GetVideosParams,) => {
 }
 
 /**
- * @summary List public short-video clips for the swipe feed
+ * @summary List visible clips or the combined posts-and-clips timeline
  */
 export const getVideos = async (params?: GetVideosParams, options?: Parameters<typeof customFetch>[1]): Promise<VideoPage> => {
 
@@ -4560,7 +4560,7 @@ export type GetVideosQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List public short-video clips for the swipe feed
+ * @summary List visible clips or the combined posts-and-clips timeline
  */
 
 export function useGetVideos<TData = Awaited<ReturnType<typeof getVideos>>, TError = ErrorType<unknown>>(

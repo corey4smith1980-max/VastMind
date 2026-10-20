@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { completeMediaUpload, requestUploadUrl, type MediaAttachment as Attachment } from "@workspace/api-client-react";
-import { Loader2, Mic, Paperclip, Square, X } from "lucide-react";
+import { ImagePlus, Loader2, Mic, Paperclip, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
@@ -13,9 +13,17 @@ export function MediaPreview({ media }: { media: Attachment }) {
   return <audio src={media.url} controls preload="metadata" className="mb-2 max-w-full" aria-label="Voice message" />;
 }
 
-export function MediaPicker({ purpose, chatId, value, onChange }: {
-  purpose: "chat" | "status" | "product"; chatId?: string; value?: Attachment; onChange: (value?: Attachment) => void;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+export function MediaPicker({ purpose, chatId, value, onChange, imagesOnly, disabled, onUploadingChange, label, hideValue }: {
+  purpose: "chat" | "status" | "product" | "post"; chatId?: string; value?: Attachment; onChange: (value?: Attachment) => void;
+  /** Restrict to JPEG/PNG/WebP/GIF. Implied for product. */
+  imagesOnly?: boolean; disabled?: boolean; onUploadingChange?: (uploading: boolean) => void;
+  /** Visible text button label instead of an icon-only button. */
+  label?: string; hideValue?: boolean;
 }) {
+  const onlyImages = imagesOnly || purpose === "product";
+  const uploadingRef = useRef(onUploadingChange); uploadingRef.current = onUploadingChange;
   const { toast } = useToast();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -34,7 +42,8 @@ export function MediaPicker({ purpose, chatId, value, onChange }: {
   };},[]);
   async function upload(file: File) {
     if (!file.size || file.size > 25*1024*1024) { toast({title:"Choose a file under 25 MB",variant:"destructive"}); return; }
-    setBusy(true);
+    if (onlyImages && !IMAGE_TYPES.includes(file.type.split(";")[0])) { toast({title:"Choose a JPEG, PNG, WebP or GIF photo",variant:"destructive"}); return; }
+    setBusy(true); uploadingRef.current?.(true);
     try {
       const contentType=file.type.split(";")[0];
       const ticket=await requestUploadUrl({name:file.name.slice(0,150),size:file.size,contentType,purpose,chatId});
@@ -43,7 +52,7 @@ export function MediaPicker({ purpose, chatId, value, onChange }: {
       const media=await completeMediaUpload(ticket.id);
       if(mounted.current)onChange(media);
     } catch(e) {if(mounted.current)toast({title:"Couldn't upload media",description:errMessage(e),variant:"destructive"});}
-    finally {if(mounted.current)setBusy(false);}
+    finally {if(mounted.current){setBusy(false);uploadingRef.current?.(false);}}
   }
   uploadRef.current=upload;
   async function record() {
@@ -71,11 +80,12 @@ export function MediaPicker({ purpose, chatId, value, onChange }: {
     } catch(e){toast({title:"Microphone unavailable",description:errMessage(e),variant:"destructive"});}
   }
   return <div className="flex shrink-0 flex-wrap items-center gap-0.5">
-    <input ref={input} type="file" className="sr-only" aria-label={purpose==="product"?"Choose a product photo":"Choose media"} accept={purpose==="product"?"image/jpeg,image/png,image/webp,image/gif":purpose==="status"?"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm":"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav"} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)void upload(file);}} />
-    <Button type="button" size="icon" variant="ghost" disabled={busy||recording} aria-label={purpose==="product"?"Upload product photo":"Attach photo or video"} onClick={()=>input.current?.click()}>{busy?<Loader2 className="h-5 w-5 animate-spin"/>:<Paperclip className="h-5 w-5"/>}</Button>
+    <input ref={input} type="file" className="sr-only" aria-label={purpose==="product"?"Choose a product photo":onlyImages?"Choose a photo":"Choose media"} accept={onlyImages?IMAGE_TYPES.join(","):purpose==="status"?"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm":"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav"} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)void upload(file);}} />
+    {label?<Button type="button" size="sm" variant="ghost" className="rounded-full" disabled={busy||recording||disabled} aria-busy={busy} onClick={()=>input.current?.click()} data-testid={`button-media-${purpose}`}>{busy?<Loader2 className="mr-1 h-4 w-4 animate-spin"/>:<ImagePlus className="mr-1 h-4 w-4"/>}{busy?"Uploading photo…":label}</Button>
+    :<Button type="button" size="icon" variant="ghost" disabled={busy||recording||disabled} aria-label={purpose==="product"?"Upload product photo":onlyImages?"Attach photo":"Attach photo or video"} onClick={()=>input.current?.click()}>{busy?<Loader2 className="h-5 w-5 animate-spin"/>:<Paperclip className="h-5 w-5"/>}</Button>}
     {purpose==="chat"&&<Button type="button" size="icon" variant={recording?"destructive":"ghost"} disabled={busy} aria-label={recording?"Stop recording":"Record voice note"} onClick={()=>recording?recorder.current?.stop():void record()}>{recording?<Square className="h-4 w-4"/>:<Mic className="h-5 w-5"/>}</Button>}
     {recording&&<span role="status" className="text-xs text-destructive">Recording · max 3 min</span>}
-    {busy&&<span role="status" className="text-xs">Uploading…</span>}
-    {value&&<span className="flex max-w-52 items-center gap-1 rounded-xl border px-2 text-xs"><span className="truncate">{value.name}</span><Button type="button" variant="ghost" size="icon" aria-label="Remove attachment" onClick={()=>onChange(undefined)}><X className="h-3 w-3"/></Button></span>}
+    {busy&&!label&&<span role="status" className="text-xs">Uploading…</span>}
+    {value&&!hideValue&&<span className="flex max-w-52 items-center gap-1 rounded-xl border px-2 text-xs"><span className="truncate">{value.name}</span><Button type="button" variant="ghost" size="icon" aria-label="Remove attachment" onClick={()=>onChange(undefined)}><X className="h-3 w-3"/></Button></span>}
   </div>;
 }

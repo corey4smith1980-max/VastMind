@@ -20,6 +20,10 @@ async function authenticate(req:IncomingMessage, bearer?:string) {
   const headers=new Headers();
   for(const [k,v] of Object.entries(req.headers))if(v)headers.set(k,Array.isArray(v)?v.join(","):v);
   if(bearer)headers.set("authorization",`Bearer ${bearer}`);
+  const passkeySession=await vastMindAuth.api.getSession({headers});
+  if(passkeySession?.user.id && passkeySession.session.id) {
+    return {userId:passkeySession.user.id,sessionId:passkeySession.session.id,provider:"vastmind" as const};
+  }
   try {
     const state=await clerkClient.authenticateRequest(new Request(`https://${host}${req.url??"/api/socket.io"}`,{headers}),{
       publishableKey:publishableKeyFromHost(host,process.env.CLERK_PUBLISHABLE_KEY),
@@ -31,9 +35,7 @@ async function authenticate(req:IncomingMessage, bearer?:string) {
       if(session.status==="active")return {userId:auth.userId,sessionId:auth.sessionId,provider:"clerk" as const};
     }
   } catch { /* A web passkey session is checked below. */ }
-  const session=await vastMindAuth.api.getSession({headers});
-  if(!session?.user.id || !session.session.id)throw new Error("Unauthorized");
-  return {userId:session.user.id,sessionId:session.session.id,provider:"vastmind" as const};
+  throw new Error("Unauthorized");
 }
 async function presence(userId:string,online:boolean) {
   const [user]=await query("SELECT * FROM users WHERE id=$1",[userId]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/vastmind-auth";
 import { useListNotifications, getListNotificationsQueryKey, useGetPushConfig, savePushSubscription, removePushSubscription } from "@workspace/api-client-react";
 import { basePath } from "@/lib/base";
 import { Bell } from "lucide-react";

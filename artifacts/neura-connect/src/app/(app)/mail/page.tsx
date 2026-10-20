@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { redirect } from "next/navigation";
 import {
   Archive, ArrowLeft, ChevronRight, CircleAlert, Clock3, Inbox, KeyRound,
   LockKeyhole, Mail as MailIcon, Plus, RefreshCw, Search, Send, ShieldCheck,
@@ -36,6 +37,11 @@ const dateLabel = (value: string) => {
 };
 
 export default function MailPage() {
+  redirect("/account-security");
+}
+
+// Retained only for a possible read-only legacy archive; no longer routed as mail.
+function LegacyMailPage() {
   const me = useMe();
   const queryClient = useQueryClient();
   const account = useGetMailAccount({ query: { queryKey: getGetMailAccountQueryKey() } });

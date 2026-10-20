@@ -15,9 +15,9 @@ The product's user-facing name is “VastMind.”
 
 **Why:** The user explicitly chose the web app rather than the installer for the main published link.
 
-Use Replit-managed Clerk and Replit Postgres. The initial media deferral ended when the user selected Replit App Storage for uploads.
+Use Replit Postgres and Replit App Storage. Replit-managed Clerk must remain a migration bridge until existing accounts can move safely to VastMind login.
 
-**Why:** The user confirmed Replit-managed Clerk, chose Replit Postgres after dismissing the Supabase secret request, then explicitly chose “Use Replit App Storage” for media.
+**Why:** The user chose these data services, then approved preserving existing Clerk accounts and migrating users gradually.
 
 **How to apply:** Keep accounts and shared social data aligned across clients. Do not re-request Supabase credentials or introduce an external database without a new user decision. Media upload deferral does not mean unrelated requested features were rejected.
 
@@ -27,14 +27,26 @@ Commerce belongs inside the VastMind web and native apps. The initial commerce s
 
 **How to apply:** Use the shared API and database for buyer and seller workflows. Keep payment status explicitly manual until a real processor is connected; never collect card details in a fake checkout.
 
-VastMind Mail is for communication within the web and mobile apps only, not public internet email. The user wants user-controlled message data and chose a user-held recovery phrase.
+VastMind identity is for account creation, login and profile identification only, not sending email or providing an inbox. An internal `username@vastmind.com` identifier is not a public email mailbox.
 
-**Why:** The user explicitly clarified the internal-only scope, non-tracking intent, and that the organization should not control users' message content.
+**Why:** The user clarified that the earlier “mail” request was not meant to send messages; it should provide secure account identity without external email sign-in.
 
-**How to apply:** Do not require external mail hosting or DNS for internal aliases. Preserve the distinction between encrypted content, visible delivery metadata, and account authentication. The user has not approved changing the existing sign-in system.
+**How to apply:** Do not add email delivery or require external mail hosting for these identifiers. Preserve existing account IDs and stored data during migration; do not delete legacy content as part of retiring inbox UI.
+
+Users should sign in with passkeys and a user-held recovery phrase. VastMind-hosted encrypted data sync comes first; self-host support comes next. The organization should not have full control of users' private data.
+
+**Why:** These are the user's explicit login, recovery, hosting and gradual-migration choices.
+
+**How to apply:** Keep account-recovery keys cryptographically separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
 
 Ordinary emoji should be free and static. VastMind-specific premium emoji should be animated and intended for paid access; billing is deferred until a payment provider is activated.
 
 **Why:** The user requested static ordinary emoji and animated VastMind premium emoji, after previously choosing to build premium features now and add billing later.
 
 **How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.
+
+Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
+
+**Why:** The user explicitly prefers the original video design and wants one TikTok-like page for watching and enjoying both posts and clips.
+
+**How to apply:** Keep posts and clips in one vertical timeline, preserve existing social features and content, and redirect old Feed links instead of reintroducing a second feed destination.

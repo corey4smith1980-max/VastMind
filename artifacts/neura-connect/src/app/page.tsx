@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/vastmind-auth";
 import { Landing } from "@/components/landing/landing";
 import { BootScreen } from "@/components/states";
 

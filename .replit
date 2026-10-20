@@ -34,3 +34,11 @@ externalPort = 8081
 [[ports]]
 localPort = 22088
 externalPort = 3000
+
+[userenv]
+
+[userenv.production]
+VASTMIND_AUTH_URL = "https://social-connect-hub--corey4smith1980.replit.app"
+
+[userenv.shared]
+CLERK_TELEMETRY_DISABLED = "1"

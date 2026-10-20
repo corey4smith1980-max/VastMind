@@ -66,7 +66,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ClerkProvider publishableKey={publishableKey} proxyUrl={proxyUrl} tokenCache={tokenCache}>
+          <ClerkProvider publishableKey={publishableKey} proxyUrl={proxyUrl} tokenCache={tokenCache} telemetry={{ disabled: true }}>
           <GestureHandlerRootView>
             <KeyboardProvider>
               <AuthGate><UsernameSetupGate><MobileRealtimeProvider><AppStoreProvider>

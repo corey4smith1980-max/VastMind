@@ -11,7 +11,8 @@ import { getGetCreatorQueryKey, getListPostCommentsQueryKey, useAddPostComment, 
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { ContentProducts } from '@/components/commerce/ContentProducts';
-import { activeCue, errorText, useAuthedMedia, useCaptionsPref, useWatchSession, webProfileLink } from '@/components/videoKit';
+import { PostEntry } from '@/components/PostEntry';
+import { activeCue, isClip, errorText, useAuthedMedia, useCaptionsPref, useWatchSession, webProfileLink } from '@/components/videoKit';
 
 const INK = 'hsl(192,52%,9%)';
 
@@ -153,7 +154,7 @@ export function ReelPager({ items, focused, onEndReached, footer, initialIndex =
       initialScrollIndex={initialIndex < items.length ? initialIndex : 0} getItemLayout={getItemLayout} windowSize={3} maxToRenderPerBatch={2} initialNumToRender={2}
       onViewableItemsChanged={onViewable} viewabilityConfig={viewability} onEndReached={onEndReached} onEndReachedThreshold={1.5}
       onRefresh={onRefresh} refreshing={refreshing ?? false} ListFooterComponent={footer}
-      renderItem={({ item, index }) => <ReelItem post={item} height={height} active={focused && index === activeIndex} near={Math.abs(index - activeIndex) <= 1} bottomInset={bottomInset} />} /> : null}
+      renderItem={({ item, index }) => !isClip(item) ? <PostEntry post={item} height={height} near={Math.abs(index - activeIndex) <= 1} bottomInset={bottomInset} /> : <ReelItem post={item} height={height} active={focused && index === activeIndex} near={Math.abs(index - activeIndex) <= 1} bottomInset={bottomInset} />} /> : null}
   </View>;
 }
 

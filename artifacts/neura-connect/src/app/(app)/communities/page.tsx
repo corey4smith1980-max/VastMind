@@ -112,7 +112,7 @@ function CommunityCard({ c, i, onRequests }: { c: Community; i: number; onReques
         <span className="rounded-full bg-accent/40 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest">{c.category}</span>
         <span className="flex items-center gap-1 text-xs text-muted-foreground">{c.isPrivate ? <Lock className="h-3 w-3" /> : <Globe2 className="h-3 w-3" />}{c.isPrivate ? "Request" : "Open"}</span>
       </div>
-      <Link href={`/feed?community=${c.id}`} className="mt-3 hover:text-primary"><h3 className="font-display text-2xl font-semibold leading-tight">{c.name}</h3></Link>
+      <Link href={`/videos?community=${c.id}`} className="mt-3 hover:text-primary"><h3 className="font-display text-2xl font-semibold leading-tight">{c.name}</h3></Link>
       <p className="mt-1.5 line-clamp-3 flex-1 text-sm text-muted-foreground">{c.description}</p>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <span className="mr-auto font-mono text-xs text-muted-foreground">{c.memberCount} member{c.memberCount === 1 ? "" : "s"} · {relTime(c.createdAt)}</span>
@@ -122,7 +122,7 @@ function CommunityCard({ c, i, onRequests }: { c: Community; i: number; onReques
             {c.isPrivate ? <Button size="sm" variant="outline" className="rounded-full" onClick={() => onRequests(c)} data-testid={`button-requests-${c.id}`}><UserCheck className="mr-1 h-3.5 w-3.5" /> Requests</Button> : null}
           </>
         ) : c.membership === "member" ? (
-          <Button size="sm" variant="secondary" className="rounded-full" asChild><Link href={`/feed?community=${c.id}`}><Check className="mr-1 h-3.5 w-3.5" /> Joined · open</Link></Button>
+          <Button size="sm" variant="secondary" className="rounded-full" asChild><Link href={`/videos?community=${c.id}`}><Check className="mr-1 h-3.5 w-3.5" /> Joined · open</Link></Button>
         ) : c.membership === "requested" ? (
           <Button size="sm" variant="outline" className="rounded-full" disabled><Clock className="mr-1 h-3.5 w-3.5" /> Requested</Button>
         ) : (

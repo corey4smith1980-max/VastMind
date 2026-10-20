@@ -2190,18 +2190,25 @@ export const GetFeedResponse = zod.array(GetFeedResponseItem)
 
 
 /**
- * @summary List public short-video clips for the swipe feed
+ * @summary List visible clips or the combined posts-and-clips timeline
  */
 export const getVideosQueryBeforeMax = 160;
 
 export const getVideosQueryCreatorIdMax = 160;
+
+export const getVideosQueryQMax = 200;
+
+export const getVideosQueryCommunityIdMax = 160;
 
 
 
 export const GetVideosQueryParams = zod.object({
   "before": zod.coerce.string().max(getVideosQueryBeforeMax).optional(),
   "feed": zod.enum(['for-you', 'following', 'latest']).optional(),
-  "creatorId": zod.coerce.string().max(getVideosQueryCreatorIdMax).optional()
+  "creatorId": zod.coerce.string().max(getVideosQueryCreatorIdMax).optional(),
+  "includePosts": zod.coerce.boolean().optional().describe('Include text, photo and poll posts alongside clips in one timeline.'),
+  "q": zod.coerce.string().max(getVideosQueryQMax).optional(),
+  "communityId": zod.coerce.string().max(getVideosQueryCommunityIdMax).optional()
 })
 
 export const getVideosResponseItemsItemCaptionsItemStartMin = 0;
@@ -2399,6 +2406,7 @@ export const TranscribeVideoResponse = zod.object({
 /**
  * @summary Publish a post, clip, or poll
  */
+export const createPostBodyContentMin = 0;
 export const createPostBodyContentMax = 5000;
 
 export const createPostBodyPollOptionsItemMax = 120;
@@ -2419,10 +2427,10 @@ export const createPostBodyCaptionsMax = 60;
 
 
 export const CreatePostBody = zod.object({
-  "content": zod.string().min(1).max(createPostBodyContentMax),
+  "content": zod.string().min(createPostBodyContentMin).max(createPostBodyContentMax).describe('Caption or poll question. May be empty only for an ordinary photo post; polls require a question.'),
   "communityId": zod.string().nullish(),
   "pollOptions": zod.array(zod.string().min(1).max(createPostBodyPollOptionsItemMax)).max(createPostBodyPollOptionsMax).optional(),
-  "mediaId": zod.string().optional(),
+  "mediaId": zod.string().optional().describe('A ready, owned post upload. Photos may accompany polls; video and audio may not.'),
   "audioMediaId": zod.string().optional(),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']).optional(),
   "isAnonymous": zod.boolean().default(createPostBodyIsAnonymousDefault),

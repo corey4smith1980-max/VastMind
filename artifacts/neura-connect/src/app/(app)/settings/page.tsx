@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useClerk } from "@clerk/react";
+import Link from "next/link";
+import { useAuth } from "@/lib/vastmind-auth";
 import { useTheme } from "next-themes";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, LogOut, Monitor, Moon, ShieldOff, Sun } from "lucide-react";
@@ -44,7 +45,7 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const invalidate = useInvalidate();
-  const { signOut } = useClerk();
+  const { signOut } = useAuth();
   const { theme, setTheme } = useTheme();
 
   // Profile form
@@ -85,7 +86,7 @@ export default function SettingsPage() {
         <UserAvatar id={me.id} name={me.name} src={me.avatarUrl} size="xl" online={me.online} />
         <div className="min-w-0">
           <p className="font-display truncate text-2xl font-semibold" data-testid="text-profile-name">{me.name}</p>
-          <p className="text-sm text-[#f4ece0]/70">@{me.username}{me.email ? ` · ${me.email}` : ""}</p>
+          <p className="text-sm text-[#f4ece0]/70">{me.username}@vastmind.com</p>
           {me.status ? <p className="mt-1 text-sm italic text-accent">“{me.status}”</p> : null}
         </div>
       </div>
@@ -162,8 +163,12 @@ export default function SettingsPage() {
           </ul>
         </Section>
 
+        <Section title="VastMind ID" sub="Passkeys, recovery and your internal VastMind identifier.">
+          <Button asChild variant="outline"><Link href="/account-security">Manage account security</Link></Button>
+        </Section>
+
         <Section title="Session" sub="Signing out clears this device's cached data.">
-          <Button variant="outline" className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { qc.clear(); signOut({ redirectUrl: `${basePath}/` }); }} data-testid="button-sign-out">
+          <Button variant="outline" className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => { void signOut({ redirectUrl: `${basePath}/` }).then(() => qc.clear()).catch((error) => toast({ title: "Couldn't sign out", description: errMessage(error), variant: "destructive" })); }} data-testid="button-sign-out">
             <LogOut className="mr-1 h-4 w-4" /> Sign out
           </Button>
         </Section>

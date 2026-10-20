@@ -4,7 +4,7 @@
 // Client emits: chat:join {chatId}, typing {chatId, isTyping}
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "@/lib/vastmind-auth";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { BrowserNotificationBridge } from "@/components/browser-notifications";
 
@@ -41,20 +41,20 @@ export function useInvalidate() {
 
 const ENTITY_MAP: Record<string, string[]> = {
   chats: ["/api/chats", "/api/business"],
-  posts: ["/api/feed", "/api/posts"],
+  posts: ["/api/videos", "/api/feed", "/api/posts"],
   communities: ["/api/communities", "/api/feed", "/api/users"],
   channels: ["/api/channels"],
   statuses: ["/api/statuses"],
   notifications: ["/api/notifications"],
-  users: ["/api/users", "/api/feed", "/api/chats"],
+  users: ["/api/videos", "/api/users", "/api/feed", "/api/chats"],
   message: ["/api/chats", "/api/notifications", "/api/business"],
   chat: ["/api/chats", "/api/business"],
   member: ["/api/chats"],
-  post: ["/api/feed", "/api/posts"],
-  comment: ["/api/feed", "/api/posts", "/api/notifications"],
-  reaction: ["/api/feed", "/api/notifications"],
-  poll: ["/api/feed"],
-  community: ["/api/communities", "/api/feed"],
+  post: ["/api/videos", "/api/feed", "/api/posts"],
+  comment: ["/api/videos", "/api/feed", "/api/posts", "/api/notifications"],
+  reaction: ["/api/videos", "/api/feed", "/api/notifications"],
+  poll: ["/api/videos", "/api/feed"],
+  community: ["/api/videos", "/api/communities", "/api/feed"],
   channel: ["/api/channels"],
   status: ["/api/statuses"],
   notification: ["/api/notifications"],

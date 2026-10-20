@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClerkProvider, useClerk } from "@clerk/react";
+import { ClerkProvider } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RealtimeProvider } from "@/lib/realtime";
 import { basePath, stripBase } from "@/lib/base";
+import { VastMindAuthProvider, useAuth } from "@/lib/vastmind-auth";
 
 // REQUIRED — resolves the key from window.location.hostname so the same build
 // serves multiple Clerk custom domains.
@@ -77,13 +78,12 @@ const clerkAppearance = {
 
 // Clears every cached query when the signed-in user changes (sign in/out/switch).
 function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
+  const { userId, isLoaded } = useAuth();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
+      if (!isLoaded) return;
       if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
@@ -100,9 +100,7 @@ function ClerkQueryClientCacheInvalidator() {
         }
       }
       prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClient]);
+  }, [userId, isLoaded, queryClient]);
 
   return null;
 }
@@ -115,6 +113,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider
+      telemetry={{ disabled: true }}
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
@@ -128,6 +127,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       routerReplace={(to) => router.replace(stripBase(to))}
     >
       <QueryClientProvider client={queryClient}>
+        <VastMindAuthProvider>
         <ClerkQueryClientCacheInvalidator />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem storageKey="ncc-theme">
           <TooltipProvider delayDuration={250}>
@@ -135,6 +135,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>
+        </VastMindAuthProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

@@ -16,6 +16,10 @@ import type { MailIdentity } from '@workspace/mail-crypto';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { loadMailIdentity, saveMailIdentity } from '@/lib/mail-key-store';
+import IdentityScreen from '@/components/IdentityScreen';
+
+// Mail was clarified as account identity, not a second messaging inbox.
+export default IdentityScreen;
 
 type MailBox = 'inbox' | 'sent' | 'archived';
 type DecodedMessage = { id: string; subject: string; body: string; trusted: true } | { id: string; body: string; trusted: false };
@@ -24,7 +28,7 @@ function errorText(error: unknown) {
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
 }
 
-export default function MailScreen() {
+function LegacyMailScreen() {
   const colors = useColors();
   const client = useQueryClient();
   const { profile } = useAppStore();

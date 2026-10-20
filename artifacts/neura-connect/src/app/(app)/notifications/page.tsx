@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 
 const META: Record<NotificationType, { icon: typeof Bell; href: string }> = {
   message: { icon: MessagesSquare, href: "/chats" },
-  reaction: { icon: Heart, href: "/feed" },
-  comment: { icon: MessageCircle, href: "/feed" },
+  reaction: { icon: Heart, href: "/videos" },
+  comment: { icon: MessageCircle, href: "/videos" },
   community: { icon: UsersRound, href: "/communities" },
   channel: { icon: Radio, href: "/channels" },
 };

@@ -7,12 +7,26 @@ import { pool } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { assert, HttpError, query, provision, uuid } from "../lib/social";
 import {
-  authenticatedUserId,
   createRegistrationIntent,
+  requestHeaders,
+  vastMindAuth,
 } from "../lib/vastmind-auth";
+import { isValidChosenUsername, normalizeUsername } from "../lib/usernames";
 
 const router = Router();
-const usernameSchema = z.string().trim().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/);
+router.use((req, res, next) => {
+  if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && req.headers.origin && !req.headers.authorization) {
+    const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+    try {
+      if (new URL(req.headers.origin).host !== host) throw new Error();
+    } catch {
+      res.status(403).json({ error: "Cross-origin request rejected" });
+      return;
+    }
+  }
+  next();
+});
+const usernameSchema = z.string().trim().transform(normalizeUsername).refine(isValidChosenUsername);
 const recoveryPublicKeySchema = z.string().regex(/^[0-9a-f]{64}$/i);
 const identityLimiter = rateLimit({
   windowMs: 15 * 60_000,
@@ -32,16 +46,15 @@ router.post("/identity/passkey-registration-intents", identityLimiter, async (re
   assert(parsed.success, 400, "Enter a valid VastMind ID and recovery key.");
   const username = parsed.data.username.toLowerCase();
   const legacyClerkUserId = getAuth(req).userId;
-  const currentId = await authenticatedUserId(req);
-  if (currentId && !legacyClerkUserId) {
+  const passkeySession = await vastMindAuth.api.getSession({ headers: requestHeaders(req) });
+  if (passkeySession) {
     throw new HttpError(409, "You are already signed in with a VastMind passkey.");
   }
 
-  let userId = legacyClerkUserId ?? uuid();
-  let displayName = parsed.data.displayName;
+  const userId = legacyClerkUserId ?? uuid();
+  const displayName = parsed.data.displayName;
   if (legacyClerkUserId) {
-    const current = await provision(legacyClerkUserId);
-    if (!parsed.data.displayName) displayName = current.name;
+    await provision(legacyClerkUserId);
   }
 
   const [taken] = await query(
@@ -64,6 +77,7 @@ router.post("/identity/recovery-challenges", identityLimiter, async (req, res) =
   const parsed = z.object({ username: usernameSchema }).safeParse(req.body);
   assert(parsed.success, 400, "Enter a valid VastMind ID.");
   const username = parsed.data.username.toLowerCase();
+  await query("DELETE FROM account_recovery_challenge WHERE expires_at < now() - interval '1 day'");
   const challengeId = randomUUID();
   const challenge = randomBytes(32).toString("base64url");
   const [user] = await query(

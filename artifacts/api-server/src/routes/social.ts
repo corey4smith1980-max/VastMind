@@ -10,6 +10,7 @@ import { claimMedia, mediaShape } from "../lib/media";
 import { pushConfiguration, validPushEndpoint } from "../lib/push";
 import { mediaTypes } from "../lib/media";
 import { creatorProfile, videoPage, validateCaptions } from "../lib/videos";
+import { validatePostComposition } from "../lib/post-composition";
 import { verifyMailEnvelopeSignature } from "@workspace/mail-crypto";
 import { authenticatedUserId } from "../lib/vastmind-auth";
 
@@ -52,10 +53,17 @@ function route(method:"get"|"post"|"patch"|"put"|"delete",path:string,operation:
   router[method](path,...(method==="get"?[]:[writeLimit]),async(req,res)=>{
     const p=validate(registry[`${operation}Params`],req.params) as Record<string,string>;
     for(const value of Object.values(p))assert(typeof value==="string" && value.length>0 && value.length<=160,400,"Invalid identifier");
-    const s=validate(registry[`${operation}QueryParams`],req.query) as any;
+    // Query strings are not booleans: Boolean("false") is true. Normalize this
+    // opt-in before the generated Zod coercion so clip-only clients stay intact.
+    let queryInput: unknown = req.query;
+    if(operation==="GetVideos" && req.query.includePosts!==undefined){
+      assert(["true","false"].includes(req.query.includePosts as string),400,"Invalid includePosts");
+      queryInput={...req.query,includePosts:req.query.includePosts==="true"};
+    }
+    const s=validate(registry[`${operation}QueryParams`],queryInput) as any;
     for(const value of Object.values(s))assert(typeof value!=="string" || value.length<=200,400,"Query is too long");
     const b=validate(registry[`${operation}Body`],req.body) as any;
-    if(b && typeof b==="object")for(const [key,value] of Object.entries(b))if(typeof value==="string" && !["bio","status","description","buyerNote"].includes(key))assert(value.trim().length>0,400,"Text must not be blank");
+    if(b && typeof b==="object")for(const [key,value] of Object.entries(b))if(typeof value==="string" && !["bio","status","description","buyerNote"].includes(key) && !(operation==="CreatePost" && key==="content"))assert(value.trim().length>0,400,"Text must not be blank");
     const c:Context={u:res.locals.user.id,user:res.locals.user,p,b,s,q:query,impact:new Set([res.locals.user.id]),entity:path.split("/")[1]};
     const run=async(q:Query)=>{
       c.q=q;
@@ -295,16 +303,15 @@ route("post","/posts","CreatePost",async c=>{
   if(c.b.communityId){const co=await community(c.b.communityId,c.u,c.q);assert(co.membership==="member",403,"Join the community before posting");}
   assert(!c.b.pollOptions?.length || c.b.pollOptions.length>=2,400,"Polls require at least two options");
   if(c.b.pollOptions)assert(new Set(c.b.pollOptions.map((x:string)=>x.trim().toLowerCase())).size===c.b.pollOptions.length && c.b.pollOptions.every((x:string)=>x.trim()),400,"Poll options must be distinct and nonempty");
-  assert(!c.b.mediaId||!c.b.pollOptions,400,"A video post can't also be a poll");
   const main=await claimMedia(c.b.mediaId,c.u,"post",null,c.q);
   const soundtrack=await claimMedia(c.b.audioMediaId,c.u,"post",null,c.q);
   const captions=validateCaptions(c.b.captions??[]);
   assert(captions.length===0 || main?.content_type.startsWith("video/"),400,"Captions require a video clip");
-  assert(!soundtrack||main,400,"A soundtrack needs a video");
+  assert(!soundtrack||main?.content_type.startsWith("video/"),400,"A soundtrack needs a video");
   assert(!main||mediaTypes.has(main.content_type),400,"Unsupported media format");
   assert(!soundtrack||soundtrack.content_type.startsWith("audio/"),400,"Choose an audio track");
   assert(!main||!main.content_type.startsWith("audio/"),400,"Choose a photo or video clip");
-  assert(!main||!c.b.pollOptions||c.b.pollOptions.length===0,400,"A media post can't be a poll");
+  validatePostComposition(c.b.content,main?.content_type,c.b.pollOptions);
   const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,content,media_id,audio_media_id,effect,captions,is_anonymous) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",[id,c.u,c.b.communityId??null,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions),c.b.isAnonymous??false]);
   for(const label of c.b.pollOptions??[])await c.q("INSERT INTO poll_options (id,post_id,label) VALUES ($1,$2,$3)",[uuid(),id,label]);
   await feedImpact(c,c.b.communityId??null);return post(id,c.u,c.q);

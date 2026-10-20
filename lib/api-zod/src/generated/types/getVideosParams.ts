@@ -17,4 +17,16 @@ feed?: GetVideosFeed;
  * @maxLength 160
  */
 creatorId?: string;
+/**
+ * Include text, photo and poll posts alongside clips in one timeline.
+ */
+includePosts?: boolean;
+/**
+ * @maxLength 200
+ */
+q?: string;
+/**
+ * @maxLength 160
+ */
+communityId?: string;
 };
