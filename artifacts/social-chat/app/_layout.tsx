@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -13,6 +14,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { AppStoreProvider } from '@/state/AppStore';
 import { ClerkProvider } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
@@ -44,6 +46,8 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const isDark = useColorScheme() === 'dark';
+  const splashBackground = isDark ? '#080817' : '#F7F8FC';
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -53,9 +57,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      // Match the native system canvas to the selected light/dark splash theme before hiding it.
+      void SystemUI.setBackgroundColorAsync(splashBackground)
+        .catch(() => undefined)
+        .finally(() => SplashScreen.hideAsync());
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, splashBackground]);
 
   if (!fontsLoaded && !fontError) return null;
   if (!publishableKey || !domain) return <Text>Missing authentication or API configuration. Set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY and EXPO_PUBLIC_DOMAIN, then rebuild.</Text>;

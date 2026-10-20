@@ -10,7 +10,7 @@ import { basePath } from "@/lib/base";
 // ---------- Boot: shown while the client-only providers load ----------
 export function BootScreen() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030615] px-5">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-background px-5">
       <img
         src={`${basePath}/vastmind-mark.png`}
         alt=""
@@ -24,7 +24,7 @@ export function BootScreen() {
         className="h-auto max-h-20 w-[min(78vw,480px)] select-none object-contain"
         draggable={false}
       />
-      <p className="mt-5 text-center text-[11px] font-medium uppercase tracking-[0.34em] text-white/75">
+      <p className="mt-5 text-center text-[11px] font-medium uppercase tracking-[0.34em] text-muted-foreground">
         All your socials <span className="px-1 text-[hsl(294_100%_68%)]">•</span> One mind
       </p>
       <p className="sr-only" role="status">Loading VastMind. All your socials, one mind.</p>

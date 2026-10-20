@@ -239,7 +239,7 @@ function ShopInner() {
 
       {productId ? <ProductDetail productId={productId} campaignId={campaignId || undefined} onOpenShop={(id) => go({ shop: id })} onOpenCart={() => go({ view: "cart" })} />
         : shopId ? <Storefront shopId={shopId} onOpen={openProduct} />
-        : view === "cart" ? <Checkout onBrowse={() => go({})} onOpenProduct={(id) => go({ product: id })} onPlaced={() => go({ view: "orders", campaign: undefined })} />
+        : view === "cart" ? <Checkout onBrowse={() => go({})} onOpenProduct={(id) => go({ product: id })} onPlaced={() => go({ view: "orders", campaign: undefined })} onCheckOrders={() => go({ view: "orders", campaign: undefined })} />
         : view === "orders" ? <BuyerOrders onBrowse={() => go({})} />
         : view === "shops" ? <ShopsDirectory onOpen={(id) => go({ shop: id })} />
         : view === "saved" ? <ProductGrid params={{ scope: "saved" }} onOpen={openProduct} empty={<EmptyState icon={Bookmark} title="Nothing saved yet" body="Tap the bookmark on any product to keep it here." action={<Button className="rounded-full" onClick={() => go({})}>Discover products</Button>} />} />

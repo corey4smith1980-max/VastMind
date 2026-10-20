@@ -62,11 +62,19 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct, onCheckOrders }: {
     onError: (e) => toast({ title: "Couldn't price your order", description: errMessage(e), variant: "destructive" }),
   } });
   const place = useCommercePlaceOrder({ mutation: {
-    onSuccess: (order) => { clear(); attemptKey.current = null; invalidate("/api/commerce"); toast({ title: "Order placed", description: `${money(order.totalMinor, order.currency)}. The seller will confirm and arrange manual payment.` }); onPlaced(order); },
+    onSuccess: (order) => { clear(true); invalidate("/api/commerce"); toast({ title: "Order placed", description: `${money(order.totalMinor, order.currency)}. The seller will confirm and arrange manual payment.` }); onPlaced(order); },
     onError: (e) => {
       const stale = (e as { status?: number } | null)?.status === 409;
-      if (stale) { setQuoted(null); attemptKey.current = null; }
-      toast({ title: stale ? "Prices or stock changed" : "Order not placed", description: stale ? "Review the total again to see the current amount before ordering." : `${errMessage(e)} Your cart is kept; you can try again safely.`, variant: "destructive" });
+      const status = (e as { status?: number } | null)?.status;
+      if (status && status >= 400 && status < 500) releaseAttempt();
+      if (stale) setQuoted(null);
+      toast({
+        title: stale ? "Prices or stock changed" : status && status < 500 ? "Order not placed" : "Order status not confirmed",
+        description: stale ? "Review the total again to see the current amount before ordering." :
+          status && status < 500 ? `${errMessage(e)} Your cart is kept so you can correct the details.` :
+            "The connection did not confirm whether your order was placed. The exact order attempt has been saved. Retry sends the same request and cannot create a duplicate.",
+        variant: "destructive",
+      });
     },
   } });
 
@@ -75,17 +83,25 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct, onCheckOrders }: {
   const s = shop.data;
   const canDeliver = !!shopId && (!s || s.deliveryEnabled);
   const canPickup = !s || s.pickupEnabled;
+  const pending = cart.pending;
+  const locked = place.isPending || !!pending;
   const missing = !recipientName.trim() || !phone.trim() || (fulfillment === "delivery" && !address.trim());
   const estimate = cart.lines.reduce((t, l) => t + l.unitPriceMinor * l.quantity, 0);
 
-  function review() { setTouched(true); if (!payload || missing) return; const reqSig = sig;
+  function review() { if (locked) return; setTouched(true); if (!payload || missing) return; const reqSig = sig;
     quoteM.mutate({ data: payload }, { onSuccess: (q) => {
       if (sigRef.current !== reqSig) return; // buyer changed the order while pricing; ignore this response
       setQuoted({ sig: reqSig, quote: q });
-      if (!attemptKey.current) attemptKey.current = newIdempotencyKey();
     } }); }
-  function submit() { if (!payload || !quote || !payAck || !attemptKey.current || place.isPending) return; place.mutate({ data: { ...payload, idempotencyKey: attemptKey.current, expectedTotalMinor: quote.totalMinor } }); }
-  const locked = place.isPending;
+  function submit() {
+    if (place.isPending) return;
+    if (pending) { place.mutate({ data: pending.body }); return; }
+    if (!payload || !quote || !payAck) return;
+    try {
+      const attempt = beginAttempt({ ...payload, idempotencyKey: newIdempotencyKey(), expectedTotalMinor: quote.totalMinor });
+      place.mutate({ data: attempt.body });
+    } catch (e) { toast({ title: "Couldn't safely start checkout", description: errMessage(e), variant: "destructive" }); }
+  }
 
   return <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
     <section aria-labelledby="cart-h" className="space-y-4">
@@ -121,7 +137,7 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct, onCheckOrders }: {
           <div><Label htmlFor="co-note">Note for the seller</Label><Input id="co-note" maxLength={2000} value={buyerNote} onChange={(e) => setNote(e.target.value)} data-testid="input-buyer-note" /></div>
         </div>
         {cart.campaignId ? <p className="text-[11px] text-muted-foreground">Arrived from a shop campaign; it is credited when you order.</p> : null}
-        <Button type="submit" variant="outline" className="w-full rounded-full" disabled={quoteM.isPending} data-testid="button-review-total">{quoteM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ReceiptText className="mr-2 h-4 w-4" />}{quote ? "Refresh total" : "Review total"}</Button>
+        <Button type="submit" variant="outline" className="w-full rounded-full" disabled={quoteM.isPending || locked} data-testid="button-review-total">{quoteM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ReceiptText className="mr-2 h-4 w-4" />}{quote ? "Refresh total" : "Review total"}</Button>
         </fieldset>
       </form>
     </section>
@@ -139,12 +155,26 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct, onCheckOrders }: {
             <div className="flex justify-between"><dt>Shipping</dt><dd className="tabular-nums">{money(quote.shippingMinor, quote.currency)}</dd></div>
             <div className="flex items-baseline justify-between border-t border-white/10 pt-3"><dt className="font-semibold">Total</dt><dd className="font-display text-3xl font-bold tabular-nums" data-testid="text-quote-total">{money(quote.totalMinor, quote.currency)}</dd></div>
           </dl> : <div className="mt-4 text-sm text-white/70"><div className="flex justify-between"><span>Items</span><span className="tabular-nums">{money(estimate, cart.currency)}</span></div><p className="mt-3 text-xs text-white/55">Review the total to apply stock, coupon and shipping rules from the shop. You'll see the exact amount before placing the order.</p></div>}
+          {pending ? <div role="alert" className="mt-5 rounded-2xl border border-amber-200/30 bg-amber-200/10 p-3 text-xs">
+            <p className="font-semibold">Order attempt pending · {money(pending.body.expectedTotalMinor, cart.currency)}</p>
+            <p className="mt-1 text-white/70">The connection did not confirm the previous request. Retry sends the same saved order and cannot create a duplicate. VastMind has not charged you.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button className="rounded-full bg-white text-[hsl(var(--ink))] hover:bg-white/90" disabled={place.isPending} onClick={submit} data-testid="button-retry-saved-order">{place.isPending ? "Checking…" : "Retry same order"}</Button>
+              <Button variant="outline" className="rounded-full border-white/25 bg-transparent text-white hover:bg-white/10" onClick={onCheckOrders} data-testid="button-check-orders">Check my orders</Button>
+              <Button variant="ghost" className="rounded-full text-white/75 hover:bg-white/10" onClick={() => {
+                if (window.confirm("Discard this saved order attempt? If the seller already received it, placing another may create a second order. Check My orders first.")) {
+                  releaseAttempt(); setQuoted(null);
+                }
+              }} data-testid="button-discard-order-attempt">Discard attempt</Button>
+            </div>
+          </div> : <>
           {quote ? <label className="mt-5 flex items-start gap-2.5 rounded-2xl border border-white/15 bg-white/5 p-3 text-xs leading-relaxed text-white/80">
             <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[hsl(var(--brand-cyan))]" checked={payAck} disabled={locked} onChange={(e) => setPayAck(e.target.checked)} data-testid="checkbox-manual-payment" />
             <span>I understand this places an order only. Nothing is charged in VastMind; I'll pay the seller directly by the method they confirm, and any refund is arranged with them.</span>
           </label> : null}
           <Button className="mt-4 h-12 w-full rounded-full text-base" disabled={!quote || !payAck || place.isPending} onClick={submit} data-testid="button-place-order">{place.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}{quote ? `Place order · ${money(quote.totalMinor, quote.currency)}` : "Review total first"}</Button>
           <p className="mt-3 text-[11px] leading-relaxed text-white/55">Payment method: manual. The seller confirms your order and arranges payment with you directly. No card details are collected and refunds are handled between you and the seller.</p>
+          </>}
         </div>
       </div>
     </aside>

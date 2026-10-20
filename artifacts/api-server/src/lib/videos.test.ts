@@ -38,8 +38,10 @@ test("creator privacy and stable personalized pages enforce ownership and curren
       for (const id of [viewer, creator, other]) await q("INSERT INTO users(id,name,username) VALUES($1,'Video test',$1)", [id]);
       await q("INSERT INTO follows(user_id,target_id) VALUES($1,$2)", [viewer, creator]);
       await q("INSERT INTO communities(id,owner_id,name,description,category,is_private) VALUES($1,$2,'Private','Test','hobbies',true)", [co, creator]);
+      const expectedPublicPosts: string[] = [];
       for (let i = 0; i < 26; i++) {
         const id = uuid(), author = i === 24 ? other : creator;
+        if (i !== 25) expectedPublicPosts.push(id);
         await q(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose,ready,attached)
           VALUES($1,$2,'/objects/test-only','test.mp4','video/mp4','12','post',true,true)`, [id, author]);
         await q("INSERT INTO posts(id,author_id,media_id,content,community_id) VALUES($1,$2,$1,'Video test',$3)", [id, author, i === 25 ? co : null]);
@@ -55,7 +57,13 @@ test("creator privacy and stable personalized pages enforce ownership and curren
       strict.ok(page.nextBefore);
       await strict.rejects(() => videoPage(other, { before: page.nextBefore! }, q), HttpError);
       const next = await videoPage(viewer, { before: page.nextBefore! }, q);
-      strict.equal(new Set([...page.items, ...next.items].map(item => item.id)).size, 25);
+      const paginatedItems = [...page.items, ...next.items];
+      strict.equal(new Set(paginatedItems.map(item => item.id)).size, paginatedItems.length, "pagination must not repeat items");
+      strict.deepEqual(
+        new Set(paginatedItems.filter(item => expectedPublicPosts.includes(item.id)).map(item => item.id)),
+        new Set(expectedPublicPosts),
+        "all public fixture clips must appear once, even when unrelated public clips already exist",
+      );
       strict.equal(next.nextBefore, null);
       const following = await videoPage(viewer, { feed: "following" }, q);
       strict.ok(following.nextBefore);
