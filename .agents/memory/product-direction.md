@@ -26,3 +26,9 @@ Commerce belongs inside the VastMind web and native apps. The initial commerce s
 **Why:** The user asked for the shop to be built inside both apps, selected catalog/orders first, chose to add billing later, and continued without connecting a payment integration.
 
 **How to apply:** Use the shared API and database for buyer and seller workflows. Keep payment status explicitly manual until a real processor is connected; never collect card details in a fake checkout.
+
+VastMind Mail is for communication within the web and mobile apps only, not public internet email. The user wants user-controlled message data and chose a user-held recovery phrase.
+
+**Why:** The user explicitly clarified the internal-only scope, non-tracking intent, and that the organization should not control users' message content.
+
+**How to apply:** Do not require external mail hosting or DNS for internal aliases. Preserve the distinction between encrypted content, visible delivery metadata, and account authentication. The user has not approved changing the existing sign-in system.

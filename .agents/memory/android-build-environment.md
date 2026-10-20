@@ -8,3 +8,9 @@ description: Environment-specific JVM, cache, and memory constraints for native 
 **Why:** GraalVM and JVM performance-data initialization caused SIGBUS failures, the default Gradle cache location hit a disk quota, and simultaneous app workflows plus native compilation exhausted available memory. A 384 MB Metaspace cap also caused `OutOfMemoryError: Metaspace` during release lint without a cgroup OOM; raising it to 768 MB let the cached release build finish.
 
 **How to apply:** Set the JVM and workspace cache before `assembleRelease`, stop nonessential managed workflows until Gradle exits, then restart them and verify their logs.
+
+Remove regenerable native compiler intermediates before publishing hosted services, including those under pnpm dependency packages. Preserve native source, JavaScript runtime files, and the downloadable APK.
+
+**Why:** Native Gradle builds leave very large shared libraries inside dependency directories; a subsequent publish passed all compilation steps but failed streaming one of these files into the deployment image.
+
+**How to apply:** Treat native intermediates as disposable caches. After another APK build, ensure the hosted deployment cleanup still runs; package-size failures after successful compilation are not necessarily application startup or database failures.

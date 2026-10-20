@@ -6,3 +6,13 @@
 
 # Downloadable native builds and other generated outputs.
 /generated-artifacts/
+
+# Regenerable native compiler output is not needed by hosted services.
+**/node_modules/**/android/build/
+**/node_modules/**/android/.cxx/
+**/node_modules/**/android/.gradle/
+**/node_modules/**/ios/build/
+/artifacts/social-chat/android/app/build/
+/artifacts/social-chat/android/app/.cxx/
+/artifacts/social-chat/android/build/
+/artifacts/social-chat/android/.gradle/
