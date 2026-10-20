@@ -1,13 +1,12 @@
-// Next.js config for I AM.
+// Next.js config for VastMind's root-mounted web app.
 // Only the Clerk *publishable* key and proxy URL are exposed to the browser.
-const basePath = (process.env.BASE_PATH || "/neura-connect").replace(/\/$/, "");
+const basePath = (process.env.BASE_PATH ?? "").replace(/\/$/, "");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   basePath,
-  // The artifact is mounted at /neura-connect/ and its startup probe uses that
-  // exact URL. Keep Next's canonical URL consistent instead of redirecting
-  // back to the slashless mount point during the production health check.
+  // Keep a trailing slash on web routes. The web app is mounted at the root;
+  // artifact routing sends the mobile install page to /mobile/ instead.
   trailingSlash: true,
   reactStrictMode: true,
   // Clerk's development handshake uses sensitive URL parameters.

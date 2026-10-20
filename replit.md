@@ -15,7 +15,7 @@ VastMind (formerly I AM / NeuraCoreConnect) is Gather's cross-platform companion
 
 ## Product
 
-- Web lives under `/neura-connect/`; the API is served at `/api`.
+- The web app is the main site at `/`; the mobile install page is served at `/mobile/`; the API is served at `/api`.
 - Web and mobile use the same Clerk accounts and PostgreSQL-backed API.
 - Available text-first features include one-to-one and group chats, message history/search, receipts/presence, feed posts and polls, comments/reactions, communities and member moderation, channels, text statuses, blocking/reporting, privacy controls, business quick replies, and mutual-community people suggestions.
 - The web Videos page adds cursor-paged clips, captions, visual presets, member-provided audio tracks, follows, reactions, and comments. Creator profile links still need a matching profile route; the native short-video surface has not been added. Do not claim the full TikTok-style scope or signed-in video flows are verified.
@@ -30,7 +30,7 @@ VastMind (formerly I AM / NeuraCoreConnect) is Gather's cross-platform companion
 - Media objects are sealed after byte-signature/size checks. Private conversation files require current membership; story files also require an unexpired story and author visibility. Expired and abandoned uploads are cleaned hourly while the API is running. App Storage has usage-based billing.
 - Calls currently use public STUN. For restrictive NAT/firewall networks, supply `TURN_URL` (comma-separated TURN/TURNS URLs), `TURN_USERNAME`, and `TURN_CREDENTIAL` via Secrets. Use a production relay provider and rotate credentials; do not commit credentials. No successful cross-network call has been verified.
 - Generate a VAPID key pair locally with `pnpm exec web-push generate-vapid-keys` from `artifacts/api-server` and enter values directly into Secrets, never chat or source files. Set `VAPID_SUBJECT` to an operator-controlled `mailto:` or HTTPS contact URI. Keep the private key stable across restarts and releases; changing keys requires devices to re-subscribe.
-- The push service worker is scoped to `/neura-connect/` and does not cache private pages. Alerts omit message text. The server must be running for push delivery; browser/OS restrictions still apply. iOS web push requires Home Screen installation on a supported version.
+- The push service worker is scoped to `/` and does not cache private pages. Alerts omit message text. The server must be running for push delivery; browser/OS restrictions still apply. iOS web push requires Home Screen installation on a supported version.
 
 ## Architecture
 

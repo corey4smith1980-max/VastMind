@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getGetVideosQueryKey, useGetVideos, useRecordVideoEngagement, type CaptionCue, type GetVideosFeed, type GetVideosParams, type MediaAttachment, type Post } from '@workspace/api-client-react';
 
 export const apiOrigin = `https://${process.env.EXPO_PUBLIC_DOMAIN}`;
-export const webProfileLink = (username: string) => `${apiOrigin}/neura-connect/profile/${encodeURIComponent(username)}`;
+export const webProfileLink = (username: string) => `${apiOrigin}/profile/${encodeURIComponent(username)}`;
 
 export const isClip = (post: Post) => !!post.media?.contentType.toLowerCase().startsWith('video/');
 export const activeCue = (cues: CaptionCue[] | undefined, t: number) => cues?.find(c => t >= c.start && t < c.end)?.text ?? null;
