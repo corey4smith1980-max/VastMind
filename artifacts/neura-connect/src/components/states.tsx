@@ -12,11 +12,21 @@ export function BootScreen() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030615] px-5">
       <img
-        src={`${basePath}/vastmind-splash.png`}
-        alt="VastMind — All your socials. One mind."
-        className="max-h-[min(78dvh,820px)] w-full max-w-[min(88vw,820px)] object-contain"
+        src={`${basePath}/vastmind-mark.png`}
+        alt=""
+        aria-hidden="true"
+        className="mb-4 h-[min(38dvh,360px)] w-[min(38dvh,360px)] select-none object-contain"
         draggable={false}
       />
+      <img
+        src={`${basePath}/vastmind-wordmark.png`}
+        alt="VastMind"
+        className="h-auto max-h-20 w-[min(78vw,480px)] select-none object-contain"
+        draggable={false}
+      />
+      <p className="mt-5 text-center text-[11px] font-medium uppercase tracking-[0.34em] text-white/75">
+        All your socials <span className="px-1 text-[hsl(294_100%_68%)]">•</span> One mind
+      </p>
       <p className="sr-only" role="status">Loading VastMind. All your socials, one mind.</p>
     </div>
   );

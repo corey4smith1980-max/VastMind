@@ -396,8 +396,10 @@ function shopCurrency(value:string) {
 function productResult(r:Row) {
   return {
     id:r.id,sellerId:r.seller_id,sellerName:r.seller_name,sellerUsername:r.seller_username,
+    // Legacy products attached to a private storefront follow its publication state.
+    isPublished:r.is_published && (r.shop_published !== false),
     title:r.title,description:r.description,category:r.category,priceMinor:r.price_minor,
-    currency:r.currency,inventory:r.inventory,isPublished:r.is_published,createdAt:r.created_at,
+    currency:r.currency,inventory:r.inventory,createdAt:r.created_at,
     imageMedia:r.image_media_id&&r.image_name?{
       id:r.image_media_id,url:`/api/storage/media/${r.image_media_id}`,name:r.image_name,
       contentType:r.image_type,size:Number(r.image_size),
@@ -405,9 +407,9 @@ function productResult(r:Row) {
   };
 }
 async function shopProductShape(id:string,q:Query=query) {
-  const [r]=await q(`SELECT p.*,u.name AS seller_name,u.username AS seller_username,
+  const [r]=await q(`SELECT p.*,s.is_published AS shop_published,u.name AS seller_name,u.username AS seller_username,
       m.name AS image_name,m.content_type AS image_type,m.size AS image_size
-    FROM shop_products p JOIN users u ON u.id=p.seller_id
+    FROM shop_products p JOIN users u ON u.id=p.seller_id LEFT JOIN shop_stores s ON s.id=p.shop_id
     LEFT JOIN media_uploads m ON m.id=p.image_media_id AND m.ready=true WHERE p.id=$1`,[id]);
   assert(r,404,"Product not found");
   return productResult(r);
@@ -424,11 +426,11 @@ async function shopOrderShape(r:Row,q:Query=query) {
 route("get","/shop/products","ListShopProducts",async c=>{
   const mine=c.s.scope==="mine";
   const term=c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null;
-  const rows=await c.q(`SELECT p.*,u.name AS seller_name,u.username AS seller_username,
+  const rows=await c.q(`SELECT p.*,s.is_published AS shop_published,u.name AS seller_name,u.username AS seller_username,
       m.name AS image_name,m.content_type AS image_type,m.size AS image_size
-    FROM shop_products p JOIN users u ON u.id=p.seller_id
+    FROM shop_products p JOIN users u ON u.id=p.seller_id LEFT JOIN shop_stores s ON s.id=p.shop_id
     LEFT JOIN media_uploads m ON m.id=p.image_media_id AND m.ready=true
-    WHERE (($1::boolean AND p.seller_id=$2) OR (NOT $1::boolean AND p.is_published=true))
+    WHERE (($1::boolean AND p.seller_id=$2) OR (NOT $1::boolean AND p.is_published=true AND (s.id IS NULL OR s.is_published)))
       AND ($3::text IS NULL OR p.seller_id=$3)
       AND NOT EXISTS (SELECT 1 FROM blocks b WHERE
         (b.user_id=$2 AND b.target_id=p.seller_id) OR (b.target_id=$2 AND b.user_id=p.seller_id))

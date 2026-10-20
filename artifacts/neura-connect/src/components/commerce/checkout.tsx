@@ -90,7 +90,7 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct }: { onBrowse: () =
 
   return <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
     <section aria-labelledby="cart-h" className="space-y-4">
-      <div className="flex items-end justify-between gap-3"><div><Kicker>One shop · {cart.currency}</Kicker><h2 id="cart-h" className="mt-1 font-display text-3xl font-semibold">{cart.sellerName}</h2></div><Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clear} disabled={locked} data-testid="button-clear-cart"><Trash2 className="mr-1 h-4 w-4" />Clear</Button></div>
+      <div className="flex items-end justify-between gap-3"><div><Kicker>One shop · {cart.currency}</Kicker><h2 id="cart-h" className="mt-1 font-display text-3xl font-semibold">{cart.sellerName}</h2></div><Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => clear()} disabled={locked || !!cart.pending} data-testid="button-clear-cart"><Trash2 className="mr-1 h-4 w-4" />Clear</Button></div>
       <ul className="space-y-2">
         {cart.lines.map((l) => <li key={`${l.productId}-${l.variantId ?? ""}`} className="rise flex items-center gap-3 rounded-2xl border bg-card p-3" data-testid={`row-cart-${l.productId}`}>
           <button onClick={() => onOpenProduct(l.productId)} aria-label={`Open ${l.title}`}><Thumb src={l.image} alt="" className="h-16 w-16 rounded-xl" /></button>
