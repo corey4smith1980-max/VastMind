@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/neura-connect/"
+previewPath = "/"
 title = "VastMind"
 description = "VastMind brings private chats, creator videos, communities, channels, and everyday business conversations together."
 version = "1.0.0"
@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = ["/neura-connect/", "/neura-connect/_next/webpack-hmr"]
+paths = ["/", "/_next/webpack-hmr"]
 localPort = 22088
 
 [services.development]
@@ -24,8 +24,8 @@ args = ["pnpm", "--filter", "@workspace/neura-connect", "run", "serve"]
 NODE_ENV = "production"
 
 [services.production.health.startup]
-path = "/neura-connect/"
+path = "/"
 
 [services.env]
 PORT = "22088"
-BASE_PATH = "/neura-connect/"
+BASE_PATH = ""
