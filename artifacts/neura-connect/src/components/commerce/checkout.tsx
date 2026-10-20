@@ -18,11 +18,11 @@ import { money, newIdempotencyKey, useCart } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
 import { Kicker, Thumb } from "./bits";
 
-export function Checkout({ onBrowse, onPlaced, onOpenProduct }: { onBrowse: () => void; onPlaced: (o: CommerceOrder) => void; onOpenProduct: (id: string) => void }) {
+export function Checkout({ onBrowse, onPlaced, onOpenProduct, onCheckOrders }: { onBrowse: () => void; onPlaced: (o: CommerceOrder) => void; onOpenProduct: (id: string) => void; onCheckOrders: () => void }) {
   const me = useMe();
   const { toast } = useToast();
   const invalidate = useInvalidate();
-  const { cart, setQty, patch, clear } = useCart(me.id);
+  const { cart, setQty, patch, clear, beginAttempt, releaseAttempt } = useCart(me.id);
   const shopId = cart?.shopId ?? "";
   const shop = useCommerceGetShop(shopId, { query: { queryKey: getCommerceGetShopQueryKey(shopId), enabled: !!shopId } });
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">("delivery");
@@ -34,7 +34,6 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct }: { onBrowse: () =
   const [quoted, setQuoted] = useState<{ sig: string; quote: CommerceQuote } | null>(null);
   const [payAck, setPayAck] = useState(false);
   const [touched, setTouched] = useState(false);
-  const attemptKey = useRef<string | null>(null);
 
   useEffect(() => { if (cart?.couponCode && !coupon) setCoupon(cart.couponCode); }, [cart?.couponCode, coupon]);
   useEffect(() => { if (cart && !cart.shopId && fulfillment === "delivery") setFulfillment("pickup"); }, [cart, fulfillment]);
@@ -55,7 +54,7 @@ export function Checkout({ onBrowse, onPlaced, onOpenProduct }: { onBrowse: () =
   const sig = JSON.stringify(payload);
   const sigRef = useRef(sig); sigRef.current = sig;
   // Any change to the order invalidates the authoritative quote and starts a new attempt.
-  useEffect(() => { setQuoted(null); attemptKey.current = null; }, [sig]);
+  useEffect(() => { if (!cart?.pending) setQuoted(null); }, [sig, cart?.pending]);
   // A quote is only valid for the exact payload it was requested with.
   const quote = quoted && quoted.sig === sig ? quoted.quote : null;
 
