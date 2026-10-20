@@ -96,12 +96,12 @@ function AudioAttachment({uri,headers}:{uri:string;headers:Record<string,string>
     <Feather name={status.playing?"pause":"play"} size={20} color={colors.primary}/><Text style={{color:colors.foreground}}>Voice message · {Math.floor(status.currentTime||0)}s</Text>
   </Pressable>;
 }
-function VideoAttachment({uri,headers}:{uri:string;headers:Record<string,string>}) {
+function VideoAttachment({uri,headers,fullScreen=false}:{uri:string;headers:Record<string,string>;fullScreen?:boolean}) {
   const source=useMemo(()=>({uri,headers}),[uri,headers]);
   const player=useVideoPlayer(source);
-  return <VideoView player={player} nativeControls style={{width:230,height:180}} contentFit="contain" />;
+  return <VideoView player={player} nativeControls style={fullScreen?{width:"100%",height:"100%"}:{width:230,height:180}} contentFit="contain" />;
 }
-export function MobileMediaPreview({media}:{media:MediaAttachment}) {
+export function MobileMediaPreview({media,fullScreen=false}:{media:MediaAttachment;fullScreen?:boolean}) {
   const {getToken}=useAuth();
   const [token,setToken]=useState<string|null>(null);
   const [webUri,setWebUri]=useState<string|null>(null);
@@ -123,7 +123,7 @@ export function MobileMediaPreview({media}:{media:MediaAttachment}) {
   if(error)return <Text>Media unavailable. Reopen this conversation to retry.</Text>;
   if(!token||(Platform.OS==="web"&&!webUri))return <ActivityIndicator accessibilityLabel="Loading private media"/>;
   const uri=Platform.OS==="web"?webUri!:absolute(media.url);
-  if(media.contentType.startsWith("image/"))return <Image accessibilityLabel={media.name} source={{uri,headers}} style={{width:230,height:180,borderRadius:12}} resizeMode="contain"/>;
-  if(media.contentType.startsWith("video/"))return <VideoAttachment uri={uri} headers={headers}/>;
+  if(media.contentType.startsWith("image/"))return <Image accessibilityLabel={media.name} source={{uri,headers}} style={fullScreen?{width:"100%",height:"100%"}:{width:230,height:180,borderRadius:12}} resizeMode="contain"/>;
+  if(media.contentType.startsWith("video/"))return <VideoAttachment uri={uri} headers={headers} fullScreen={fullScreen}/>;
   return <AudioAttachment uri={uri} headers={headers}/>;
 }

@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaAttachment } from './mediaAttachment';
+import type { StatusBackgroundStyle } from './statusBackgroundStyle';
 import type { UserSummary } from './userSummary';
 
 export interface Status {
   id: string;
   author: UserSummary;
   content: string;
+  backgroundStyle: StatusBackgroundStyle;
   createdAt: Date;
   expiresAt: Date;
   media?: MediaAttachment;

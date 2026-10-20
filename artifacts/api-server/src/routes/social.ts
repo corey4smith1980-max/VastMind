@@ -370,11 +370,11 @@ route("post","/channels/:channelId/updates/:updateId/pin","TogglePinnedUpdate",a
 });
 route("get","/statuses","ListStatuses",async c=>{
   const rows=await c.q("SELECT s.* FROM statuses s WHERE expires_at>now() ORDER BY created_at DESC LIMIT 100");const result=[];
-  for(const r of rows){const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)});}return result;
+  for(const r of rows){const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,backgroundStyle:r.background_style??"midnight",createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)});}return result;
 });
 route("post","/statuses","CreateStatus",async c=>{
-  const media=await claimMedia(c.b.mediaId,c.u,"status",null,c.q);
-  const [r]=await c.q("INSERT INTO statuses (id,author_id,content,media_id,expires_at) VALUES ($1,$2,$3,$4,now()+interval '24 hours') RETURNING *",[uuid(),c.u,c.b.content,media?.id??null]);return {id:r.id,author:await summary(c.u,c.u,c.q),content:r.content,createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)};
+  const media=await claimMedia(c.b.mediaId,c.u,"status",null,c.q),backgroundStyle=c.b.backgroundStyle??"midnight";
+  const [r]=await c.q("INSERT INTO statuses (id,author_id,content,media_id,background_style,expires_at) VALUES ($1,$2,$3,$4,$5,now()+interval '24 hours') RETURNING *",[uuid(),c.u,c.b.content,media?.id??null,backgroundStyle]);return {id:r.id,author:await summary(c.u,c.u,c.q),content:r.content,backgroundStyle:r.background_style,createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)};
 },201);
 async function overview(c:Context){
   const chats=await c.q(`SELECT c.id FROM chats c JOIN chat_members m ON m.chat_id=c.id WHERE m.user_id=$1 AND c.type='private' AND NOT EXISTS(SELECT 1 FROM chat_members other JOIN blocks b ON (b.user_id=$1 AND b.target_id=other.user_id) OR (b.target_id=$1 AND b.user_id=other.user_id) WHERE other.chat_id=c.id)`,[c.u]);

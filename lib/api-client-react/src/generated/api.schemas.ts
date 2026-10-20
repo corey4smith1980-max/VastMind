@@ -528,16 +528,45 @@ export interface ChannelUpdateInput {
   content: string;
 }
 
+export type StatusBackgroundStyle = typeof StatusBackgroundStyle[keyof typeof StatusBackgroundStyle];
+
+
+export const StatusBackgroundStyle = {
+  midnight: 'midnight',
+  sunset: 'sunset',
+  berry: 'berry',
+  ocean: 'ocean',
+  aurora: 'aurora',
+  coral: 'coral',
+  forest: 'forest',
+  plum: 'plum',
+} as const;
+
 export interface Status {
   id: string;
   author: UserSummary;
   content: string;
+  backgroundStyle: StatusBackgroundStyle;
   createdAt: string;
   expiresAt: string;
   media?: MediaAttachment;
 }
 
 export type StatusList = Status[];
+
+export type StatusInputBackgroundStyle = typeof StatusInputBackgroundStyle[keyof typeof StatusInputBackgroundStyle];
+
+
+export const StatusInputBackgroundStyle = {
+  midnight: 'midnight',
+  sunset: 'sunset',
+  berry: 'berry',
+  ocean: 'ocean',
+  aurora: 'aurora',
+  coral: 'coral',
+  forest: 'forest',
+  plum: 'plum',
+} as const;
 
 export interface StatusInput {
   /**
@@ -546,6 +575,7 @@ export interface StatusInput {
      */
   content: string;
   mediaId?: string;
+  backgroundStyle?: StatusInputBackgroundStyle;
 }
 
 export interface PushConfiguration {

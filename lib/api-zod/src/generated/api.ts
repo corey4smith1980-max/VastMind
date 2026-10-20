@@ -2996,6 +2996,7 @@ export const ListStatusesResponseItem = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
+  "backgroundStyle": zod.enum(['midnight', 'sunset', 'berry', 'ocean', 'aurora', 'coral', 'forest', 'plum']),
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "media": zod.object({
@@ -3014,11 +3015,12 @@ export const ListStatusesResponse = zod.array(ListStatusesResponseItem)
  */
 export const createStatusBodyContentMax = 500;
 
-
+export const createStatusBodyBackgroundStyleDefault = `midnight`;
 
 export const CreateStatusBody = zod.object({
   "content": zod.string().min(1).max(createStatusBodyContentMax),
-  "mediaId": zod.string().optional()
+  "mediaId": zod.string().optional(),
+  "backgroundStyle": zod.enum(['midnight', 'sunset', 'berry', 'ocean', 'aurora', 'coral', 'forest', 'plum']).default(createStatusBodyBackgroundStyleDefault)
 })
 
 export const CreateStatusResponse = zod.object({
@@ -3034,6 +3036,7 @@ export const CreateStatusResponse = zod.object({
   "lastSeenAt": zod.coerce.date().nullish()
 }),
   "content": zod.string(),
+  "backgroundStyle": zod.enum(['midnight', 'sunset', 'berry', 'ocean', 'aurora', 'coral', 'forest', 'plum']),
   "createdAt": zod.coerce.date(),
   "expiresAt": zod.coerce.date(),
   "media": zod.object({

@@ -5,6 +5,7 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { StatusInputBackgroundStyle } from './statusInputBackgroundStyle';
 
 export interface StatusInput {
   /**
@@ -13,4 +14,5 @@ export interface StatusInput {
      */
   content: string;
   mediaId?: string;
+  backgroundStyle?: StatusInputBackgroundStyle;
 }

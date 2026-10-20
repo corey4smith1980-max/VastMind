@@ -51,7 +51,7 @@ export const votes = pgTable("votes",{postId:text("post_id").notNull().reference
 export const channels = pgTable("channels",{id:id(),ownerId:uid("owner_id"),name:text("name").notNull(),description:text("description").notNull(),createdAt:created()});
 export const channelFollowers = pgTable("channel_followers",{channelId:text("channel_id").notNull().references(()=>channels.id,{onDelete:"cascade"}),userId:uid("user_id")},t=>[primaryKey({columns:[t.channelId,t.userId]})]);
 export const channelUpdates = pgTable("channel_updates",{id:id(),channelId:text("channel_id").notNull().references(()=>channels.id,{onDelete:"cascade"}),content:text("content").notNull(),pinned:boolean("pinned").notNull().default(false),createdAt:created()});
-export const statuses = pgTable("statuses",{id:id(),authorId:uid("author_id"),content:text("content").notNull(),mediaId:text("media_id"),createdAt:created(),expiresAt:timestamp("expires_at",{withTimezone:true}).notNull()});
+export const statuses = pgTable("statuses",{id:id(),authorId:uid("author_id"),content:text("content").notNull(),mediaId:text("media_id"),backgroundStyle:text("background_style").notNull().default("midnight"),createdAt:created(),expiresAt:timestamp("expires_at",{withTimezone:true}).notNull()});
 
 // Only metadata belongs in PostgreSQL; bytes remain in private App Storage.
 export const mediaUploads = pgTable("media_uploads", {

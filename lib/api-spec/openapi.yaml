@@ -1653,12 +1653,15 @@ components:
         content: { type: string, minLength: 1, maxLength: 4000 }
     Status:
       type: object
-      required: [id, author, content, createdAt, expiresAt]
+      required: [id, author, content, backgroundStyle, createdAt, expiresAt]
       properties:
         id: { type: string }
         author:
           $ref: "#/components/schemas/UserSummary"
         content: { type: string }
+        backgroundStyle:
+          type: string
+          enum: [midnight, sunset, berry, ocean, aurora, coral, forest, plum]
         createdAt: { type: string, format: date-time }
         expiresAt: { type: string, format: date-time }
         media:
@@ -1673,6 +1676,10 @@ components:
       properties:
         content: { type: string, minLength: 1, maxLength: 500 }
         mediaId: { type: string }
+        backgroundStyle:
+          type: string
+          enum: [midnight, sunset, berry, ocean, aurora, coral, forest, plum]
+          default: midnight
     PushConfiguration:
       type: object
       required: [configured]
