@@ -1472,12 +1472,12 @@ export const CreateStatusResponse = zod.object({
  */
 export const listShopProductsQueryQMax = 100;
 
-export const listShopProductsQueryMineDefault = false;
+export const listShopProductsQueryScopeDefault = `discover`;
 
 export const ListShopProductsQueryParams = zod.object({
   "q": zod.coerce.string().max(listShopProductsQueryQMax).optional(),
   "sellerId": zod.coerce.string().optional(),
-  "mine": zod.coerce.boolean().default(listShopProductsQueryMineDefault)
+  "scope": zod.enum(['discover', 'mine']).default(listShopProductsQueryScopeDefault)
 })
 
 export const ListShopProductsResponseItem = zod.object({

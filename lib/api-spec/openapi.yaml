@@ -1009,8 +1009,8 @@ paths:
           name: sellerId
           schema: { type: string }
         - in: query
-          name: mine
-          schema: { type: boolean, default: false }
+          name: scope
+          schema: { type: string, enum: [discover, mine], default: discover }
       responses:
         "200":
           description: Shop products

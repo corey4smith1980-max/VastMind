@@ -386,6 +386,145 @@ async function overview(c:Context){
   }
   const [u]=await c.q("SELECT is_open FROM users WHERE id=$1",[c.u]);return {isOpen:u.is_open,unreadCustomerChats:unread,totalCustomers:chats.length,responseRate:received?Math.round(replied/received*100):0};
 }
+function shopCurrency(value:string) {
+  const currency=value.toUpperCase();
+  assert(/^[A-Z]{3}$/.test(currency),400,"Use a three-letter currency code");
+  try { new Intl.NumberFormat("en",{style:"currency",currency}).format(0); }
+  catch { throw new HttpError(400,"Unsupported currency code"); }
+  return currency;
+}
+function productResult(r:Row) {
+  return {
+    id:r.id,sellerId:r.seller_id,sellerName:r.seller_name,sellerUsername:r.seller_username,
+    title:r.title,description:r.description,category:r.category,priceMinor:r.price_minor,
+    currency:r.currency,inventory:r.inventory,isPublished:r.is_published,createdAt:r.created_at,
+    imageMedia:r.image_media_id&&r.image_name?{
+      id:r.image_media_id,url:`/api/storage/media/${r.image_media_id}`,name:r.image_name,
+      contentType:r.image_type,size:Number(r.image_size),
+    }:null,
+  };
+}
+async function shopProductShape(id:string,q:Query=query) {
+  const [r]=await q(`SELECT p.*,u.name AS seller_name,u.username AS seller_username,
+      m.name AS image_name,m.content_type AS image_type,m.size AS image_size
+    FROM shop_products p JOIN users u ON u.id=p.seller_id
+    LEFT JOIN media_uploads m ON m.id=p.image_media_id AND m.ready=true WHERE p.id=$1`,[id]);
+  assert(r,404,"Product not found");
+  return productResult(r);
+}
+async function shopOrderShape(r:Row,q:Query=query) {
+  const items=await q(`SELECT product_id AS "productId",title,"unit_price_minor" AS "unitPriceMinor",quantity
+    FROM shop_order_items WHERE order_id=$1 ORDER BY id`,[r.id]);
+  return {
+    id:r.id,buyerId:r.buyer_id,buyerName:r.buyer_name,sellerId:r.seller_id,sellerName:r.seller_name,
+    status:r.status,paymentStatus:r.payment_status,buyerNote:r.buyer_note,totalMinor:r.total_minor,
+    currency:r.currency,createdAt:r.created_at,updatedAt:r.updated_at,items,
+  };
+}
+route("get","/shop/products","ListShopProducts",async c=>{
+  const mine=c.s.scope==="mine";
+  const term=c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null;
+  const rows=await c.q(`SELECT p.*,u.name AS seller_name,u.username AS seller_username,
+      m.name AS image_name,m.content_type AS image_type,m.size AS image_size
+    FROM shop_products p JOIN users u ON u.id=p.seller_id
+    LEFT JOIN media_uploads m ON m.id=p.image_media_id AND m.ready=true
+    WHERE (($1::boolean AND p.seller_id=$2) OR (NOT $1::boolean AND p.is_published=true))
+      AND ($3::text IS NULL OR p.seller_id=$3)
+      AND NOT EXISTS (SELECT 1 FROM blocks b WHERE
+        (b.user_id=$2 AND b.target_id=p.seller_id) OR (b.target_id=$2 AND b.user_id=p.seller_id))
+      AND ($4::text IS NULL OR p.title ILIKE $4 OR p.description ILIKE $4 OR p.category ILIKE $4 OR u.name ILIKE $4 OR u.username ILIKE $4)
+    ORDER BY p.created_at DESC LIMIT 100`,[mine,c.u,c.s.sellerId??null,term]);
+  return rows.map(productResult);
+});
+route("post","/shop/products","CreateShopProduct",async c=>{
+  const currency=shopCurrency(c.b.currency);
+  assert(Number.isSafeInteger(c.b.priceMinor)&&c.b.priceMinor>0,400,"Enter a valid product price");
+  const image=await claimMedia(c.b.imageMediaId,c.u,"product",null,c.q);
+  const id=uuid();
+  await c.q(`INSERT INTO shop_products
+    (id,seller_id,title,description,category,price_minor,currency,inventory,image_media_id,is_published)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+  [id,c.u,c.b.title.trim(),c.b.description?.trim()??"",c.b.category.trim(),c.b.priceMinor,currency,c.b.inventory,image?.id??null,c.b.isPublished??true]);
+  return shopProductShape(id,c.q);
+},201);
+route("patch","/shop/products/:productId","UpdateShopProduct",async c=>{
+  const [current]=await c.q("SELECT * FROM shop_products WHERE id=$1 AND seller_id=$2 FOR UPDATE",[c.p.productId,c.u]);
+  assert(current,404,"Product not found");
+  const hasImage=Object.prototype.hasOwnProperty.call(c.b,"imageMediaId");
+  const image=hasImage&&c.b.imageMediaId?await claimMedia(c.b.imageMediaId,c.u,"product",null,c.q):null;
+  const currency=c.b.currency?shopCurrency(c.b.currency):current.currency;
+  const priceMinor=c.b.priceMinor??current.price_minor;
+  assert(Number.isSafeInteger(priceMinor)&&priceMinor>0,400,"Enter a valid product price");
+  await c.q(`UPDATE shop_products SET title=$1,description=$2,category=$3,price_minor=$4,currency=$5,
+      inventory=$6,image_media_id=$7,is_published=$8,updated_at=now() WHERE id=$9 AND seller_id=$10`,
+    [c.b.title?.trim()??current.title,c.b.description?.trim()??current.description,c.b.category?.trim()??current.category,
+      priceMinor,currency,c.b.inventory??current.inventory,hasImage?(image?.id??null):current.image_media_id,
+      c.b.isPublished??current.is_published,c.p.productId,c.u]);
+  return shopProductShape(c.p.productId,c.q);
+});
+route("get","/shop/orders","ListShopOrders",async c=>{
+  const scope=c.s.scope??"buyer";
+  const column=scope==="seller"?"seller_id":"buyer_id";
+  const rows=await c.q(`SELECT o.*,b.name AS buyer_name,s.name AS seller_name FROM shop_orders o
+    JOIN users b ON b.id=o.buyer_id JOIN users s ON s.id=o.seller_id
+    WHERE o.${column}=$1 ORDER BY o.created_at DESC LIMIT 50`,[c.u]);
+  return Promise.all(rows.map(r=>shopOrderShape(r,c.q)));
+});
+route("post","/shop/orders","PlaceShopOrder",async c=>{
+  const quantities=new Map<string,number>();
+  for(const line of c.b.items)quantities.set(line.productId,(quantities.get(line.productId)??0)+line.quantity);
+  assert(quantities.size>0&&quantities.size<=20&&[...quantities.values()].every(n=>n<=99),400,"Choose up to 20 products with quantities under 100");
+  const ids=[...quantities.keys()];
+  const products=await c.q("SELECT * FROM shop_products WHERE id=ANY($1::text[]) FOR UPDATE",[ids]);
+  assert(products.length===ids.length,409,"One or more products are no longer available");
+  assert(products.every(p=>p.is_published),409,"One or more products are no longer available");
+  const sellerIds=new Set(products.map(p=>p.seller_id)),currencies=new Set(products.map(p=>p.currency));
+  assert(sellerIds.size===1,400,"Place a separate order for each seller");
+  const [sellerId]=[...sellerIds];assert(sellerId!==c.u,400,"You can't order from your own shop");
+  assert(currencies.size===1,400,"A single order must use one currency");
+  let total=0;
+  for(const p of products){const quantity=quantities.get(p.id)!;assert(p.inventory>=quantity,409,`${p.title} is out of stock`);total+=p.price_minor*quantity;}
+  assert(Number.isSafeInteger(total)&&total>0,400,"Order total is too large");
+  const orderId=uuid(),currency=products[0].currency;
+  await c.q(`INSERT INTO shop_orders (id,buyer_id,seller_id,status,payment_status,buyer_note,total_minor,currency)
+    VALUES ($1,$2,$3,'pending','awaiting_manual',$4,$5,$6)`,
+  [orderId,c.u,sellerId,c.b.buyerNote?.trim()??"",total,currency]);
+  for(const p of products){
+    const quantity=quantities.get(p.id)!;
+    const [stock]=await c.q("UPDATE shop_products SET inventory=inventory-$1,updated_at=now() WHERE id=$2 AND inventory >= $1 RETURNING id",[quantity,p.id]);
+    assert(stock,409,`${p.title} just sold out`);
+    await c.q(`INSERT INTO shop_order_items (id,order_id,product_id,title,unit_price_minor,quantity)
+      VALUES ($1,$2,$3,$4,$5,$6)`,[uuid(),orderId,p.id,p.title,p.price_minor,quantity]);
+  }
+  c.impact.add(sellerId);
+  const [r]=await c.q(`SELECT o.*,b.name AS buyer_name,s.name AS seller_name FROM shop_orders o
+    JOIN users b ON b.id=o.buyer_id JOIN users s ON s.id=o.seller_id WHERE o.id=$1`,[orderId]);
+  return shopOrderShape(r,c.q);
+},201);
+route("patch","/shop/orders/:orderId","UpdateShopOrder",async c=>{
+  const [order]=await c.q("SELECT * FROM shop_orders WHERE id=$1 FOR UPDATE",[c.p.orderId]);
+  assert(order,404,"Order not found");assert(order.seller_id===c.u,403,"Only this seller can update the order");
+  const nextStatus=c.b.status??order.status,nextPayment=c.b.paymentStatus??order.payment_status;
+  if(c.b.status&&c.b.status!==order.status){
+    const allowed:Record<string,string[]>={pending:["confirmed","cancelled"],confirmed:["preparing","cancelled"],preparing:["completed","cancelled"],completed:[],cancelled:[]};
+    assert((allowed[order.status]??[]).includes(c.b.status),409,"That order status change isn't allowed");
+  }
+  if(c.b.paymentStatus){
+    assert(c.b.paymentStatus==="manual_confirmed"&&order.payment_status==="awaiting_manual",409,"Manual payment can only be recorded once");
+    assert(nextStatus!=="cancelled",409,"Cancelled orders can't be marked as paid");
+  }
+  if(c.b.status==="cancelled"){
+    assert(order.status!=="cancelled",409,"This order is already cancelled");
+    assert(order.payment_status==="awaiting_manual",409,"Resolve the manually received payment before cancelling this order");
+    await c.q(`UPDATE shop_products p SET inventory=p.inventory+i.quantity,updated_at=now()
+      FROM shop_order_items i WHERE i.order_id=$1 AND p.id=i.product_id`,[order.id]);
+  }
+  await c.q("UPDATE shop_orders SET status=$1,payment_status=$2,updated_at=now() WHERE id=$3",[nextStatus,nextPayment,order.id]);
+  c.impact.add(order.buyer_id);
+  const [updated]=await c.q(`SELECT o.*,b.name AS buyer_name,s.name AS seller_name FROM shop_orders o
+    JOIN users b ON b.id=o.buyer_id JOIN users s ON s.id=o.seller_id WHERE o.id=$1`,[order.id]);
+  return shopOrderShape(updated,c.q);
+});
 route("get","/business/overview","GetBusinessOverview",overview);
 route("patch","/business/status","UpdateBusinessStatus",async c=>{await c.q("UPDATE users SET is_open=$1 WHERE id=$2",[c.b.isOpen,c.u]);return overview(c);});
 route("get","/business/quick-replies","ListQuickReplies",async c=>c.q("SELECT id,label,content FROM quick_replies WHERE user_id=$1 ORDER BY label LIMIT 200",[c.u]));

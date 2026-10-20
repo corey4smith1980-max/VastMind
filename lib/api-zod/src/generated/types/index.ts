@@ -48,6 +48,7 @@ export * from './listCommunitiesParams';
 export * from './listShopOrdersParams';
 export * from './listShopOrdersScope';
 export * from './listShopProductsParams';
+export * from './listShopProductsScope';
 export * from './mediaAttachment';
 export * from './mediaUploadInput';
 export * from './mediaUploadInputPurpose';

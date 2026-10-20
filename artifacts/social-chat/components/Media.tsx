@@ -12,7 +12,7 @@ import { useColors } from "@/hooks/useColors";
 
 const absolute = (path: string) => `https://${process.env.EXPO_PUBLIC_DOMAIN}${path}`;
 
-export async function uploadDeviceMedia(uri: string, name: string, contentType: string, purpose: "chat"|"status"|"post", chatId?: string, webFile?: globalThis.File) {
+export async function uploadDeviceMedia(uri: string, name: string, contentType: string, purpose: "chat"|"status"|"post"|"product", chatId?: string, webFile?: globalThis.File) {
   // Native File is a streaming Blob supported by expo/fetch. Bytes never pass
   // through our JSON API or PostgreSQL.
   const file=Platform.OS==="web"?(webFile||await (await fetch(uri)).blob()):new NativeFile(uri);
@@ -23,22 +23,22 @@ export async function uploadDeviceMedia(uri: string, name: string, contentType: 
   return completeMediaUpload(ticket.id);
 }
 
-export function MobileMediaPicker({purpose,chatId,onChange,disabled}:{purpose:"chat"|"status";chatId?:string;onChange:(m:MediaAttachment)=>void;disabled?:boolean}) {
+export function MobileMediaPicker({purpose,chatId,onChange,disabled}:{purpose:"chat"|"status"|"product";chatId?:string;onChange:(m:MediaAttachment)=>void;disabled?:boolean}) {
   const colors=useColors();
   const [busy,setBusy]=useState(false);
   async function pick() {
     setBusy(true);
     try{
-      const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:["images","videos"],quality:0.8,videoMaxDuration:60});
+      const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:purpose==="product"?["images"]:["images","videos"],quality:0.8,videoMaxDuration:60});
       if(result.canceled)return;
       const asset=result.assets[0];
       const mime=asset.mimeType|| (asset.type==="video"?"video/mp4":"image/jpeg");
-      if(!["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm"].includes(mime))throw new Error("Choose a JPEG, PNG, WebP, GIF, MP4 or WebM file. Export HEIC photos or MOV videos first.");
+      if(!(purpose==="product"?["image/jpeg","image/png","image/webp","image/gif"].includes(mime):["image/jpeg","image/png","image/webp","image/gif","video/mp4","video/webm"].includes(mime)))throw new Error(purpose==="product"?"Choose a JPEG, PNG, WebP or GIF product photo.":"Choose a JPEG, PNG, WebP, GIF, MP4 or WebM file. Export HEIC photos or MOV videos first.");
       onChange(await uploadDeviceMedia(asset.uri,asset.fileName||`media.${mime.split("/")[1]}`,mime,purpose,chatId,asset.file));
     }catch(e){Alert.alert("Couldn't upload media",e instanceof Error?e.message:"Please try again.");}
     finally{setBusy(false);}
   }
-  return <Pressable accessibilityLabel="Attach photo or video" disabled={busy||disabled} onPress={pick} style={{padding:10,minWidth:44,minHeight:44}}>
+  return <Pressable accessibilityLabel={purpose==="product"?"Upload product photo":"Attach photo or video"} disabled={busy||disabled} onPress={pick} style={{padding:10,minWidth:44,minHeight:44}}>
     {busy?<ActivityIndicator color={colors.primary}/>:<Feather name="paperclip" size={20} color={colors.primary}/>}
   </Pressable>;
 }

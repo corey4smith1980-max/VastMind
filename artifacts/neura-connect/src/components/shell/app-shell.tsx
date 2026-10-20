@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/react";
 import {
-  Bell, Briefcase, CircleDashed, Clapperboard, MessagesSquare, Menu, Newspaper, Radio, Settings, UsersRound,
+  Bell, Briefcase, CircleDashed, Clapperboard, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, UsersRound,
 } from "lucide-react";
 import { useGetMyProfile, useListNotifications, useListChats, getGetMyProfileQueryKey, getListNotificationsQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { BrandMark } from "@/components/brand";
@@ -27,6 +27,7 @@ const NAV = [
   { href: "/communities", label: "Communities", icon: UsersRound, primary: true },
   { href: "/channels", label: "Channels", icon: Radio },
   { href: "/business", label: "Business", icon: Briefcase },
+  { href: "/shop", label: "Shop", icon: ShoppingBag },
   { href: "/notifications", label: "Alerts", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

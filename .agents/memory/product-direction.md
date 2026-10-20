@@ -20,3 +20,9 @@ Use Replit-managed Clerk and Replit Postgres. The initial media deferral ended w
 **Why:** The user confirmed Replit-managed Clerk, chose Replit Postgres after dismissing the Supabase secret request, then explicitly chose “Use Replit App Storage” for media.
 
 **How to apply:** Keep accounts and shared social data aligned across clients. Do not re-request Supabase credentials or introduce an external database without a new user decision. Media upload deferral does not mean unrelated requested features were rejected.
+
+Commerce belongs inside the VastMind web and native apps. The initial commerce scope is catalog, inventory, cart, and order management; payments are deferred until a provider is explicitly selected.
+
+**Why:** The user asked for the shop to be built inside both apps, selected catalog/orders first, chose to add billing later, and continued without connecting a payment integration.
+
+**How to apply:** Use the shared API and database for buyer and seller workflows. Keep payment status explicitly manual until a real processor is connected; never collect card details in a fake checkout.

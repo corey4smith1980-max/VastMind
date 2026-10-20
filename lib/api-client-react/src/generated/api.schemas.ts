@@ -991,8 +991,16 @@ export type ListShopProductsParams = {
  */
 q?: string;
 sellerId?: string;
-mine?: boolean;
+scope?: ListShopProductsScope;
 };
+
+export type ListShopProductsScope = typeof ListShopProductsScope[keyof typeof ListShopProductsScope];
+
+
+export const ListShopProductsScope = {
+  discover: 'discover',
+  mine: 'mine',
+} as const;
 
 export type ListShopOrdersParams = {
 scope?: ListShopOrdersScope;

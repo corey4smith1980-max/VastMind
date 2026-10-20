@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import { randomUUID } from "node:crypto";
+import { pipeline } from "node:stream/promises";
 import { RequestUploadUrlBody, RequestUploadUrlResponse, CompleteMediaUploadParams, CompleteMediaUploadResponse, GetMediaContentParams } from "@workspace/api-zod";
 import { assert, query, provision, transaction, chatAllowed, blocked, canDiscover } from "../lib/social";
 import { storage, mediaTypes, MEDIA_LIMIT, matchesMediaType, mediaShape } from "../lib/media";
@@ -37,9 +38,10 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   const parsed = RequestUploadUrlBody.safeParse(req.body);
   assert(parsed.success, 400, "Invalid upload metadata");
   const body = parsed.data!;
-  assert(["chat","status","post"].includes(body.purpose),400,"Unsupported upload purpose");
+  assert(["chat","status","post","product"].includes(body.purpose),400,"Unsupported upload purpose");
   assert(mediaTypes.has(body.contentType), 400, "Use JPEG, PNG, WebP, GIF, MP4, WebM, or a supported audio file");
   assert(body.purpose === "chat" || body.purpose === "post" || !body.contentType.startsWith("audio/"), 400, "Stories support photos and videos");
+  assert(body.purpose !== "product" || body.contentType.startsWith("image/"),400,"Shop listings need a photo");
   const userId = res.locals.mediaUser;
   if (body.purpose === "chat") { assert(body.chatId, 400, "Conversation required"); await chatAllowed(body.chatId!, userId); }
   const [pending] = await query("SELECT count(*)::int AS n FROM media_uploads WHERE owner_id=$1 AND attached=false AND created_at>now()-interval '1 day'", [userId]);
@@ -103,6 +105,9 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
         LEFT JOIN community_members cm ON cm.community_id=c.id AND cm.user_id=$2 WHERE c.id=$1`,[item.community_id,viewer]);
       assert(communityAccess&&(!communityAccess.is_private||communityAccess.state==="member"),404,"Post media unavailable");
     }
+  } else if (m.attached && m.purpose === "product") {
+    const [product]=await query("SELECT seller_id,is_published FROM shop_products WHERE image_media_id=$1",[m.id]);
+    assert(product && (product.is_published || product.seller_id===viewer),404,"Product image unavailable");
   } else assert(m.owner_id===viewer,403,"Media access denied");
   const file = await storage.getObjectEntityFile(m.object_path);
   // Video elements cannot attach Clerk's bearer header to each range request.
@@ -134,9 +139,16 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
   }
   res.set("Content-Length",String(end-start+1));
   const stream=file.createReadStream({start,end});
-  stream.on("error",()=>{ if(!res.headersSent)res.status(502).end(); else res.destroy(); });
-  res.on("close",()=>stream.destroy());
-  stream.pipe(res);
+  try {
+    await pipeline(stream,res);
+  } catch (error) {
+    // Browsers routinely cancel range requests while scrolling or changing
+    // clips. Treat that as normal disconnect behavior, not a server crash.
+    if (res.destroyed || req.aborted) return;
+    req.log.error({ err: error, mediaId: m.id }, "Media stream failed");
+    if (!res.headersSent) res.status(502).end();
+    else res.destroy();
+  }
 });
 
 // Lazy startup cleanup is also run hourly; expired stories are never served even before cleanup.

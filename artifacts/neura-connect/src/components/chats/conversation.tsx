@@ -1,11 +1,11 @@
 "use client";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Phone, Video, Search, SendHorizontal, ShieldOff, Users, X, Zap,
+  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Phone, Video, Search, SendHorizontal, ShieldOff, SmilePlus, Users, X, Zap,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useGetChatMessages, getGetChatMessagesQueryKey, useSendMessage, useMarkChatRead, getListChatsQueryKey,
+  useGetChatMessages, getGetChatMessagesQueryKey, useSendMessage, useMarkChatRead, getListChatsQueryKey, useToggleMessageReaction,
   useListQuickReplies, getListQuickRepliesQueryKey, type Conversation, type Message, type MediaAttachment,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -33,20 +33,25 @@ const PAGE = 40;
 const byTime = (a: Message, b: Message) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 
 // ---------- Message bubble ----------
-function Bubble({ m, mine, showName, others }: { m: Message; mine: boolean; showName: boolean; others: number }) {
+function Bubble({ m, mine, showName, others, onReact }: { m: Message; mine: boolean; showName: boolean; others: number; onReact: (messageId: string, emoji: string) => void }) {
   if (m.type === "system") {
     return <div className="my-3 flex justify-center"><span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">{m.content}</span></div>;
   }
   const readByOthers = m.readBy.filter((id) => id !== m.senderId).length;
+  const sticker = m.type === "sticker";
   return (
     <div className={cn("rise flex gap-2", mine ? "justify-end" : "justify-start")} data-testid={`message-${m.id}`}>
       {!mine && showName ? <UserAvatar id={m.senderId} name={m.senderName} src={m.senderAvatarUrl} size="sm" className="mt-auto" /> : !mine ? <span className="w-8 shrink-0" /> : null}
-      <div className={cn("max-w-[78%] rounded-[1.15rem] px-3.5 py-2 shadow-[0_1px_0_hsl(var(--ink)/.06)] sm:max-w-[64%]", mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md border")}>
+      <div className={cn("max-w-[78%] rounded-[1.15rem] px-3.5 py-2 shadow-[0_1px_0_hsl(var(--ink)/.06)] sm:max-w-[64%]", sticker ? "border-0 bg-transparent px-1 shadow-none" : mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md border")}>
         {!mine && showName ? <p className="mb-0.5 text-xs font-semibold text-primary">{m.senderName}</p> : null}
         {m.media ? <MediaPreview media={m.media} /> : null}
-        <p className="whitespace-pre-wrap break-words text-[15px] leading-snug">{m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+        <p className={cn("whitespace-pre-wrap break-words leading-snug", sticker ? "text-6xl" : "text-[15px]")}>{sticker ? m.content : m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
           /^https?:\/\//.test(part) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a> : part
         )}</p>
+        {m.reactions.length ? <div className="mt-1 flex flex-wrap gap-1" aria-label="Message reactions">
+          {m.reactions.map((reaction) => <button key={reaction.emoji} type="button" aria-pressed={reaction.reactedByMe} aria-label={`${reaction.emoji}, ${reaction.count} reactions`} onClick={() => onReact(m.id,reaction.emoji)} className={cn("rounded-full border px-2 py-0.5 text-xs",reaction.reactedByMe?"border-primary bg-primary/10":"bg-card/70")}>{reaction.emoji} {reaction.count}</button>)}
+        </div> : null}
+        <div className="mt-1 flex items-center justify-end gap-1">
         <p className={cn("mt-1 flex items-center justify-end gap-1 font-mono text-[10px]", mine ? "opacity-75" : "text-muted-foreground")}>
           {clock(m.createdAt)}
           {mine ? (
@@ -55,12 +60,19 @@ function Bubble({ m, mine, showName, others }: { m: Message; mine: boolean; show
             ) : <Check className="h-3.5 w-3.5" aria-label="Sent" />
           ) : null}
         </p>
+        <Popover>
+          <PopoverTrigger asChild><button type="button" aria-label="React to message" className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"><SmilePlus className="h-3.5 w-3.5" /></button></PopoverTrigger>
+          <PopoverContent align="end" className="w-auto rounded-full p-1.5">
+            <div className="flex gap-1">{["❤️","👍","😂","😮","😢","🙏"].map((emoji)=><button key={emoji} type="button" aria-label={`React with ${emoji}`} onClick={()=>onReact(m.id,emoji)} className="grid h-9 w-9 place-items-center rounded-full text-xl hover:bg-muted">{emoji}</button>)}</div>
+          </PopoverContent>
+        </Popover>
+        </div>
       </div>
     </div>
   );
 }
 
-function MessageRun({ items, meId, others }: { items: Message[]; meId: string; others: number }) {
+function MessageRun({ items, meId, others, onReact }: { items: Message[]; meId: string; others: number; onReact: (messageId: string, emoji: string) => void }) {
   return (
     <>
       {items.map((m, i) => {
@@ -74,7 +86,7 @@ function MessageRun({ items, meId, others }: { items: Message[]; meId: string; o
               </div>
             ) : null}
             <div className={cn(prev && prev.senderId === m.senderId && !newDay ? "mt-0.5" : "mt-3")}>
-              <Bubble m={m} mine={m.senderId === meId} showName={!prev || prev.senderId !== m.senderId || newDay} others={others} />
+              <Bubble m={m} mine={m.senderId === meId} showName={!prev || prev.senderId !== m.senderId || newDay} others={others} onReact={onReact} />
             </div>
           </Fragment>
         );
@@ -84,7 +96,7 @@ function MessageRun({ items, meId, others }: { items: Message[]; meId: string; o
 }
 
 // ---------- Older page of history (cursor-based) ----------
-function OlderPage({ chatId, before, meId, others, onCursor }: { chatId: string; before: string; meId: string; others: number; onCursor: (before: string, next: string | null) => void }) {
+function OlderPage({ chatId, before, meId, others, onCursor, onReact }: { chatId: string; before: string; meId: string; others: number; onCursor: (before: string, next: string | null) => void; onReact: (messageId: string, emoji: string) => void }) {
   const params = { before, limit: PAGE };
   const q = useGetChatMessages(chatId, params, { query: { queryKey: getGetChatMessagesQueryKey(chatId, params), staleTime: 60_000 } });
   const cb = useRef(onCursor);
@@ -94,7 +106,7 @@ function OlderPage({ chatId, before, meId, others, onCursor }: { chatId: string;
   }, [q.data, before]);
   if (q.isLoading) return <div className="space-y-2 py-3">{[0, 1, 2].map((i) => <Skeleton key={i} className={cn("h-10 w-1/2 rounded-2xl", i % 2 && "ml-auto")} />)}</div>;
   if (q.isError) return <p className="py-3 text-center text-xs text-destructive">Couldn't load older messages.</p>;
-  return <MessageRun items={[...(q.data?.items ?? [])].sort(byTime)} meId={meId} others={others} />;
+  return <MessageRun items={[...(q.data?.items ?? [])].sort(byTime)} meId={meId} others={others} onReact={onReact} />;
 }
 
 // ---------- In-conversation search (server-side q) ----------
@@ -206,6 +218,13 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
       onError: (e, vars) => { setDraft(vars.data.content); toast({ title: "Message not sent", description: errMessage(e), variant: "destructive" }); },
     },
   });
+  const reaction = useToggleMessageReaction({
+    mutation: {
+      onSuccess: () => invalidate(`/api/chats/${chat.id}/messages`),
+      onError: (e) => toast({ title: "Reaction not saved", description: errMessage(e), variant: "destructive" }),
+    },
+  });
+  const onReact = (messageId: string, emoji: string) => reaction.mutate({ chatId: chat.id, messageId, data: { emoji } });
   const typingTimer = useRef<number | null>(null);
   const isTypingRef = useRef(false);
   function onDraft(v: string) {
@@ -222,6 +241,11 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
     isTypingRef.current = false;
     sendTyping(chat.id, false);
     send.mutate({ chatId: chat.id, data: { content, mediaId:attachment?.id } });
+  }
+  function sendSticker(emoji: string) {
+    if(send.isPending)return;
+    nearBottom.current=true;
+    send.mutate({chatId:chat.id,data:{content:emoji,type:"sticker"}});
   }
 
   const replies = useListQuickReplies({ query: { queryKey: getListQuickRepliesQueryKey(), staleTime: 60_000 } });
@@ -294,13 +318,13 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Beginning of conversation</span>
               ) : null}
             </div>
-            {[...older].reverse().map((b) => <OlderPage key={b} chatId={chat.id} before={b} meId={me.id} others={others} onCursor={onCursor} />)}
+            {[...older].reverse().map((b) => <OlderPage key={b} chatId={chat.id} before={b} meId={me.id} others={others} onCursor={onCursor} onReact={onReact} />)}
             {latestItems.length === 0 ? (
               <div className="mx-auto mt-16 max-w-xs rounded-3xl border bg-card p-6 text-center">
                 <p className="font-display text-xl font-semibold">The line is open.</p>
                 <p className="mt-1 text-sm text-muted-foreground">Send the first message — {isGroup ? "everyone in the group will see it" : `${other?.user.name.split(" ")[0] ?? "they"}'ll get it right away`}.</p>
               </div>
-            ) : <MessageRun items={latestItems} meId={me.id} others={others} />}
+            ) : <MessageRun items={latestItems} meId={me.id} others={others} onReact={onReact} />}
             {send.isPending ? (
               <div className="mt-2 flex justify-end"><div className="bubble-mine max-w-[64%] rounded-[1.15rem] rounded-br-md px-3.5 py-2 opacity-70"><p className="whitespace-pre-wrap text-[15px]">{send.variables?.data.content}</p><Clock className="ml-auto mt-1 h-3 w-3" aria-label="Sending" /></div></div>
             ) : null}
@@ -318,7 +342,7 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
       {/* Composer */}
       {attachment?<div className="flex items-center justify-between border-t bg-card px-3 py-2 text-xs"><span className="truncate">Ready to send: {attachment.name}</span><Button type="button" variant="ghost" size="icon" aria-label="Remove attachment" onClick={()=>setAttachment(undefined)}><X className="h-4 w-4"/></Button></div>:null}
       <form className="flex items-end gap-1 border-t bg-card p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:p-3" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-        <ComposerTools append={(value) => onDraft(`${draft}${draft ? " " : ""}${value}`.slice(0, 4000))} />
+        <ComposerTools append={(value) => onDraft(`${draft}${draft ? " " : ""}${value}`.slice(0, 4000))} sendSticker={sendSticker} />
         <MediaPicker purpose="chat" chatId={chat.id} onChange={setAttachment} />
         <Popover>
           <PopoverTrigger asChild>

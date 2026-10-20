@@ -14,7 +14,7 @@ export function MediaPreview({ media }: { media: Attachment }) {
 }
 
 export function MediaPicker({ purpose, chatId, value, onChange }: {
-  purpose: "chat" | "status"; chatId?: string; value?: Attachment; onChange: (value?: Attachment) => void;
+  purpose: "chat" | "status" | "product"; chatId?: string; value?: Attachment; onChange: (value?: Attachment) => void;
 }) {
   const { toast } = useToast();
   const input = useRef<HTMLInputElement>(null);
@@ -71,8 +71,8 @@ export function MediaPicker({ purpose, chatId, value, onChange }: {
     } catch(e){toast({title:"Microphone unavailable",description:errMessage(e),variant:"destructive"});}
   }
   return <div className="flex shrink-0 flex-wrap items-center gap-0.5">
-    <input ref={input} type="file" className="sr-only" aria-label="Choose media" accept={purpose==="status"?"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm":"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav"} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)void upload(file);}} />
-    <Button type="button" size="icon" variant="ghost" disabled={busy||recording} aria-label="Attach photo or video" onClick={()=>input.current?.click()}>{busy?<Loader2 className="h-5 w-5 animate-spin"/>:<Paperclip className="h-5 w-5"/>}</Button>
+    <input ref={input} type="file" className="sr-only" aria-label={purpose==="product"?"Choose a product photo":"Choose media"} accept={purpose==="product"?"image/jpeg,image/png,image/webp,image/gif":purpose==="status"?"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm":"image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav"} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(file)void upload(file);}} />
+    <Button type="button" size="icon" variant="ghost" disabled={busy||recording} aria-label={purpose==="product"?"Upload product photo":"Attach photo or video"} onClick={()=>input.current?.click()}>{busy?<Loader2 className="h-5 w-5 animate-spin"/>:<Paperclip className="h-5 w-5"/>}</Button>
     {purpose==="chat"&&<Button type="button" size="icon" variant={recording?"destructive":"ghost"} disabled={busy} aria-label={recording?"Stop recording":"Record voice note"} onClick={()=>recording?recorder.current?.stop():void record()}>{recording?<Square className="h-4 w-4"/>:<Mic className="h-5 w-5"/>}</Button>}
     {recording&&<span role="status" className="text-xs text-destructive">Recording · max 3 min</span>}
     {busy&&<span role="status" className="text-xs">Uploading…</span>}
