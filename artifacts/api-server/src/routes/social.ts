@@ -450,6 +450,7 @@ route("post","/shop/products","CreateShopProduct",async c=>{
 route("patch","/shop/products/:productId","UpdateShopProduct",async c=>{
   const [current]=await c.q("SELECT * FROM shop_products WHERE id=$1 AND seller_id=$2 FOR UPDATE",[c.p.productId,c.u]);
   assert(current,404,"Product not found");
+  assert(!current.shop_id,409,"Manage storefront products in the updated Seller Center");
   const hasImage=Object.prototype.hasOwnProperty.call(c.b,"imageMediaId");
   const image=hasImage&&c.b.imageMediaId?await claimMedia(c.b.imageMediaId,c.u,"product",null,c.q):null;
   const currency=c.b.currency?shopCurrency(c.b.currency):current.currency;
@@ -477,6 +478,7 @@ route("post","/shop/orders","PlaceShopOrder",async c=>{
   const ids=[...quantities.keys()];
   const products=await c.q("SELECT * FROM shop_products WHERE id=ANY($1::text[]) FOR UPDATE",[ids]);
   assert(products.length===ids.length,409,"One or more products are no longer available");
+  assert(products.every(p=>!p.shop_id),409,"Use the updated shop checkout for storefront products");
   assert(products.every(p=>p.is_published),409,"One or more products are no longer available");
   const sellerIds=new Set(products.map(p=>p.seller_id)),currencies=new Set(products.map(p=>p.currency));
   assert(sellerIds.size===1,400,"Place a separate order for each seller");
@@ -504,6 +506,7 @@ route("post","/shop/orders","PlaceShopOrder",async c=>{
 route("patch","/shop/orders/:orderId","UpdateShopOrder",async c=>{
   const [order]=await c.q("SELECT * FROM shop_orders WHERE id=$1 FOR UPDATE",[c.p.orderId]);
   assert(order,404,"Order not found");assert(order.seller_id===c.u,403,"Only this seller can update the order");
+  assert(!order.idempotency_key,409,"Manage this order in the updated Seller Center");
   const nextStatus=c.b.status??order.status,nextPayment=c.b.paymentStatus??order.payment_status;
   if(c.b.status&&c.b.status!==order.status){
     const allowed:Record<string,string[]>={pending:["confirmed","cancelled"],confirmed:["preparing","cancelled"],preparing:["completed","cancelled"],completed:[],cancelled:[]};

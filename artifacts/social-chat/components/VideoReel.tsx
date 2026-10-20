@@ -9,6 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetCreatorQueryKey, getListPostCommentsQueryKey, useAddPostComment, useListPostComments, useTogglePostReaction, useToggleUserFollow, type Post } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
+import { useAppStore } from '@/state/AppStore';
+import { ContentProducts } from '@/components/commerce/ContentProducts';
 import { activeCue, errorText, useAuthedMedia, useCaptionsPref, useWatchSession, webProfileLink } from '@/components/videoKit';
 
 const INK = 'hsl(192,52%,9%)';
@@ -60,6 +62,7 @@ function ActionButton({ icon, label, count, onPress, tint, disabled }: { icon: R
 export function ReelItem({ post, active, near, height, bottomInset }: { post: Post; active: boolean; near: boolean; height: number; bottomInset: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { profile } = useAppStore();
   const { source, error } = useAuthedMedia(post.media, near);
   const player = useVideoPlayer(source, p => { p.loop = true; p.timeUpdateEventInterval = 0.25; });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
@@ -119,6 +122,7 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
         {post.communityName ? <Text style={s.tag}>{post.communityName}</Text> : null}
         <Text style={s.tag} numberOfLines={1}>{post.audioMedia ? `Creator's sound · ${post.audioMedia.name}` : 'Original sound'}</Text>
       </View>
+      <ContentProducts postId={post.id} isAuthor={profile?.id === post.author.id} tone="dark" enabled={near} />
       {note ? <Text style={{ color: 'hsl(42,90%,70%)', marginTop: 6 }} onPress={() => setNote('')}>{note}</Text> : null}
     </View>
     <View style={[s.rail, { bottom: bottomInset + 20 }]}>

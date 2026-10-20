@@ -8,6 +8,1585 @@
 import * as zod from 'zod';
 
 
+export const commerceListShopsQueryQMax = 100;
+
+export const commerceListShopsQueryCursorMax = 100;
+
+
+
+export const CommerceListShopsQueryParams = zod.object({
+  "scope": zod.enum(['discover', 'mine', 'following']).optional(),
+  "q": zod.coerce.string().max(commerceListShopsQueryQMax).optional(),
+  "cursor": zod.coerce.string().max(commerceListShopsQueryCursorMax).optional()
+})
+
+export const CommerceListShopsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "ownerId": zod.string(),
+  "ownerName": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "policies": zod.string(),
+  "contact": zod.string(),
+  "pickupDetails": zod.string(),
+  "shippingMinor": zod.number().int(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "logo": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+}).optional(),
+  "followerCount": zod.number().int(),
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator', 'buyer']),
+  "createdAt": zod.string()
+})),
+  "nextCursor": zod.string().optional()
+})
+
+
+export const commerceCreateShopBodyNameMin = 2;
+export const commerceCreateShopBodyNameMax = 100;
+
+export const commerceCreateShopBodySlugMin = 3;
+export const commerceCreateShopBodySlugMax = 60;
+
+
+export const commerceCreateShopBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const commerceCreateShopBodyCurrencyMin = 3;
+export const commerceCreateShopBodyCurrencyMax = 3;
+
+export const commerceCreateShopBodyCategoryMax = 80;
+
+export const commerceCreateShopBodyDescriptionMax = 3000;
+
+export const commerceCreateShopBodyPoliciesMax = 5000;
+
+export const commerceCreateShopBodyContactMax = 500;
+
+export const commerceCreateShopBodyPickupDetailsMax = 1000;
+
+export const commerceCreateShopBodyShippingMinorMin = 0;
+export const commerceCreateShopBodyShippingMinorMax = 100000000;
+
+
+
+export const CommerceCreateShopBody = zod.object({
+  "name": zod.string().min(commerceCreateShopBodyNameMin).max(commerceCreateShopBodyNameMax),
+  "slug": zod.string().min(commerceCreateShopBodySlugMin).max(commerceCreateShopBodySlugMax).regex(commerceCreateShopBodySlugRegExp),
+  "currency": zod.string().min(commerceCreateShopBodyCurrencyMin).max(commerceCreateShopBodyCurrencyMax),
+  "category": zod.string().min(1).max(commerceCreateShopBodyCategoryMax),
+  "description": zod.string().max(commerceCreateShopBodyDescriptionMax).optional(),
+  "policies": zod.string().max(commerceCreateShopBodyPoliciesMax).optional(),
+  "contact": zod.string().max(commerceCreateShopBodyContactMax).optional(),
+  "pickupDetails": zod.string().max(commerceCreateShopBodyPickupDetailsMax).optional(),
+  "shippingMinor": zod.number().int().min(commerceCreateShopBodyShippingMinorMin).max(commerceCreateShopBodyShippingMinorMax).optional(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean().optional(),
+  "logoMediaId": zod.string().nullish()
+})
+
+export const CommerceCreateShopResponse = zod.object({
+  "id": zod.string(),
+  "ownerId": zod.string(),
+  "ownerName": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "policies": zod.string(),
+  "contact": zod.string(),
+  "pickupDetails": zod.string(),
+  "shippingMinor": zod.number().int(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "logo": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+}).optional(),
+  "followerCount": zod.number().int(),
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator', 'buyer']),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceGetShopParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const CommerceGetShopResponse = zod.object({
+  "id": zod.string(),
+  "ownerId": zod.string(),
+  "ownerName": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "policies": zod.string(),
+  "contact": zod.string(),
+  "pickupDetails": zod.string(),
+  "shippingMinor": zod.number().int(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "logo": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+}).optional(),
+  "followerCount": zod.number().int(),
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator', 'buyer']),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceUpdateShopParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceUpdateShopBodyNameMin = 2;
+export const commerceUpdateShopBodyNameMax = 100;
+
+export const commerceUpdateShopBodySlugMin = 3;
+export const commerceUpdateShopBodySlugMax = 60;
+
+
+export const commerceUpdateShopBodySlugRegExp = new RegExp('^[a-z0-9]+(?:-[a-z0-9]+)*$');
+export const commerceUpdateShopBodyCurrencyMin = 3;
+export const commerceUpdateShopBodyCurrencyMax = 3;
+
+export const commerceUpdateShopBodyCategoryMax = 80;
+
+export const commerceUpdateShopBodyDescriptionMax = 3000;
+
+export const commerceUpdateShopBodyPoliciesMax = 5000;
+
+export const commerceUpdateShopBodyContactMax = 500;
+
+export const commerceUpdateShopBodyPickupDetailsMax = 1000;
+
+export const commerceUpdateShopBodyShippingMinorMin = 0;
+export const commerceUpdateShopBodyShippingMinorMax = 100000000;
+
+
+
+export const CommerceUpdateShopBody = zod.object({
+  "name": zod.string().min(commerceUpdateShopBodyNameMin).max(commerceUpdateShopBodyNameMax),
+  "slug": zod.string().min(commerceUpdateShopBodySlugMin).max(commerceUpdateShopBodySlugMax).regex(commerceUpdateShopBodySlugRegExp),
+  "currency": zod.string().min(commerceUpdateShopBodyCurrencyMin).max(commerceUpdateShopBodyCurrencyMax),
+  "category": zod.string().min(1).max(commerceUpdateShopBodyCategoryMax),
+  "description": zod.string().max(commerceUpdateShopBodyDescriptionMax).optional(),
+  "policies": zod.string().max(commerceUpdateShopBodyPoliciesMax).optional(),
+  "contact": zod.string().max(commerceUpdateShopBodyContactMax).optional(),
+  "pickupDetails": zod.string().max(commerceUpdateShopBodyPickupDetailsMax).optional(),
+  "shippingMinor": zod.number().int().min(commerceUpdateShopBodyShippingMinorMin).max(commerceUpdateShopBodyShippingMinorMax).optional(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean().optional(),
+  "logoMediaId": zod.string().nullish()
+})
+
+export const CommerceUpdateShopResponse = zod.object({
+  "id": zod.string(),
+  "ownerId": zod.string(),
+  "ownerName": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "policies": zod.string(),
+  "contact": zod.string(),
+  "pickupDetails": zod.string(),
+  "shippingMinor": zod.number().int(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "logo": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+}).optional(),
+  "followerCount": zod.number().int(),
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator', 'buyer']),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceFollowShopParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const CommerceFollowShopBody = zod.object({
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean()
+})
+
+export const CommerceFollowShopResponse = zod.object({
+  "id": zod.string(),
+  "ownerId": zod.string(),
+  "ownerName": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "policies": zod.string(),
+  "contact": zod.string(),
+  "pickupDetails": zod.string(),
+  "shippingMinor": zod.number().int(),
+  "deliveryEnabled": zod.boolean(),
+  "pickupEnabled": zod.boolean(),
+  "isPublished": zod.boolean(),
+  "logo": zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+}).optional(),
+  "followerCount": zod.number().int(),
+  "following": zod.boolean(),
+  "marketingOptIn": zod.boolean(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator', 'buyer']),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceListTeamParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const CommerceListTeamResponseItem = zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator'])
+})
+export const CommerceListTeamResponse = zod.array(CommerceListTeamResponseItem)
+
+
+export const CommerceUpdateTeamParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceUpdateTeamBodyUserIdMax = 150;
+
+
+
+export const CommerceUpdateTeamBody = zod.object({
+  "userId": zod.string().min(1).max(commerceUpdateTeamBodyUserIdMax),
+  "role": zod.enum(['manager', 'fulfillment', 'marketer', 'creator']),
+  "approved": zod.boolean()
+})
+
+export const CommerceUpdateTeamResponseItem = zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "role": zod.enum(['owner', 'manager', 'fulfillment', 'marketer', 'creator'])
+})
+export const CommerceUpdateTeamResponse = zod.array(CommerceUpdateTeamResponseItem)
+
+
+export const commerceListProductsQueryQMax = 100;
+
+export const commerceListProductsQueryCategoryMax = 80;
+
+export const commerceListProductsQueryCurrencyMax = 3;
+
+export const commerceListProductsQueryMinPriceMin = 0;
+
+export const commerceListProductsQueryMaxPriceMin = 0;
+
+export const commerceListProductsQueryCursorMax = 100;
+
+
+
+export const CommerceListProductsQueryParams = zod.object({
+  "shopId": zod.coerce.string().optional(),
+  "scope": zod.enum(['discover', 'mine', 'saved']).optional(),
+  "q": zod.coerce.string().max(commerceListProductsQueryQMax).optional(),
+  "category": zod.coerce.string().max(commerceListProductsQueryCategoryMax).optional(),
+  "currency": zod.coerce.string().max(commerceListProductsQueryCurrencyMax).optional(),
+  "minPrice": zod.coerce.number().int().min(commerceListProductsQueryMinPriceMin).optional(),
+  "maxPrice": zod.coerce.number().int().min(commerceListProductsQueryMaxPriceMin).optional(),
+  "sort": zod.enum(['newest', 'price_low', 'price_high']).optional(),
+  "cursor": zod.coerce.string().max(commerceListProductsQueryCursorMax).optional()
+})
+
+export const commerceListProductsResponseItemsItemVariantsItemOneLabelMax = 100;
+
+export const commerceListProductsResponseItemsItemVariantsItemOneSkuMax = 80;
+
+export const commerceListProductsResponseItemsItemVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceListProductsResponseItemsItemVariantsItemOneInventoryMin = 0;
+export const commerceListProductsResponseItemsItemVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceListProductsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceListProductsResponseItemsItemVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceListProductsResponseItemsItemVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceListProductsResponseItemsItemVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceListProductsResponseItemsItemVariantsItemOneInventoryMin).max(commerceListProductsResponseItemsItemVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})),
+  "nextCursor": zod.string().optional()
+})
+
+
+export const commerceCreateProductBodyTitleMax = 180;
+
+export const commerceCreateProductBodyDescriptionMax = 10000;
+
+export const commerceCreateProductBodyCategoryMax = 80;
+
+export const commerceCreateProductBodyPriceMinorMax = 100000000;
+
+export const commerceCreateProductBodyInventoryMin = 0;
+export const commerceCreateProductBodyInventoryMax = 1000000;
+
+export const commerceCreateProductBodyMediaIdsMax = 8;
+
+export const commerceCreateProductBodyVariantsItemLabelMax = 100;
+
+export const commerceCreateProductBodyVariantsItemSkuMax = 80;
+
+export const commerceCreateProductBodyVariantsItemPriceMinorMax = 100000000;
+
+export const commerceCreateProductBodyVariantsItemInventoryMin = 0;
+export const commerceCreateProductBodyVariantsItemInventoryMax = 1000000;
+
+export const commerceCreateProductBodyVariantsMax = 50;
+
+
+
+export const CommerceCreateProductBody = zod.object({
+  "shopId": zod.string(),
+  "title": zod.string().min(1).max(commerceCreateProductBodyTitleMax),
+  "description": zod.string().max(commerceCreateProductBodyDescriptionMax).optional(),
+  "category": zod.string().min(1).max(commerceCreateProductBodyCategoryMax),
+  "priceMinor": zod.number().int().min(1).max(commerceCreateProductBodyPriceMinorMax),
+  "inventory": zod.number().int().min(commerceCreateProductBodyInventoryMin).max(commerceCreateProductBodyInventoryMax),
+  "isPublished": zod.boolean(),
+  "mediaIds": zod.array(zod.string()).max(commerceCreateProductBodyMediaIdsMax),
+  "variants": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "label": zod.string().min(1).max(commerceCreateProductBodyVariantsItemLabelMax),
+  "sku": zod.string().min(1).max(commerceCreateProductBodyVariantsItemSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceCreateProductBodyVariantsItemPriceMinorMax),
+  "inventory": zod.number().int().min(commerceCreateProductBodyVariantsItemInventoryMin).max(commerceCreateProductBodyVariantsItemInventoryMax)
+})).max(commerceCreateProductBodyVariantsMax)
+})
+
+export const commerceCreateProductResponseVariantsItemOneLabelMax = 100;
+
+export const commerceCreateProductResponseVariantsItemOneSkuMax = 80;
+
+export const commerceCreateProductResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceCreateProductResponseVariantsItemOneInventoryMin = 0;
+export const commerceCreateProductResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceCreateProductResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceCreateProductResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceCreateProductResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceCreateProductResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceCreateProductResponseVariantsItemOneInventoryMin).max(commerceCreateProductResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceGetProductParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const commerceGetProductResponseVariantsItemOneLabelMax = 100;
+
+export const commerceGetProductResponseVariantsItemOneSkuMax = 80;
+
+export const commerceGetProductResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceGetProductResponseVariantsItemOneInventoryMin = 0;
+export const commerceGetProductResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceGetProductResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceGetProductResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceGetProductResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceGetProductResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceGetProductResponseVariantsItemOneInventoryMin).max(commerceGetProductResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceUpdateProductParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const commerceUpdateProductBodyTitleMax = 180;
+
+export const commerceUpdateProductBodyDescriptionMax = 10000;
+
+export const commerceUpdateProductBodyCategoryMax = 80;
+
+export const commerceUpdateProductBodyPriceMinorMax = 100000000;
+
+export const commerceUpdateProductBodyInventoryMin = 0;
+export const commerceUpdateProductBodyInventoryMax = 1000000;
+
+export const commerceUpdateProductBodyMediaIdsMax = 8;
+
+export const commerceUpdateProductBodyVariantsItemLabelMax = 100;
+
+export const commerceUpdateProductBodyVariantsItemSkuMax = 80;
+
+export const commerceUpdateProductBodyVariantsItemPriceMinorMax = 100000000;
+
+export const commerceUpdateProductBodyVariantsItemInventoryMin = 0;
+export const commerceUpdateProductBodyVariantsItemInventoryMax = 1000000;
+
+export const commerceUpdateProductBodyVariantsMax = 50;
+
+
+
+export const CommerceUpdateProductBody = zod.object({
+  "shopId": zod.string(),
+  "title": zod.string().min(1).max(commerceUpdateProductBodyTitleMax),
+  "description": zod.string().max(commerceUpdateProductBodyDescriptionMax).optional(),
+  "category": zod.string().min(1).max(commerceUpdateProductBodyCategoryMax),
+  "priceMinor": zod.number().int().min(1).max(commerceUpdateProductBodyPriceMinorMax),
+  "inventory": zod.number().int().min(commerceUpdateProductBodyInventoryMin).max(commerceUpdateProductBodyInventoryMax),
+  "isPublished": zod.boolean(),
+  "mediaIds": zod.array(zod.string()).max(commerceUpdateProductBodyMediaIdsMax),
+  "variants": zod.array(zod.object({
+  "id": zod.string().optional(),
+  "label": zod.string().min(1).max(commerceUpdateProductBodyVariantsItemLabelMax),
+  "sku": zod.string().min(1).max(commerceUpdateProductBodyVariantsItemSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceUpdateProductBodyVariantsItemPriceMinorMax),
+  "inventory": zod.number().int().min(commerceUpdateProductBodyVariantsItemInventoryMin).max(commerceUpdateProductBodyVariantsItemInventoryMax)
+})).max(commerceUpdateProductBodyVariantsMax)
+})
+
+export const commerceUpdateProductResponseVariantsItemOneLabelMax = 100;
+
+export const commerceUpdateProductResponseVariantsItemOneSkuMax = 80;
+
+export const commerceUpdateProductResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceUpdateProductResponseVariantsItemOneInventoryMin = 0;
+export const commerceUpdateProductResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceUpdateProductResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceUpdateProductResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceUpdateProductResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceUpdateProductResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceUpdateProductResponseVariantsItemOneInventoryMin).max(commerceUpdateProductResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceSaveProductParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const CommerceSaveProductBody = zod.object({
+  "saved": zod.boolean()
+})
+
+export const commerceSaveProductResponseVariantsItemOneLabelMax = 100;
+
+export const commerceSaveProductResponseVariantsItemOneSkuMax = 80;
+
+export const commerceSaveProductResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceSaveProductResponseVariantsItemOneInventoryMin = 0;
+export const commerceSaveProductResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceSaveProductResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceSaveProductResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceSaveProductResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceSaveProductResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceSaveProductResponseVariantsItemOneInventoryMin).max(commerceSaveProductResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+
+
+export const CommerceReviewProductParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const commerceReviewProductBodyRatingMax = 5;
+
+export const commerceReviewProductBodyContentMax = 2000;
+
+
+
+export const CommerceReviewProductBody = zod.object({
+  "rating": zod.number().int().min(1).max(commerceReviewProductBodyRatingMax),
+  "content": zod.string().min(1).max(commerceReviewProductBodyContentMax)
+})
+
+export const commerceReviewProductResponseVariantsItemOneLabelMax = 100;
+
+export const commerceReviewProductResponseVariantsItemOneSkuMax = 80;
+
+export const commerceReviewProductResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceReviewProductResponseVariantsItemOneInventoryMin = 0;
+export const commerceReviewProductResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceReviewProductResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceReviewProductResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceReviewProductResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceReviewProductResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceReviewProductResponseVariantsItemOneInventoryMin).max(commerceReviewProductResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+
+
+export const commerceReportBodyTargetIdMax = 100;
+
+export const commerceReportBodyReasonMin = 5;
+export const commerceReportBodyReasonMax = 2000;
+
+
+
+export const CommerceReportBody = zod.object({
+  "kind": zod.enum(['shop', 'product']),
+  "targetId": zod.string().min(1).max(commerceReportBodyTargetIdMax),
+  "reason": zod.string().min(commerceReportBodyReasonMin).max(commerceReportBodyReasonMax)
+})
+
+export const CommerceReportResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const commerceQuoteBodyItemsItemQuantityMax = 99;
+
+export const commerceQuoteBodyItemsMax = 30;
+
+export const commerceQuoteBodyRecipientNameMax = 150;
+
+export const commerceQuoteBodyPhoneMax = 80;
+
+export const commerceQuoteBodyAddressMax = 1000;
+
+export const commerceQuoteBodyBuyerNoteMax = 2000;
+
+export const commerceQuoteBodyCouponCodeMax = 40;
+
+export const commerceQuoteBodyCampaignIdMax = 100;
+
+export const commerceQuoteBodyIdempotencyKeyMin = 16;
+export const commerceQuoteBodyIdempotencyKeyMax = 100;
+
+export const commerceQuoteBodyExpectedTotalMinorMin = 0;
+export const commerceQuoteBodyExpectedTotalMinorMax = 2000000000;
+
+
+
+export const CommerceQuoteBody = zod.object({
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "quantity": zod.number().int().min(1).max(commerceQuoteBodyItemsItemQuantityMax)
+})).min(1).max(commerceQuoteBodyItemsMax),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "recipientName": zod.string().max(commerceQuoteBodyRecipientNameMax).optional(),
+  "phone": zod.string().max(commerceQuoteBodyPhoneMax).optional(),
+  "address": zod.string().max(commerceQuoteBodyAddressMax).optional(),
+  "buyerNote": zod.string().max(commerceQuoteBodyBuyerNoteMax).optional(),
+  "couponCode": zod.string().max(commerceQuoteBodyCouponCodeMax).optional(),
+  "campaignId": zod.string().max(commerceQuoteBodyCampaignIdMax).optional(),
+  "idempotencyKey": zod.string().min(commerceQuoteBodyIdempotencyKeyMin).max(commerceQuoteBodyIdempotencyKeyMax).optional(),
+  "expectedTotalMinor": zod.number().int().min(commerceQuoteBodyExpectedTotalMinorMin).max(commerceQuoteBodyExpectedTotalMinorMax).optional()
+})
+
+export const CommerceQuoteResponse = zod.object({
+  "shopId": zod.string().optional(),
+  "sellerId": zod.string(),
+  "currency": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "variantLabel": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int(),
+  "lineTotalMinor": zod.number().int()
+})),
+  "subtotalMinor": zod.number().int(),
+  "discountMinor": zod.number().int(),
+  "shippingMinor": zod.number().int(),
+  "totalMinor": zod.number().int(),
+  "paymentMethod": zod.enum(['manual']),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "couponId": zod.string().optional(),
+  "campaignId": zod.string().optional()
+})
+
+
+export const commerceListOrdersQueryCursorMax = 100;
+
+
+
+export const CommerceListOrdersQueryParams = zod.object({
+  "shopId": zod.coerce.string().optional(),
+  "scope": zod.enum(['buyer', 'seller']).optional(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled', 'returned']).optional(),
+  "cursor": zod.coerce.string().max(commerceListOrdersQueryCursorMax).optional()
+})
+
+export const CommerceListOrdersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "shopId": zod.string().optional(),
+  "sellerId": zod.string(),
+  "currency": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "variantLabel": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int(),
+  "lineTotalMinor": zod.number().int()
+})),
+  "subtotalMinor": zod.number().int(),
+  "discountMinor": zod.number().int(),
+  "shippingMinor": zod.number().int(),
+  "totalMinor": zod.number().int(),
+  "paymentMethod": zod.enum(['manual']),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "couponId": zod.string().optional(),
+  "campaignId": zod.string().optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled', 'returned']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "recipientName": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "trackingNumber": zod.string(),
+  "carrier": zod.string(),
+  "requestType": zod.string(),
+  "requestStatus": zod.string(),
+  "requestReason": zod.string(),
+  "createdAt": zod.string(),
+  "history": zod.array(zod.object({
+  "action": zod.string(),
+  "actorName": zod.string(),
+  "note": zod.string(),
+  "createdAt": zod.string()
+}))
+}))),
+  "nextCursor": zod.string().optional()
+})
+
+
+export const commercePlaceOrderBodyItemsItemQuantityMax = 99;
+
+export const commercePlaceOrderBodyItemsMax = 30;
+
+export const commercePlaceOrderBodyRecipientNameMax = 150;
+
+export const commercePlaceOrderBodyPhoneMax = 80;
+
+export const commercePlaceOrderBodyAddressMax = 1000;
+
+export const commercePlaceOrderBodyBuyerNoteMax = 2000;
+
+export const commercePlaceOrderBodyCouponCodeMax = 40;
+
+export const commercePlaceOrderBodyCampaignIdMax = 100;
+
+export const commercePlaceOrderBodyIdempotencyKeyMin = 16;
+export const commercePlaceOrderBodyIdempotencyKeyMax = 100;
+
+export const commercePlaceOrderBodyExpectedTotalMinorMin = 0;
+export const commercePlaceOrderBodyExpectedTotalMinorMax = 2000000000;
+
+
+
+export const CommercePlaceOrderBody = zod.object({
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "quantity": zod.number().int().min(1).max(commercePlaceOrderBodyItemsItemQuantityMax)
+})).min(1).max(commercePlaceOrderBodyItemsMax),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "recipientName": zod.string().max(commercePlaceOrderBodyRecipientNameMax).optional(),
+  "phone": zod.string().max(commercePlaceOrderBodyPhoneMax).optional(),
+  "address": zod.string().max(commercePlaceOrderBodyAddressMax).optional(),
+  "buyerNote": zod.string().max(commercePlaceOrderBodyBuyerNoteMax).optional(),
+  "couponCode": zod.string().max(commercePlaceOrderBodyCouponCodeMax).optional(),
+  "campaignId": zod.string().max(commercePlaceOrderBodyCampaignIdMax).optional(),
+  "idempotencyKey": zod.string().min(commercePlaceOrderBodyIdempotencyKeyMin).max(commercePlaceOrderBodyIdempotencyKeyMax).optional(),
+  "expectedTotalMinor": zod.number().int().min(commercePlaceOrderBodyExpectedTotalMinorMin).max(commercePlaceOrderBodyExpectedTotalMinorMax).optional()
+})
+
+export const CommercePlaceOrderResponse = zod.object({
+  "shopId": zod.string().optional(),
+  "sellerId": zod.string(),
+  "currency": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "variantLabel": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int(),
+  "lineTotalMinor": zod.number().int()
+})),
+  "subtotalMinor": zod.number().int(),
+  "discountMinor": zod.number().int(),
+  "shippingMinor": zod.number().int(),
+  "totalMinor": zod.number().int(),
+  "paymentMethod": zod.enum(['manual']),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "couponId": zod.string().optional(),
+  "campaignId": zod.string().optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled', 'returned']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "recipientName": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "trackingNumber": zod.string(),
+  "carrier": zod.string(),
+  "requestType": zod.string(),
+  "requestStatus": zod.string(),
+  "requestReason": zod.string(),
+  "createdAt": zod.string(),
+  "history": zod.array(zod.object({
+  "action": zod.string(),
+  "actorName": zod.string(),
+  "note": zod.string(),
+  "createdAt": zod.string()
+}))
+}))
+
+
+export const CommerceUpdateOrderParams = zod.object({
+  "orderId": zod.coerce.string()
+})
+
+export const commerceUpdateOrderBodyReasonMax = 2000;
+
+export const commerceUpdateOrderBodyTrackingNumberMax = 150;
+
+export const commerceUpdateOrderBodyCarrierMax = 150;
+
+
+
+export const CommerceUpdateOrderBody = zod.object({
+  "action": zod.enum(['confirm', 'prepare', 'complete', 'manual_paid', 'cancel', 'request_cancel', 'request_return', 'approve_request', 'reject_request', 'tracking']),
+  "reason": zod.string().max(commerceUpdateOrderBodyReasonMax).optional(),
+  "trackingNumber": zod.string().max(commerceUpdateOrderBodyTrackingNumberMax).optional(),
+  "carrier": zod.string().max(commerceUpdateOrderBodyCarrierMax).optional(),
+  "paymentResolvedManually": zod.boolean().optional()
+})
+
+export const CommerceUpdateOrderResponse = zod.object({
+  "shopId": zod.string().optional(),
+  "sellerId": zod.string(),
+  "currency": zod.string(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "variantId": zod.string().optional(),
+  "variantLabel": zod.string().optional(),
+  "sku": zod.string().optional(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int(),
+  "lineTotalMinor": zod.number().int()
+})),
+  "subtotalMinor": zod.number().int(),
+  "discountMinor": zod.number().int(),
+  "shippingMinor": zod.number().int(),
+  "totalMinor": zod.number().int(),
+  "paymentMethod": zod.enum(['manual']),
+  "fulfillment": zod.enum(['delivery', 'pickup']),
+  "couponId": zod.string().optional(),
+  "campaignId": zod.string().optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled', 'returned']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "recipientName": zod.string(),
+  "phone": zod.string(),
+  "address": zod.string(),
+  "trackingNumber": zod.string(),
+  "carrier": zod.string(),
+  "requestType": zod.string(),
+  "requestStatus": zod.string(),
+  "requestReason": zod.string(),
+  "createdAt": zod.string(),
+  "history": zod.array(zod.object({
+  "action": zod.string(),
+  "actorName": zod.string(),
+  "note": zod.string(),
+  "createdAt": zod.string()
+}))
+}))
+
+
+export const CommerceListCouponsParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceListCouponsResponseOneCodeMin = 3;
+export const commerceListCouponsResponseOneCodeMax = 40;
+
+
+export const commerceListCouponsResponseOneCodeRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const commerceListCouponsResponseOneValueMax = 100000000;
+
+export const commerceListCouponsResponseOneMinSpendMinorMin = 0;
+export const commerceListCouponsResponseOneMinSpendMinorMax = 100000000;
+
+export const commerceListCouponsResponseOneMaxRedemptionsMax = 1000000;
+
+export const commerceListCouponsResponseOnePerBuyerLimitMax = 1000;
+
+export const commerceListCouponsResponseOneProductIdsMax = 100;
+
+
+
+export const CommerceListCouponsResponseItem = zod.object({
+  "code": zod.string().min(commerceListCouponsResponseOneCodeMin).max(commerceListCouponsResponseOneCodeMax).regex(commerceListCouponsResponseOneCodeRegExp),
+  "kind": zod.enum(['percent', 'fixed']),
+  "value": zod.number().int().min(1).max(commerceListCouponsResponseOneValueMax),
+  "minSpendMinor": zod.number().int().min(commerceListCouponsResponseOneMinSpendMinorMin).max(commerceListCouponsResponseOneMinSpendMinorMax),
+  "maxRedemptions": zod.number().int().min(1).max(commerceListCouponsResponseOneMaxRedemptionsMax),
+  "perBuyerLimit": zod.number().int().min(1).max(commerceListCouponsResponseOnePerBuyerLimitMax),
+  "expiresAt": zod.coerce.date(),
+  "productIds": zod.array(zod.string()).max(commerceListCouponsResponseOneProductIdsMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "currency": zod.string(),
+  "active": zod.boolean(),
+  "redemptions": zod.number().int()
+}))
+export const CommerceListCouponsResponse = zod.array(CommerceListCouponsResponseItem)
+
+
+export const CommerceCreateCouponParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceCreateCouponBodyCodeMin = 3;
+export const commerceCreateCouponBodyCodeMax = 40;
+
+
+export const commerceCreateCouponBodyCodeRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const commerceCreateCouponBodyValueMax = 100000000;
+
+export const commerceCreateCouponBodyMinSpendMinorMin = 0;
+export const commerceCreateCouponBodyMinSpendMinorMax = 100000000;
+
+export const commerceCreateCouponBodyMaxRedemptionsMax = 1000000;
+
+export const commerceCreateCouponBodyPerBuyerLimitMax = 1000;
+
+export const commerceCreateCouponBodyProductIdsMax = 100;
+
+
+
+export const CommerceCreateCouponBody = zod.object({
+  "code": zod.string().min(commerceCreateCouponBodyCodeMin).max(commerceCreateCouponBodyCodeMax).regex(commerceCreateCouponBodyCodeRegExp),
+  "kind": zod.enum(['percent', 'fixed']),
+  "value": zod.number().int().min(1).max(commerceCreateCouponBodyValueMax),
+  "minSpendMinor": zod.number().int().min(commerceCreateCouponBodyMinSpendMinorMin).max(commerceCreateCouponBodyMinSpendMinorMax),
+  "maxRedemptions": zod.number().int().min(1).max(commerceCreateCouponBodyMaxRedemptionsMax),
+  "perBuyerLimit": zod.number().int().min(1).max(commerceCreateCouponBodyPerBuyerLimitMax),
+  "expiresAt": zod.coerce.date(),
+  "productIds": zod.array(zod.string()).max(commerceCreateCouponBodyProductIdsMax).optional()
+})
+
+export const commerceCreateCouponResponseOneCodeMin = 3;
+export const commerceCreateCouponResponseOneCodeMax = 40;
+
+
+export const commerceCreateCouponResponseOneCodeRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const commerceCreateCouponResponseOneValueMax = 100000000;
+
+export const commerceCreateCouponResponseOneMinSpendMinorMin = 0;
+export const commerceCreateCouponResponseOneMinSpendMinorMax = 100000000;
+
+export const commerceCreateCouponResponseOneMaxRedemptionsMax = 1000000;
+
+export const commerceCreateCouponResponseOnePerBuyerLimitMax = 1000;
+
+export const commerceCreateCouponResponseOneProductIdsMax = 100;
+
+
+
+export const CommerceCreateCouponResponse = zod.object({
+  "code": zod.string().min(commerceCreateCouponResponseOneCodeMin).max(commerceCreateCouponResponseOneCodeMax).regex(commerceCreateCouponResponseOneCodeRegExp),
+  "kind": zod.enum(['percent', 'fixed']),
+  "value": zod.number().int().min(1).max(commerceCreateCouponResponseOneValueMax),
+  "minSpendMinor": zod.number().int().min(commerceCreateCouponResponseOneMinSpendMinorMin).max(commerceCreateCouponResponseOneMinSpendMinorMax),
+  "maxRedemptions": zod.number().int().min(1).max(commerceCreateCouponResponseOneMaxRedemptionsMax),
+  "perBuyerLimit": zod.number().int().min(1).max(commerceCreateCouponResponseOnePerBuyerLimitMax),
+  "expiresAt": zod.coerce.date(),
+  "productIds": zod.array(zod.string()).max(commerceCreateCouponResponseOneProductIdsMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "currency": zod.string(),
+  "active": zod.boolean(),
+  "redemptions": zod.number().int()
+}))
+
+
+export const CommerceUpdateCouponParams = zod.object({
+  "couponId": zod.coerce.string()
+})
+
+export const CommerceUpdateCouponBody = zod.object({
+  "active": zod.boolean()
+})
+
+export const commerceUpdateCouponResponseOneCodeMin = 3;
+export const commerceUpdateCouponResponseOneCodeMax = 40;
+
+
+export const commerceUpdateCouponResponseOneCodeRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const commerceUpdateCouponResponseOneValueMax = 100000000;
+
+export const commerceUpdateCouponResponseOneMinSpendMinorMin = 0;
+export const commerceUpdateCouponResponseOneMinSpendMinorMax = 100000000;
+
+export const commerceUpdateCouponResponseOneMaxRedemptionsMax = 1000000;
+
+export const commerceUpdateCouponResponseOnePerBuyerLimitMax = 1000;
+
+export const commerceUpdateCouponResponseOneProductIdsMax = 100;
+
+
+
+export const CommerceUpdateCouponResponse = zod.object({
+  "code": zod.string().min(commerceUpdateCouponResponseOneCodeMin).max(commerceUpdateCouponResponseOneCodeMax).regex(commerceUpdateCouponResponseOneCodeRegExp),
+  "kind": zod.enum(['percent', 'fixed']),
+  "value": zod.number().int().min(1).max(commerceUpdateCouponResponseOneValueMax),
+  "minSpendMinor": zod.number().int().min(commerceUpdateCouponResponseOneMinSpendMinorMin).max(commerceUpdateCouponResponseOneMinSpendMinorMax),
+  "maxRedemptions": zod.number().int().min(1).max(commerceUpdateCouponResponseOneMaxRedemptionsMax),
+  "perBuyerLimit": zod.number().int().min(1).max(commerceUpdateCouponResponseOnePerBuyerLimitMax),
+  "expiresAt": zod.coerce.date(),
+  "productIds": zod.array(zod.string()).max(commerceUpdateCouponResponseOneProductIdsMax).optional()
+}).and(zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "currency": zod.string(),
+  "active": zod.boolean(),
+  "redemptions": zod.number().int()
+}))
+
+
+export const CommerceListCampaignsParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const CommerceListCampaignsResponseItem = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "name": zod.string(),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "creatorName": zod.string().optional(),
+  "couponCode": zod.string().optional(),
+  "active": zod.boolean(),
+  "linkPath": zod.string(),
+  "clicks": zod.number().int().optional(),
+  "carts": zod.number().int().optional(),
+  "orders": zod.number().int().optional()
+})
+export const CommerceListCampaignsResponse = zod.array(CommerceListCampaignsResponseItem)
+
+
+export const CommerceCreateCampaignParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceCreateCampaignBodyNameMax = 150;
+
+
+
+export const CommerceCreateCampaignBody = zod.object({
+  "name": zod.string().min(1).max(commerceCreateCampaignBodyNameMax),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "couponId": zod.string().optional()
+})
+
+export const CommerceCreateCampaignResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "name": zod.string(),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "creatorName": zod.string().optional(),
+  "couponCode": zod.string().optional(),
+  "active": zod.boolean(),
+  "linkPath": zod.string(),
+  "clicks": zod.number().int().optional(),
+  "carts": zod.number().int().optional(),
+  "orders": zod.number().int().optional()
+})
+
+
+export const CommerceGetCampaignParams = zod.object({
+  "campaignId": zod.coerce.string()
+})
+
+export const CommerceGetCampaignResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "name": zod.string(),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "creatorName": zod.string().optional(),
+  "couponCode": zod.string().optional(),
+  "active": zod.boolean(),
+  "linkPath": zod.string(),
+  "clicks": zod.number().int().optional(),
+  "carts": zod.number().int().optional(),
+  "orders": zod.number().int().optional()
+})
+
+
+export const CommerceUpdateCampaignParams = zod.object({
+  "campaignId": zod.coerce.string()
+})
+
+export const CommerceUpdateCampaignBody = zod.object({
+  "active": zod.boolean()
+})
+
+export const CommerceUpdateCampaignResponse = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "name": zod.string(),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "creatorName": zod.string().optional(),
+  "couponCode": zod.string().optional(),
+  "active": zod.boolean(),
+  "linkPath": zod.string(),
+  "clicks": zod.number().int().optional(),
+  "carts": zod.number().int().optional(),
+  "orders": zod.number().int().optional()
+})
+
+
+export const CommerceGetDashboardParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const CommerceGetDashboardQueryParams = zod.object({
+  "from": zod.date().optional(),
+  "to": zod.date().optional()
+})
+
+export const CommerceGetDashboardResponse = zod.object({
+  "from": zod.string(),
+  "to": zod.string(),
+  "productCount": zod.number().int(),
+  "lowStockCount": zod.number().int(),
+  "followerCount": zod.number().int(),
+  "pendingOrders": zod.number().int(),
+  "views": zod.number().int(),
+  "clicks": zod.number().int(),
+  "carts": zod.number().int(),
+  "conversions": zod.number().int(),
+  "currencies": zod.array(zod.object({
+  "currency": zod.string(),
+  "grossOrderValueMinor": zod.number().int(),
+  "completedValueMinor": zod.number().int(),
+  "manualConfirmedValueMinor": zod.number().int(),
+  "processorPaidValueMinor": zod.number().int(),
+  "orderCount": zod.number().int()
+})),
+  "topProducts": zod.array(zod.object({
+  "productId": zod.string(),
+  "title": zod.string(),
+  "units": zod.number().int(),
+  "currency": zod.string(),
+  "orderValueMinor": zod.number().int()
+})),
+  "campaigns": zod.array(zod.object({
+  "id": zod.string(),
+  "shopId": zod.string(),
+  "name": zod.string(),
+  "productId": zod.string().optional(),
+  "creatorId": zod.string().optional(),
+  "creatorName": zod.string().optional(),
+  "couponCode": zod.string().optional(),
+  "active": zod.boolean(),
+  "linkPath": zod.string(),
+  "clicks": zod.number().int().optional(),
+  "carts": zod.number().int().optional(),
+  "orders": zod.number().int().optional()
+}))
+})
+
+
+export const CommerceListCustomersParams = zod.object({
+  "shopId": zod.coerce.string()
+})
+
+export const commerceListCustomersQueryCursorMax = 100;
+
+
+
+export const CommerceListCustomersQueryParams = zod.object({
+  "cursor": zod.coerce.string().max(commerceListCustomersQueryCursorMax).optional()
+})
+
+export const CommerceListCustomersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "orderCount": zod.number().int(),
+  "notes": zod.string(),
+  "labels": zod.array(zod.string()),
+  "marketingOptIn": zod.boolean()
+})),
+  "nextCursor": zod.string().optional()
+})
+
+
+export const CommerceUpdateCustomerParams = zod.object({
+  "shopId": zod.coerce.string(),
+  "userId": zod.coerce.string()
+})
+
+export const commerceUpdateCustomerBodyNotesMax = 5000;
+
+export const commerceUpdateCustomerBodyLabelsItemMax = 50;
+
+export const commerceUpdateCustomerBodyLabelsMax = 10;
+
+
+
+export const CommerceUpdateCustomerBody = zod.object({
+  "notes": zod.string().max(commerceUpdateCustomerBodyNotesMax),
+  "labels": zod.array(zod.string().min(1).max(commerceUpdateCustomerBodyLabelsItemMax)).max(commerceUpdateCustomerBodyLabelsMax)
+})
+
+export const CommerceUpdateCustomerResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+export const CommerceListContentProductsParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const commerceListContentProductsResponseVariantsItemOneLabelMax = 100;
+
+export const commerceListContentProductsResponseVariantsItemOneSkuMax = 80;
+
+export const commerceListContentProductsResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceListContentProductsResponseVariantsItemOneInventoryMin = 0;
+export const commerceListContentProductsResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceListContentProductsResponseItem = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceListContentProductsResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceListContentProductsResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceListContentProductsResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceListContentProductsResponseVariantsItemOneInventoryMin).max(commerceListContentProductsResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+export const CommerceListContentProductsResponse = zod.array(CommerceListContentProductsResponseItem)
+
+
+export const CommerceTagContentParams = zod.object({
+  "postId": zod.coerce.string()
+})
+
+export const commerceTagContentBodyProductIdsMax = 5;
+
+
+
+export const CommerceTagContentBody = zod.object({
+  "productIds": zod.array(zod.string()).max(commerceTagContentBodyProductIdsMax)
+})
+
+export const commerceTagContentResponseVariantsItemOneLabelMax = 100;
+
+export const commerceTagContentResponseVariantsItemOneSkuMax = 80;
+
+export const commerceTagContentResponseVariantsItemOnePriceMinorMax = 100000000;
+
+export const commerceTagContentResponseVariantsItemOneInventoryMin = 0;
+export const commerceTagContentResponseVariantsItemOneInventoryMax = 1000000;
+
+
+
+export const CommerceTagContentResponseItem = zod.object({
+  "id": zod.string(),
+  "shopId": zod.string().optional(),
+  "shopName": zod.string().optional(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "currency": zod.string(),
+  "priceMinor": zod.number().int(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "gallery": zod.array(zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "name": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number()
+})),
+  "variants": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string().min(1).max(commerceTagContentResponseVariantsItemOneLabelMax),
+  "sku": zod.string().min(1).max(commerceTagContentResponseVariantsItemOneSkuMax),
+  "priceMinor": zod.number().int().min(1).max(commerceTagContentResponseVariantsItemOnePriceMinorMax),
+  "inventory": zod.number().int().min(commerceTagContentResponseVariantsItemOneInventoryMin).max(commerceTagContentResponseVariantsItemOneInventoryMax)
+}).and(zod.object({
+  "id": zod.string()
+}))),
+  "saved": zod.boolean(),
+  "reviewEligible": zod.boolean(),
+  "reviews": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "rating": zod.number().int(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})),
+  "rating": zod.number(),
+  "reviewCount": zod.number().int(),
+  "createdAt": zod.string()
+})
+export const CommerceTagContentResponse = zod.array(CommerceTagContentResponseItem)
+
+
+export const CommerceRecordEventBody = zod.object({
+  "shopId": zod.string(),
+  "productId": zod.string().optional(),
+  "campaignId": zod.string().optional(),
+  "kind": zod.enum(['view', 'product_click', 'add_to_cart', 'campaign_click'])
+})
+
+export const CommerceRecordEventResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
 /**
  * Returns server health status
  * @summary Health check

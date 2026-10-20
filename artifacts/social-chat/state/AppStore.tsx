@@ -47,7 +47,7 @@ function useServerStore() {
       const name = chat.name || other?.name || 'Conversation';
       return { id: chat.id, name, initials: initials(name), category: chat.type === 'group' ? 'group' : 'personal', lastMessage: chat.lastMessage ?? '', time: time(chat.lastMessageAt), unread: chat.unreadCount, online: other ? (presence[other.id] ?? other.online) : false, messages: [] };
     }),
-    posts: (feed.data ?? []).map(p => ({ id: p.id, author: p.author.name, initials: initials(p.author.name), subtitle: p.communityName ?? `@${p.author.username}`, time: time(p.createdAt), text: p.content, image: null, likes: p.reactionsCount, liked: p.reacted, comments: [] })),
+    posts: (feed.data ?? []).map(p => ({ id: p.id, authorId: p.author.id, author: p.author.name, initials: initials(p.author.name), subtitle: p.communityName ?? `@${p.author.username}`, time: time(p.createdAt), text: p.content, image: null, likes: p.reactionsCount, liked: p.reacted, comments: [] })),
     channels: (channels.data ?? []).map(c => ({ id: c.id, name: c.name, initials: initials(c.name), category: c.owner.name, followers: String(c.subscriberCount), color: 'blue', followed: c.followed, description: c.description, updates: c.latestUpdate ? [{ id: c.latestUpdate.id, author: c.owner.name, text: c.latestUpdate.content, time: time(c.latestUpdate.createdAt) }] : [] })),
     businessOpen: business.data?.isOpen ?? false,
   };

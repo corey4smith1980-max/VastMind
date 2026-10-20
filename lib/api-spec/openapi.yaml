@@ -29,6 +29,48 @@ tags:
   - name: notifications
     description: In-app notifications
 paths:
+  /commerce/shops:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops"
+  /commerce/shops/{shopId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}"
+  /commerce/shops/{shopId}/follow:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1follow"
+  /commerce/shops/{shopId}/team:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1team"
+  /commerce/products:
+    $ref: "./commerce.yaml#/paths/~1commerce~1products"
+  /commerce/products/{productId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1products~1{productId}"
+  /commerce/products/{productId}/save:
+    $ref: "./commerce.yaml#/paths/~1commerce~1products~1{productId}~1save"
+  /commerce/products/{productId}/reviews:
+    $ref: "./commerce.yaml#/paths/~1commerce~1products~1{productId}~1reviews"
+  /commerce/reports:
+    $ref: "./commerce.yaml#/paths/~1commerce~1reports"
+  /commerce/quote:
+    $ref: "./commerce.yaml#/paths/~1commerce~1quote"
+  /commerce/orders:
+    $ref: "./commerce.yaml#/paths/~1commerce~1orders"
+  /commerce/orders/{orderId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1orders~1{orderId}"
+  /commerce/shops/{shopId}/coupons:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1coupons"
+  /commerce/coupons/{couponId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1coupons~1{couponId}"
+  /commerce/shops/{shopId}/campaigns:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1campaigns"
+  /commerce/campaigns/{campaignId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1campaigns~1{campaignId}"
+  /commerce/shops/{shopId}/dashboard:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1dashboard"
+  /commerce/shops/{shopId}/customers:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1customers"
+  /commerce/shops/{shopId}/customers/{userId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1shops~1{shopId}~1customers~1{userId}"
+  /commerce/content/{postId}/products:
+    $ref: "./commerce.yaml#/paths/~1commerce~1content~1{postId}~1products"
+  /commerce/events:
+    $ref: "./commerce.yaml#/paths/~1commerce~1events"
   /healthz:
     get:
       operationId: healthCheck

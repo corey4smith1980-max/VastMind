@@ -831,6 +831,718 @@ export interface MembershipDecisionInput {
   approve: boolean;
 }
 
+export interface CommerceAcknowledgement {
+  success: boolean;
+}
+
+export interface CommerceMedia {
+  id: string;
+  url: string;
+  name: string;
+  contentType: string;
+  size: number;
+}
+
+export type CommerceShopRole = typeof CommerceShopRole[keyof typeof CommerceShopRole];
+
+
+export const CommerceShopRole = {
+  owner: 'owner',
+  manager: 'manager',
+  fulfillment: 'fulfillment',
+  marketer: 'marketer',
+  creator: 'creator',
+  buyer: 'buyer',
+} as const;
+
+export interface CommerceShop {
+  id: string;
+  ownerId: string;
+  ownerName: string;
+  name: string;
+  slug: string;
+  description: string;
+  category: string;
+  currency: string;
+  policies: string;
+  contact: string;
+  pickupDetails: string;
+  shippingMinor: number;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  isPublished: boolean;
+  logo?: CommerceMedia;
+  followerCount: number;
+  following: boolean;
+  marketingOptIn: boolean;
+  role: CommerceShopRole;
+  createdAt: string;
+}
+
+export interface CommerceShopInput {
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  name: string;
+  /**
+     * @minLength 3
+     * @maxLength 60
+     * @pattern ^[a-z0-9]+(?:-[a-z0-9]+)*$
+     */
+  slug: string;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currency: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  category: string;
+  /** @maxLength 3000 */
+  description?: string;
+  /** @maxLength 5000 */
+  policies?: string;
+  /** @maxLength 500 */
+  contact?: string;
+  /** @maxLength 1000 */
+  pickupDetails?: string;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  shippingMinor?: number;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  isPublished?: boolean;
+  /** @nullable */
+  logoMediaId?: string | null;
+}
+
+export interface CommerceFollowInput {
+  following: boolean;
+  marketingOptIn: boolean;
+}
+
+export interface CommerceShopPage {
+  items: CommerceShop[];
+  nextCursor?: string;
+}
+
+export type CommerceTeamInputRole = typeof CommerceTeamInputRole[keyof typeof CommerceTeamInputRole];
+
+
+export const CommerceTeamInputRole = {
+  manager: 'manager',
+  fulfillment: 'fulfillment',
+  marketer: 'marketer',
+  creator: 'creator',
+} as const;
+
+export interface CommerceTeamInput {
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  userId: string;
+  role: CommerceTeamInputRole;
+  approved: boolean;
+}
+
+export type CommerceTeamMemberRole = typeof CommerceTeamMemberRole[keyof typeof CommerceTeamMemberRole];
+
+
+export const CommerceTeamMemberRole = {
+  owner: 'owner',
+  manager: 'manager',
+  fulfillment: 'fulfillment',
+  marketer: 'marketer',
+  creator: 'creator',
+} as const;
+
+export interface CommerceTeamMember {
+  userId: string;
+  name: string;
+  username: string;
+  role: CommerceTeamMemberRole;
+}
+
+export interface CommerceVariantInput {
+  id?: string;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  label: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  sku: string;
+  /**
+     * @minimum 1
+     * @maximum 100000000
+     */
+  priceMinor: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  inventory: number;
+}
+
+export type CommerceVariant = CommerceVariantInput & {
+  id: string;
+};
+
+export interface CommerceProductInput {
+  shopId: string;
+  /**
+     * @minLength 1
+     * @maxLength 180
+     */
+  title: string;
+  /** @maxLength 10000 */
+  description?: string;
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  category: string;
+  /**
+     * @minimum 1
+     * @maximum 100000000
+     */
+  priceMinor: number;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  inventory: number;
+  isPublished: boolean;
+  /** @maxItems 8 */
+  mediaIds: string[];
+  /** @maxItems 50 */
+  variants: CommerceVariantInput[];
+}
+
+export interface CommerceReviewInput {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  content: string;
+}
+
+export interface CommerceReview {
+  userId: string;
+  name: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
+export interface CommerceProduct {
+  id: string;
+  shopId?: string;
+  shopName?: string;
+  sellerId: string;
+  sellerName: string;
+  title: string;
+  description: string;
+  category: string;
+  currency: string;
+  priceMinor: number;
+  inventory: number;
+  isPublished: boolean;
+  gallery: CommerceMedia[];
+  variants: CommerceVariant[];
+  saved: boolean;
+  reviewEligible: boolean;
+  reviews: CommerceReview[];
+  rating: number;
+  reviewCount: number;
+  createdAt: string;
+}
+
+export interface CommerceSavedInput {
+  saved: boolean;
+}
+
+export interface CommerceProductPage {
+  items: CommerceProduct[];
+  nextCursor?: string;
+}
+
+export type CommerceReportInputKind = typeof CommerceReportInputKind[keyof typeof CommerceReportInputKind];
+
+
+export const CommerceReportInputKind = {
+  shop: 'shop',
+  product: 'product',
+} as const;
+
+export interface CommerceReportInput {
+  kind: CommerceReportInputKind;
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  targetId: string;
+  /**
+     * @minLength 5
+     * @maxLength 2000
+     */
+  reason: string;
+}
+
+export interface CommerceCartLine {
+  productId: string;
+  variantId?: string;
+  /**
+     * @minimum 1
+     * @maximum 99
+     */
+  quantity: number;
+}
+
+export type CommerceCheckoutInputFulfillment = typeof CommerceCheckoutInputFulfillment[keyof typeof CommerceCheckoutInputFulfillment];
+
+
+export const CommerceCheckoutInputFulfillment = {
+  delivery: 'delivery',
+  pickup: 'pickup',
+} as const;
+
+export interface CommerceCheckoutInput {
+  /**
+     * @minItems 1
+     * @maxItems 30
+     */
+  items: CommerceCartLine[];
+  fulfillment: CommerceCheckoutInputFulfillment;
+  /** @maxLength 150 */
+  recipientName?: string;
+  /** @maxLength 80 */
+  phone?: string;
+  /** @maxLength 1000 */
+  address?: string;
+  /** @maxLength 2000 */
+  buyerNote?: string;
+  /** @maxLength 40 */
+  couponCode?: string;
+  /** @maxLength 100 */
+  campaignId?: string;
+  /**
+     * @minLength 16
+     * @maxLength 100
+     */
+  idempotencyKey?: string;
+  /**
+     * @minimum 0
+     * @maximum 2000000000
+     */
+  expectedTotalMinor?: number;
+}
+
+export interface CommerceQuotedLine {
+  productId: string;
+  variantId?: string;
+  variantLabel?: string;
+  sku?: string;
+  title: string;
+  unitPriceMinor: number;
+  quantity: number;
+  lineTotalMinor: number;
+}
+
+export type CommerceQuotePaymentMethod = typeof CommerceQuotePaymentMethod[keyof typeof CommerceQuotePaymentMethod];
+
+
+export const CommerceQuotePaymentMethod = {
+  manual: 'manual',
+} as const;
+
+export type CommerceQuoteFulfillment = typeof CommerceQuoteFulfillment[keyof typeof CommerceQuoteFulfillment];
+
+
+export const CommerceQuoteFulfillment = {
+  delivery: 'delivery',
+  pickup: 'pickup',
+} as const;
+
+export interface CommerceQuote {
+  shopId?: string;
+  sellerId: string;
+  currency: string;
+  items: CommerceQuotedLine[];
+  subtotalMinor: number;
+  discountMinor: number;
+  shippingMinor: number;
+  totalMinor: number;
+  paymentMethod: CommerceQuotePaymentMethod;
+  fulfillment: CommerceQuoteFulfillment;
+  couponId?: string;
+  campaignId?: string;
+}
+
+export interface CommerceHistory {
+  action: string;
+  actorName: string;
+  note: string;
+  createdAt: string;
+}
+
+export type CommerceOrderStatus = typeof CommerceOrderStatus[keyof typeof CommerceOrderStatus];
+
+
+export const CommerceOrderStatus = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  returned: 'returned',
+} as const;
+
+export type CommerceOrderPaymentStatus = typeof CommerceOrderPaymentStatus[keyof typeof CommerceOrderPaymentStatus];
+
+
+export const CommerceOrderPaymentStatus = {
+  awaiting_manual: 'awaiting_manual',
+  manual_confirmed: 'manual_confirmed',
+} as const;
+
+export type CommerceOrder = CommerceQuote & {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  sellerName: string;
+  status: CommerceOrderStatus;
+  paymentStatus: CommerceOrderPaymentStatus;
+  buyerNote: string;
+  recipientName: string;
+  phone: string;
+  address: string;
+  trackingNumber: string;
+  carrier: string;
+  requestType: string;
+  requestStatus: string;
+  requestReason: string;
+  createdAt: string;
+  history: CommerceHistory[];
+};
+
+export interface CommerceOrderPage {
+  items: CommerceOrder[];
+  nextCursor?: string;
+}
+
+export type CommerceOrderActionInputAction = typeof CommerceOrderActionInputAction[keyof typeof CommerceOrderActionInputAction];
+
+
+export const CommerceOrderActionInputAction = {
+  confirm: 'confirm',
+  prepare: 'prepare',
+  complete: 'complete',
+  manual_paid: 'manual_paid',
+  cancel: 'cancel',
+  request_cancel: 'request_cancel',
+  request_return: 'request_return',
+  approve_request: 'approve_request',
+  reject_request: 'reject_request',
+  tracking: 'tracking',
+} as const;
+
+export interface CommerceOrderActionInput {
+  action: CommerceOrderActionInputAction;
+  /** @maxLength 2000 */
+  reason?: string;
+  /** @maxLength 150 */
+  trackingNumber?: string;
+  /** @maxLength 150 */
+  carrier?: string;
+  paymentResolvedManually?: boolean;
+}
+
+export type CommerceCouponInputKind = typeof CommerceCouponInputKind[keyof typeof CommerceCouponInputKind];
+
+
+export const CommerceCouponInputKind = {
+  percent: 'percent',
+  fixed: 'fixed',
+} as const;
+
+export interface CommerceCouponInput {
+  /**
+     * @minLength 3
+     * @maxLength 40
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  code: string;
+  kind: CommerceCouponInputKind;
+  /**
+     * @minimum 1
+     * @maximum 100000000
+     */
+  value: number;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  minSpendMinor: number;
+  /**
+     * @minimum 1
+     * @maximum 1000000
+     */
+  maxRedemptions: number;
+  /**
+     * @minimum 1
+     * @maximum 1000
+     */
+  perBuyerLimit: number;
+  expiresAt: string;
+  /** @maxItems 100 */
+  productIds?: string[];
+}
+
+export type CommerceCoupon = CommerceCouponInput & {
+  id: string;
+  shopId: string;
+  currency: string;
+  active: boolean;
+  redemptions: number;
+};
+
+export interface CommerceCouponStateInput {
+  active: boolean;
+}
+
+export interface CommerceCampaignInput {
+  /**
+     * @minLength 1
+     * @maxLength 150
+     */
+  name: string;
+  productId?: string;
+  creatorId?: string;
+  couponId?: string;
+}
+
+export interface CommerceCampaign {
+  id: string;
+  shopId: string;
+  name: string;
+  productId?: string;
+  creatorId?: string;
+  creatorName?: string;
+  couponCode?: string;
+  active: boolean;
+  linkPath: string;
+  clicks?: number;
+  carts?: number;
+  orders?: number;
+}
+
+export interface CommerceCurrencyMetric {
+  currency: string;
+  grossOrderValueMinor: number;
+  completedValueMinor: number;
+  manualConfirmedValueMinor: number;
+  processorPaidValueMinor: number;
+  orderCount: number;
+}
+
+export interface CommerceProductMetric {
+  productId: string;
+  title: string;
+  units: number;
+  currency: string;
+  orderValueMinor: number;
+}
+
+export interface CommerceDashboard {
+  from: string;
+  to: string;
+  productCount: number;
+  lowStockCount: number;
+  followerCount: number;
+  pendingOrders: number;
+  views: number;
+  clicks: number;
+  carts: number;
+  conversions: number;
+  currencies: CommerceCurrencyMetric[];
+  topProducts: CommerceProductMetric[];
+  campaigns: CommerceCampaign[];
+}
+
+export interface CommerceCustomerInput {
+  /** @maxLength 5000 */
+  notes: string;
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 50
+     */
+  labels: string[];
+}
+
+export interface CommerceCustomer {
+  userId: string;
+  name: string;
+  username: string;
+  orderCount: number;
+  notes: string;
+  labels: string[];
+  marketingOptIn: boolean;
+}
+
+export interface CommerceCustomerPage {
+  items: CommerceCustomer[];
+  nextCursor?: string;
+}
+
+export interface CommerceContentInput {
+  /** @maxItems 5 */
+  productIds: string[];
+}
+
+export type CommerceEventInputKind = typeof CommerceEventInputKind[keyof typeof CommerceEventInputKind];
+
+
+export const CommerceEventInputKind = {
+  view: 'view',
+  product_click: 'product_click',
+  add_to_cart: 'add_to_cart',
+  campaign_click: 'campaign_click',
+} as const;
+
+export interface CommerceEventInput {
+  shopId: string;
+  productId?: string;
+  campaignId?: string;
+  kind: CommerceEventInputKind;
+}
+
+export type CommerceListShopsParams = {
+scope?: CommerceListShopsScope;
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @maxLength 100
+ */
+cursor?: string;
+};
+
+export type CommerceListShopsScope = typeof CommerceListShopsScope[keyof typeof CommerceListShopsScope];
+
+
+export const CommerceListShopsScope = {
+  discover: 'discover',
+  mine: 'mine',
+  following: 'following',
+} as const;
+
+export type CommerceListProductsParams = {
+shopId?: string;
+scope?: CommerceListProductsScope;
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @maxLength 80
+ */
+category?: string;
+/**
+ * @maxLength 3
+ */
+currency?: string;
+/**
+ * @minimum 0
+ */
+minPrice?: number;
+/**
+ * @minimum 0
+ */
+maxPrice?: number;
+sort?: CommerceListProductsSort;
+/**
+ * @maxLength 100
+ */
+cursor?: string;
+};
+
+export type CommerceListProductsScope = typeof CommerceListProductsScope[keyof typeof CommerceListProductsScope];
+
+
+export const CommerceListProductsScope = {
+  discover: 'discover',
+  mine: 'mine',
+  saved: 'saved',
+} as const;
+
+export type CommerceListProductsSort = typeof CommerceListProductsSort[keyof typeof CommerceListProductsSort];
+
+
+export const CommerceListProductsSort = {
+  newest: 'newest',
+  price_low: 'price_low',
+  price_high: 'price_high',
+} as const;
+
+export type CommerceListOrdersParams = {
+shopId?: string;
+scope?: CommerceListOrdersScope;
+status?: CommerceListOrdersStatus;
+/**
+ * @maxLength 100
+ */
+cursor?: string;
+};
+
+export type CommerceListOrdersScope = typeof CommerceListOrdersScope[keyof typeof CommerceListOrdersScope];
+
+
+export const CommerceListOrdersScope = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
+
+export type CommerceListOrdersStatus = typeof CommerceListOrdersStatus[keyof typeof CommerceListOrdersStatus];
+
+
+export const CommerceListOrdersStatus = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  completed: 'completed',
+  cancelled: 'cancelled',
+  returned: 'returned',
+} as const;
+
+export type CommerceGetDashboardParams = {
+from?: string;
+to?: string;
+};
+
+export type CommerceListCustomersParams = {
+/**
+ * @maxLength 100
+ */
+cursor?: string;
+};
+
 export type SearchUsersParams = {
 /**
  * @minLength 1

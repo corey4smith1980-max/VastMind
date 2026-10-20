@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { basePath } from "@/lib/base";
 import { errMessage, relTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ShoppableProducts } from "@/components/commerce/shoppable";
 import { activeCue, useCaptionsPref, useVideoPlayback, useWatchSession } from "./video-kit";
 
 const effectClass = { none: "", warm: "sepia-[.2] saturate-[1.15]", mono: "grayscale", soft: "brightness-[1.06] saturate-[.82]" };
@@ -145,6 +146,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
         {post.communityName ? <span className="rounded-full border border-white/30 bg-black/20 px-2.5 py-1">{post.communityName}</span> : null}
         {post.audioMedia ? <span className="inline-flex max-w-[210px] items-center gap-1 rounded-full border border-white/30 bg-black/20 px-2.5 py-1"><Music2 className="h-3 w-3 shrink-0" /><span className="truncate">Creator's sound · {post.audioMedia.name}</span></span> : <span className="rounded-full border border-white/30 bg-black/20 px-2.5 py-1">Original sound</span>}
       </div>
+      <ShoppableProducts post={post} tone="dark" className="mt-3" />
     </div>
     <div className="absolute bottom-7 right-3 z-[4] flex flex-col items-center gap-3.5 text-white sm:right-5">
       <button onClick={togglePlay} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur" aria-label={playing ? "Pause clip" : "Play clip"}>{playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}</button>

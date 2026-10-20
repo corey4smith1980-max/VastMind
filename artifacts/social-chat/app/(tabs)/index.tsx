@@ -6,6 +6,7 @@ import { useAppStore, initials } from '@/state/AppStore';
 import { useColors } from '@/hooks/useColors';
 import { AppHeader, Avatar, Eyebrow, PageFrame, StorageNotice } from '@/components/common';
 import { FeedPost } from '@/types';
+import { ContentProducts } from '@/components/commerce/ContentProducts';
 import { useRouter } from "expo-router";
 
 export default function FeedScreen() {
@@ -30,7 +31,7 @@ export default function FeedScreen() {
 }
 function PostCard({ post }: { post: FeedPost }) {
   const colors = useColors();
-  const { toggleLike, addComment } = useAppStore();
+  const { toggleLike, addComment, profile } = useAppStore();
   const comments = useListPostComments(post.id, { query: { queryKey: getListPostCommentsQueryKey(post.id), refetchInterval: 10000 } });
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,6 +39,7 @@ function PostCard({ post }: { post: FeedPost }) {
   return <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
     <View style={styles.row}><Avatar initials={post.initials} size={42} tone="blue" /><View style={{ flex: 1 }}><Text style={{ color: colors.foreground, fontWeight: '700' }}>{post.author}</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{post.subtitle} · {post.time}</Text></View></View>
     <Text style={{ color: colors.foreground, lineHeight: 22, marginVertical: 16 }}>{post.text}</Text>
+    <ContentProducts postId={post.id} isAuthor={!!profile && post.authorId === profile.id} tone="light" />
     <Pressable onPress={async () => { await toggleLike(post.id); }} style={styles.row}><Feather name="heart" size={19} color={post.liked ? colors.primary : colors.mutedForeground} /><Text style={{ color: colors.mutedForeground }}>{post.likes} · {comments.data?.length ?? 0} replies</Text></Pressable>
     {comments.error && <Pressable onPress={() => void comments.refetch()}><Text style={{ color: colors.destructive }}>Could not load replies. Retry</Text></Pressable>}
     {comments.data?.map(comment => <Text key={comment.id} style={{ color: colors.foreground, marginTop: 10 }}><Text style={{ fontWeight: '700' }}>{comment.author.name}: </Text>{comment.content}</Text>)}

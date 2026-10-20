@@ -27,6 +27,7 @@ export type Comment = {
 
 export type FeedPost = {
   id: string;
+  authorId?: string;
   author: string;
   initials: string;
   subtitle: string;

@@ -1,113 +1,107 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { Inbox, Loader2, MessageSquareReply, Percent, Plus, Store, Users, Zap } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { BarChart3, ExternalLink, Inbox, Megaphone, Package, Plus, Settings, ShoppingCart, Ticket, Users, UserSquare2 } from "lucide-react";
 import {
-  useGetBusinessOverview, getGetBusinessOverviewQueryKey, useListQuickReplies, getListQuickRepliesQueryKey,
-  useCreateQuickReply, useUpdateBusinessStatus,
+  useCommerceListShops, getCommerceListShopsQueryKey, useCommerceListProducts, getCommerceListProductsQueryKey,
+  type CommerceShop, type CommerceShopRole,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageHeader } from "@/components/page-header";
 import { PageScroll } from "@/components/page-scroll";
-import { EmptyState, ErrorState } from "@/components/states";
-import { useToast } from "@/hooks/use-toast";
-import { errMessage } from "@/lib/format";
-import { useInvalidate, usePollInterval } from "@/lib/realtime";
+import { ErrorState } from "@/components/states";
+import { CreateShopPanel, ShopForm } from "@/components/commerce/seller/shop-form";
+import { Catalog } from "@/components/commerce/seller/catalog";
+import { Dashboard, SellerOrders } from "@/components/commerce/seller/operations";
+import { Campaigns, Coupons, Customers } from "@/components/commerce/seller/marketing";
+import { Team } from "@/components/commerce/seller/team";
+import { InboxTools } from "@/components/commerce/seller/inbox-tools";
+import { Thumb, selectClass } from "@/components/commerce/bits";
+import { mediaSrc } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
 
-// ---------- Business tools: availability, inbox stats, quick replies ----------
+type Tab = "overview" | "catalog" | "orders" | "coupons" | "campaigns" | "customers" | "team" | "settings" | "inbox" | "new";
+const TABS: { key: Tab; label: string; icon: typeof BarChart3; roles: CommerceShopRole[] }[] = [
+  { key: "overview", label: "Dashboard", icon: BarChart3, roles: ["owner", "manager", "marketer"] },
+  { key: "orders", label: "Orders", icon: ShoppingCart, roles: ["owner", "manager", "fulfillment"] },
+  { key: "catalog", label: "Catalog", icon: Package, roles: ["owner", "manager"] },
+  { key: "coupons", label: "Coupons", icon: Ticket, roles: ["owner", "manager", "marketer"] },
+  { key: "campaigns", label: "Campaigns", icon: Megaphone, roles: ["owner", "manager", "marketer", "creator"] },
+  { key: "customers", label: "Customers", icon: UserSquare2, roles: ["owner", "manager", "marketer"] },
+  { key: "team", label: "Team", icon: Users, roles: ["owner"] },
+  { key: "settings", label: "Settings", icon: Settings, roles: ["owner", "manager"] },
+];
+
+function SettingsPanel({ shop, onSaved }: { shop: CommerceShop; onSaved: () => void }) {
+  const p = { shopId: shop.id };
+  const products = useCommerceListProducts(p, { query: { queryKey: getCommerceListProductsQueryKey(p) } });
+  if (products.isLoading) return <Skeleton className="h-96 rounded-[1.6rem]" />;
+  return <div className="rounded-[1.6rem] border bg-card p-5 sm:p-7"><ShopForm key={shop.id} shop={shop} currencyLocked={!!products.data?.items.length} onSaved={onSaved} /></div>;
+}
+
+function SellerCenter() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const params = { scope: "mine" as const };
+  const shops = useCommerceListShops(params, { query: { queryKey: getCommerceListShopsQueryKey(params) } });
+  const mine = (shops.data?.items ?? []).filter((s) => s.role !== "buyer");
+  const shopParam = sp.get("shop");
+  const shop = mine.find((s) => s.id === shopParam) ?? mine[0];
+  const tabs = shop ? TABS.filter((t) => t.roles.includes(shop.role)) : [];
+  const requested = (sp.get("tab") as Tab) || undefined;
+  const tab: Tab = requested === "inbox" || requested === "new" ? requested : tabs.find((t) => t.key === requested)?.key ?? tabs[0]?.key ?? "inbox";
+  const go = (q: { shop?: string; tab?: Tab }) => {
+    const u = new URLSearchParams();
+    const s = q.shop ?? shop?.id; if (s) u.set("shop", s);
+    if (q.tab) u.set("tab", q.tab);
+    router.replace(`/business?${u}`, { scroll: false });
+  };
+  useEffect(() => { if (shop && shopParam !== shop.id && requested !== "new") go({ tab }); /* keep URL shareable */ // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shop?.id]);
+
+  if (shops.isLoading) return <PageScroll className="max-w-6xl"><Skeleton className="h-40 rounded-[2rem]" /><div className="mt-4 grid gap-3 sm:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-[1.4rem]" />)}</div></PageScroll>;
+  if (shops.isError) return <PageScroll className="max-w-6xl"><ErrorState error={shops.error} onRetry={() => shops.refetch()} /></PageScroll>;
+
+  const creating = !shop || tab === "new";
+  return <PageScroll className="max-w-6xl">
+    <header className="rise relative overflow-hidden rounded-[2rem] bg-[hsl(var(--ink))] p-5 text-[hsl(224_35%_95%)] sm:p-7">
+      <div aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ background: "var(--brand-gradient)" }} />
+      <div className="flex flex-wrap items-center gap-4">
+        {shop && !creating ? <Thumb src={mediaSrc(shop.logo)} alt="" className="h-14 w-14 rounded-2xl ring-1 ring-white/15" /> : null}
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-[10px] uppercase tracking-[.24em] text-[hsl(var(--brand-cyan))]">Seller Center{shop && !creating ? ` · ${shop.role}` : ""}</p>
+          <h1 className="mt-1 truncate font-display text-3xl font-semibold sm:text-4xl" data-testid="text-seller-title">{creating ? "Open a new shop" : shop.name}</h1>
+          {shop && !creating ? <p className="text-xs text-white/60">{shop.isPublished ? "Live" : "Unpublished"} · {shop.currency} · {shop.followerCount} followers</p> : null}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {mine.length > 1 ? <select aria-label="Switch shop" className={cn(selectClass, "h-9 w-auto rounded-full border-white/20 bg-white/10 text-white")} value={shop?.id} onChange={(e) => go({ shop: e.target.value })} data-testid="select-shop">{mine.map((s) => <option key={s.id} value={s.id} className="text-foreground">{s.name}</option>)}</select> : null}
+          {shop && !creating ? <Button asChild size="sm" variant="outline" className="rounded-full border-white/25 bg-transparent text-white hover:bg-white/10"><Link href={`/shop?shop=${encodeURIComponent(shop.id)}`}><ExternalLink className="mr-1 h-3.5 w-3.5" />View storefront</Link></Button> : null}
+          {shop && !creating ? <Button size="sm" variant="ghost" className="rounded-full text-white/70 hover:bg-white/10 hover:text-white" onClick={() => go({ tab: "new" })} data-testid="button-new-shop"><Plus className="mr-1 h-3.5 w-3.5" />New shop</Button> : null}
+        </div>
+      </div>
+      <nav className="mt-5 flex gap-1 overflow-x-auto pb-0.5" aria-label="Seller Center sections">
+        {[...(creating ? [] : tabs), { key: "inbox" as Tab, label: "Inbox tools", icon: Inbox }].map((t) => { const on = tab === t.key; return <button key={t.key} onClick={() => go({ tab: t.key })} aria-current={on ? "page" : undefined} className={cn("relative flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-colors", on ? "bg-white/12 text-white" : "text-white/55 hover:text-white")} data-testid={`tab-${t.key}`}><t.icon className="h-4 w-4" />{t.label}{on ? <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full" style={{ background: "var(--brand-gradient)" }} /> : null}</button>; })}
+        {creating && shop ? <button onClick={() => go({ tab: undefined })} className="shrink-0 rounded-full px-3.5 py-2 text-sm text-white/55 hover:text-white">Back to {shop.name}</button> : null}
+      </nav>
+    </header>
+
+    <div key={`${shop?.id}-${tab}`} className="rise mt-6">
+      {tab === "inbox" ? <InboxTools />
+        : creating ? <CreateShopPanel onCreated={(s) => router.replace(`/business?shop=${encodeURIComponent(s.id)}&tab=catalog`)} />
+        : tab === "overview" ? <Dashboard shop={shop} />
+        : tab === "orders" ? <SellerOrders shop={shop} />
+        : tab === "catalog" ? <Catalog shop={shop} />
+        : tab === "coupons" ? <Coupons shop={shop} />
+        : tab === "campaigns" ? <Campaigns shop={shop} />
+        : tab === "customers" ? <Customers shop={shop} />
+        : tab === "team" ? <Team shop={shop} />
+        : tab === "settings" ? <SettingsPanel shop={shop} onSaved={() => shops.refetch()} />
+        : null}
+    </div>
+  </PageScroll>;
+}
+
 export default function BusinessPage() {
-  const { toast } = useToast();
-  const invalidate = useInvalidate();
-  const poll = usePollInterval(30_000);
-  const overview = useGetBusinessOverview({ query: { queryKey: getGetBusinessOverviewQueryKey(), refetchInterval: poll } });
-  const replies = useListQuickReplies({ query: { queryKey: getListQuickRepliesQueryKey() } });
-  const [label, setLabel] = useState("");
-  const [content, setContent] = useState("");
-
-  const status = useUpdateBusinessStatus({
-    mutation: {
-      onSuccess: (_d, v) => { invalidate("/api/business"); toast({ title: v.data.isOpen ? "You're open for messages" : "Marked as closed" }); },
-      onError: (e) => toast({ title: "Couldn't update", description: errMessage(e), variant: "destructive" }),
-    },
-  });
-  const createReply = useCreateQuickReply({
-    mutation: {
-      onSuccess: () => { setLabel(""); setContent(""); invalidate("/api/business/quick-replies"); toast({ title: "Quick reply saved", description: "Use it from the bolt button in any chat." }); },
-      onError: (e) => toast({ title: "Couldn't save", description: errMessage(e), variant: "destructive" }),
-    },
-  });
-
-  const o = overview.data;
-  const isOpen = status.isPending ? status.variables?.data.isOpen ?? o?.isOpen : o?.isOpen;
-  const stats = o ? [
-    { label: "Unread customer chats", value: String(o.unreadCustomerChats), icon: Inbox, tone: "bg-primary text-primary-foreground" },
-    { label: "Customers", value: String(o.totalCustomers), icon: Users, tone: "bg-card" },
-    { label: "Response rate", value: `${Math.round(o.responseRate * (o.responseRate <= 1 ? 1000 : 10)) / 10}%`, icon: Percent, tone: "bg-accent/40" },
-  ] : [];
-
-  return (
-    <PageScroll className="max-w-4xl">
-      <PageHeader kicker="Shopfront" title="Business" sub="Let customers know when you're around, keep an eye on your inbox, and answer the usual questions in one tap." />
-
-      {/* Availability */}
-      <section className={cn("rise mt-6 flex items-center gap-4 rounded-[1.8rem] p-5 transition-colors duration-500 sm:p-6", isOpen ? "bg-[hsl(var(--ink))] text-[#f4ece0]" : "border bg-card")}>
-        <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl", isOpen ? "bg-online/20 text-online" : "bg-muted text-muted-foreground")}><Store className="h-6 w-6" /></span>
-        <div className="flex-1">
-          {overview.isLoading ? <Skeleton className="h-6 w-40" /> : <p className="font-display text-2xl font-semibold">{isOpen ? "Open for messages" : "Closed right now"}</p>}
-          <p className={cn("text-sm", isOpen ? "text-[#f4ece0]/70" : "text-muted-foreground")}>{isOpen ? "Customers see you're available." : "Customers can still message — they'll know you'll reply later."}</p>
-        </div>
-        <Switch checked={!!isOpen} disabled={!o || status.isPending} onCheckedChange={(v) => status.mutate({ data: { isOpen: v } })} aria-label="Open for messages" data-testid="switch-business-open" />
-      </section>
-
-      {/* Stats */}
-      {overview.isError ? <ErrorState error={overview.error} onRetry={() => overview.refetch()} /> : (
-        <section className="mt-4 grid gap-3 sm:grid-cols-[1.3fr_1fr_1fr]">
-          {overview.isLoading ? [0, 1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-[1.6rem]" />) : stats.map((s, i) => (
-            <div key={s.label} className={cn("rise rounded-[1.6rem] border p-5", s.tone)} style={{ animationDelay: `${i * 60}ms` }} data-testid={`stat-${i}`}>
-              <s.icon className="h-5 w-5 opacity-80" />
-              <p className="font-display mt-4 text-4xl font-bold tabular-nums">{s.value}</p>
-              <p className="mt-1 text-sm opacity-80">{s.label}</p>
-            </div>
-          ))}
-        </section>
-      )}
-      {o && o.unreadCustomerChats > 0 ? (
-        <Button asChild variant="outline" className="mt-3 rounded-full"><Link href="/chats"><MessageSquareReply className="mr-1 h-4 w-4" /> Answer customers</Link></Button>
-      ) : null}
-
-      {/* Quick replies */}
-      <section className="mt-10 grid gap-6 md:grid-cols-[1fr_1.2fr]">
-        <div className="rounded-[1.6rem] border bg-card p-5">
-          <h2 className="font-display flex items-center gap-2 text-xl font-semibold"><Zap className="h-5 w-5 text-primary" /> New quick reply</h2>
-          <div className="mt-4 space-y-3">
-            <div><Label htmlFor="qr-label">Label</Label><Input id="qr-label" value={label} maxLength={80} placeholder="Opening hours" onChange={(e) => setLabel(e.target.value)} data-testid="input-reply-label" /></div>
-            <div><Label htmlFor="qr-content">Message</Label><Textarea id="qr-content" value={content} maxLength={2000} rows={4} placeholder="We're open Tue–Sat, 8 till 4." onChange={(e) => setContent(e.target.value)} data-testid="input-reply-content" /></div>
-            <Button className="w-full rounded-full" disabled={!label.trim() || !content.trim() || createReply.isPending} onClick={() => createReply.mutate({ data: { label: label.trim(), content: content.trim() } })} data-testid="button-save-reply">
-              {createReply.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Save reply
-            </Button>
-          </div>
-        </div>
-        <div>
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">Saved replies · usable in every chat</h2>
-          <div className="mt-3 space-y-2">
-            {replies.isLoading ? [0, 1].map((i) => <Skeleton key={i} className="h-16 rounded-2xl" />) : null}
-            {replies.isError ? <ErrorState error={replies.error} onRetry={() => replies.refetch()} /> : null}
-            {replies.data?.length === 0 ? <EmptyState icon={Zap} title="No saved replies" body="Save the answers you type over and over." className="py-8" /> : null}
-            {replies.data?.map((r) => (
-              <div key={r.id} className="rise rounded-2xl border bg-card p-4" data-testid={`card-reply-${r.id}`}>
-                <p className="font-semibold">/{r.label}</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{r.content}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </PageScroll>
-  );
+  return <Suspense fallback={<PageScroll className="max-w-6xl"><Skeleton className="h-40 rounded-[2rem]" /></PageScroll>}><SellerCenter /></Suspense>;
 }

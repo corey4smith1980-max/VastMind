@@ -1,0 +1,609 @@
+openapi: 3.1.0
+info: { title: Commerce, version: 1.0.0 }
+paths:
+  /commerce/shops:
+    get:
+      operationId: commerceListShops
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [discover, mine, following] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200": { description: Shops, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShopPage" } } } }
+    post:
+      operationId: commerceCreateShop
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShopInput" } } } }
+      responses:
+        "201": { description: Shop created, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShop" } } } }
+  /commerce/shops/{shopId}:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceGetShop
+      responses:
+        "200": { description: Storefront, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShop" } } } }
+    patch:
+      operationId: commerceUpdateShop
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShopInput" } } } }
+      responses:
+        "200": { description: Updated storefront, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShop" } } } }
+  /commerce/shops/{shopId}/follow:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: commerceFollowShop
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceFollowInput" } } } }
+      responses:
+        "200": { description: Following preferences, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceShop" } } } }
+  /commerce/shops/{shopId}/team:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceListTeam
+      responses:
+        "200": { description: Approved business team and creators, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceTeamMember" } } } } }
+    put:
+      operationId: commerceUpdateTeam
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceTeamInput" } } } }
+      responses:
+        "200": { description: Updated team, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceTeamMember" } } } } }
+  /commerce/products:
+    get:
+      operationId: commerceListProducts
+      parameters:
+        - { name: shopId, in: query, schema: { type: string } }
+        - { name: scope, in: query, schema: { type: string, enum: [discover, mine, saved] } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: category, in: query, schema: { type: string, maxLength: 80 } }
+        - { name: currency, in: query, schema: { type: string, maxLength: 3 } }
+        - { name: minPrice, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: maxPrice, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, price_low, price_high] } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200": { description: Paginated catalog, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProductPage" } } } }
+    post:
+      operationId: commerceCreateProduct
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProductInput" } } } }
+      responses:
+        "201": { description: Product created, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProduct" } } } }
+  /commerce/products/{productId}:
+    parameters:
+      - { name: productId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceGetProduct
+      responses:
+        "200": { description: Product details and purchase-eligible reviews, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProduct" } } } }
+    patch:
+      operationId: commerceUpdateProduct
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProductInput" } } } }
+      responses:
+        "200": { description: Updated product, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProduct" } } } }
+  /commerce/products/{productId}/save:
+    parameters:
+      - { name: productId, in: path, required: true, schema: { type: string } }
+    put:
+      operationId: commerceSaveProduct
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceSavedInput" } } } }
+      responses:
+        "200": { description: Updated saved item, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProduct" } } } }
+  /commerce/products/{productId}/reviews:
+    parameters:
+      - { name: productId, in: path, required: true, schema: { type: string } }
+    post:
+      operationId: commerceReviewProduct
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceReviewInput" } } } }
+      responses:
+        "200": { description: Updated review, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceProduct" } } } }
+  /commerce/reports:
+    post:
+      operationId: commerceReport
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceReportInput" } } } }
+      responses:
+        "201": { description: Report recorded, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceAcknowledgement" } } } }
+  /commerce/quote:
+    post:
+      operationId: commerceQuote
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCheckoutInput" } } } }
+      responses:
+        "200": { description: Authoritative price quote, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceQuote" } } } }
+  /commerce/orders:
+    get:
+      operationId: commerceListOrders
+      parameters:
+        - { name: shopId, in: query, schema: { type: string } }
+        - { name: scope, in: query, schema: { type: string, enum: [buyer, seller] } }
+        - { name: status, in: query, schema: { type: string, enum: [pending, confirmed, preparing, completed, cancelled, returned] } }
+        - { name: cursor, in: query, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200": { description: Orders, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceOrderPage" } } } }
+    post:
+      operationId: commercePlaceOrder
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCheckoutInput" } } } }
+      responses:
+        "201": { description: Inventory-reserved manual-payment order, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceOrder" } } } }
+  /commerce/orders/{orderId}:
+    parameters:
+      - { name: orderId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: commerceUpdateOrder
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceOrderActionInput" } } } }
+      responses:
+        "200": { description: Updated order and history, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceOrder" } } } }
+  /commerce/shops/{shopId}/coupons:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceListCoupons
+      responses:
+        "200": { description: Coupons, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceCoupon" } } } } }
+    post:
+      operationId: commerceCreateCoupon
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCouponInput" } } } }
+      responses:
+        "201": { description: Coupon created, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCoupon" } } } }
+  /commerce/coupons/{couponId}:
+    parameters:
+      - { name: couponId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: commerceUpdateCoupon
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCouponStateInput" } } } }
+      responses:
+        "200": { description: Coupon state, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCoupon" } } } }
+  /commerce/shops/{shopId}/campaigns:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceListCampaigns
+      responses:
+        "200": { description: First-party campaigns, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceCampaign" } } } } }
+    post:
+      operationId: commerceCreateCampaign
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCampaignInput" } } } }
+      responses:
+        "201": { description: Campaign created, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCampaign" } } } }
+  /commerce/campaigns/{campaignId}:
+    parameters:
+      - { name: campaignId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceGetCampaign
+      responses:
+        "200": { description: Active campaign attribution, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCampaign" } } } }
+    patch:
+      operationId: commerceUpdateCampaign
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCouponStateInput" } } } }
+      responses:
+        "200": { description: Campaign state, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCampaign" } } } }
+  /commerce/shops/{shopId}/dashboard:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceGetDashboard
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Currency-separated real business metrics, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceDashboard" } } } }
+  /commerce/shops/{shopId}/customers:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceListCustomers
+      parameters:
+        - { name: cursor, in: query, schema: { type: string, maxLength: 100 } }
+      responses:
+        "200": { description: Order-derived customers and private notes, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCustomerPage" } } } }
+  /commerce/shops/{shopId}/customers/{userId}:
+    parameters:
+      - { name: shopId, in: path, required: true, schema: { type: string } }
+      - { name: userId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: commerceUpdateCustomer
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceCustomerInput" } } } }
+      responses:
+        "200": { description: Private CRM notes saved, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceAcknowledgement" } } } }
+  /commerce/content/{postId}/products:
+    parameters:
+      - { name: postId, in: path, required: true, schema: { type: string } }
+    get:
+      operationId: commerceListContentProducts
+      responses:
+        "200": { description: Authorized shoppable content, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceProduct" } } } } }
+    put:
+      operationId: commerceTagContent
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceContentInput" } } } }
+      responses:
+        "200": { description: Product tags, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/CommerceProduct" } } } } }
+  /commerce/events:
+    post:
+      operationId: commerceRecordEvent
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceEventInput" } } } }
+      responses:
+        "200": { description: Deduplicated first-party event, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceAcknowledgement" } } } }
+components:
+  schemas:
+    CommerceAcknowledgement:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+    CommerceMedia:
+      type: object
+      required: [id, url, name, contentType, size]
+      properties:
+        id: { type: string }
+        url: { type: string }
+        name: { type: string }
+        contentType: { type: string }
+        size: { type: number }
+    CommerceShop:
+      type: object
+      required: [id, ownerId, ownerName, name, slug, description, category, currency, policies, contact, pickupDetails, shippingMinor, deliveryEnabled, pickupEnabled, isPublished, followerCount, following, marketingOptIn, role, createdAt]
+      properties:
+        id: { type: string }
+        ownerId: { type: string }
+        ownerName: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        category: { type: string }
+        currency: { type: string }
+        policies: { type: string }
+        contact: { type: string }
+        pickupDetails: { type: string }
+        shippingMinor: { type: integer }
+        deliveryEnabled: { type: boolean }
+        pickupEnabled: { type: boolean }
+        isPublished: { type: boolean }
+        logo: { $ref: "#/components/schemas/CommerceMedia" }
+        followerCount: { type: integer }
+        following: { type: boolean }
+        marketingOptIn: { type: boolean }
+        role: { type: string, enum: [owner, manager, fulfillment, marketer, creator, buyer] }
+        createdAt: { type: string }
+    CommerceShopInput:
+      type: object
+      required: [name, slug, currency, category, deliveryEnabled, pickupEnabled]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        slug: { type: string, minLength: 3, maxLength: 60, pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: string, maxLength: 3000 }
+        policies: { type: string, maxLength: 5000 }
+        contact: { type: string, maxLength: 500 }
+        pickupDetails: { type: string, maxLength: 1000 }
+        shippingMinor: { type: integer, minimum: 0, maximum: 100000000 }
+        deliveryEnabled: { type: boolean }
+        pickupEnabled: { type: boolean }
+        isPublished: { type: boolean }
+        logoMediaId: { type: [string, "null"] }
+    CommerceFollowInput:
+      type: object
+      required: [following, marketingOptIn]
+      properties:
+        following: { type: boolean }
+        marketingOptIn: { type: boolean }
+    CommerceShopPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/CommerceShop" } }
+        nextCursor: { type: string }
+    CommerceTeamInput:
+      type: object
+      required: [userId, role, approved]
+      properties:
+        userId: { type: string, minLength: 1, maxLength: 150 }
+        role: { type: string, enum: [manager, fulfillment, marketer, creator] }
+        approved: { type: boolean }
+    CommerceTeamMember:
+      type: object
+      required: [userId, name, username, role]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        username: { type: string }
+        role: { type: string, enum: [owner, manager, fulfillment, marketer, creator] }
+    CommerceVariantInput:
+      type: object
+      required: [label, sku, priceMinor, inventory]
+      properties:
+        id: { type: string }
+        label: { type: string, minLength: 1, maxLength: 100 }
+        sku: { type: string, minLength: 1, maxLength: 80 }
+        priceMinor: { type: integer, minimum: 1, maximum: 100000000 }
+        inventory: { type: integer, minimum: 0, maximum: 1000000 }
+    CommerceVariant:
+      allOf:
+        - { $ref: "#/components/schemas/CommerceVariantInput" }
+        - { type: object, required: [id], properties: { id: { type: string } } }
+    CommerceProductInput:
+      type: object
+      required: [shopId, title, category, priceMinor, inventory, isPublished, mediaIds, variants]
+      properties:
+        shopId: { type: string }
+        title: { type: string, minLength: 1, maxLength: 180 }
+        description: { type: string, maxLength: 10000 }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        priceMinor: { type: integer, minimum: 1, maximum: 100000000 }
+        inventory: { type: integer, minimum: 0, maximum: 1000000 }
+        isPublished: { type: boolean }
+        mediaIds: { type: array, maxItems: 8, uniqueItems: true, items: { type: string } }
+        variants: { type: array, maxItems: 50, items: { $ref: "#/components/schemas/CommerceVariantInput" } }
+    CommerceReviewInput:
+      type: object
+      required: [rating, content]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        content: { type: string, minLength: 1, maxLength: 2000 }
+    CommerceReview:
+      type: object
+      required: [userId, name, rating, content, createdAt]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        rating: { type: integer }
+        content: { type: string }
+        createdAt: { type: string }
+    CommerceProduct:
+      type: object
+      required: [id, sellerId, sellerName, title, description, category, currency, priceMinor, inventory, isPublished, gallery, variants, saved, reviewEligible, reviews, rating, reviewCount, createdAt]
+      properties:
+        id: { type: string }
+        shopId: { type: string }
+        shopName: { type: string }
+        sellerId: { type: string }
+        sellerName: { type: string }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        currency: { type: string }
+        priceMinor: { type: integer }
+        inventory: { type: integer }
+        isPublished: { type: boolean }
+        gallery: { type: array, items: { $ref: "#/components/schemas/CommerceMedia" } }
+        variants: { type: array, items: { $ref: "#/components/schemas/CommerceVariant" } }
+        saved: { type: boolean }
+        reviewEligible: { type: boolean }
+        reviews: { type: array, items: { $ref: "#/components/schemas/CommerceReview" } }
+        rating: { type: number }
+        reviewCount: { type: integer }
+        createdAt: { type: string }
+    CommerceSavedInput:
+      type: object
+      required: [saved]
+      properties:
+        saved: { type: boolean }
+    CommerceProductPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/CommerceProduct" } }
+        nextCursor: { type: string }
+    CommerceReportInput:
+      type: object
+      required: [kind, targetId, reason]
+      properties:
+        kind: { type: string, enum: [shop, product] }
+        targetId: { type: string, minLength: 1, maxLength: 100 }
+        reason: { type: string, minLength: 5, maxLength: 2000 }
+    CommerceCartLine:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: string }
+        variantId: { type: string }
+        quantity: { type: integer, minimum: 1, maximum: 99 }
+    CommerceCheckoutInput:
+      type: object
+      required: [items, fulfillment]
+      properties:
+        items: { type: array, minItems: 1, maxItems: 30, items: { $ref: "#/components/schemas/CommerceCartLine" } }
+        fulfillment: { type: string, enum: [delivery, pickup] }
+        recipientName: { type: string, maxLength: 150 }
+        phone: { type: string, maxLength: 80 }
+        address: { type: string, maxLength: 1000 }
+        buyerNote: { type: string, maxLength: 2000 }
+        couponCode: { type: string, maxLength: 40 }
+        campaignId: { type: string, maxLength: 100 }
+        idempotencyKey: { type: string, minLength: 16, maxLength: 100 }
+        expectedTotalMinor: { type: integer, minimum: 0, maximum: 2000000000 }
+    CommerceQuotedLine:
+      type: object
+      required: [productId, title, unitPriceMinor, quantity, lineTotalMinor]
+      properties:
+        productId: { type: string }
+        variantId: { type: string }
+        variantLabel: { type: string }
+        sku: { type: string }
+        title: { type: string }
+        unitPriceMinor: { type: integer }
+        quantity: { type: integer }
+        lineTotalMinor: { type: integer }
+    CommerceQuote:
+      type: object
+      required: [sellerId, currency, items, subtotalMinor, discountMinor, shippingMinor, totalMinor, paymentMethod, fulfillment]
+      properties:
+        shopId: { type: string }
+        sellerId: { type: string }
+        currency: { type: string }
+        items: { type: array, items: { $ref: "#/components/schemas/CommerceQuotedLine" } }
+        subtotalMinor: { type: integer }
+        discountMinor: { type: integer }
+        shippingMinor: { type: integer }
+        totalMinor: { type: integer }
+        paymentMethod: { type: string, enum: [manual] }
+        fulfillment: { type: string, enum: [delivery, pickup] }
+        couponId: { type: string }
+        campaignId: { type: string }
+    CommerceHistory:
+      type: object
+      required: [action, actorName, note, createdAt]
+      properties:
+        action: { type: string }
+        actorName: { type: string }
+        note: { type: string }
+        createdAt: { type: string }
+    CommerceOrder:
+      allOf:
+        - { $ref: "#/components/schemas/CommerceQuote" }
+        - type: object
+          required: [id, buyerId, buyerName, sellerName, status, paymentStatus, buyerNote, recipientName, phone, address, trackingNumber, carrier, requestType, requestStatus, requestReason, createdAt, history]
+          properties:
+            id: { type: string }
+            buyerId: { type: string }
+            buyerName: { type: string }
+            sellerName: { type: string }
+            status: { type: string, enum: [pending, confirmed, preparing, completed, cancelled, returned] }
+            paymentStatus: { type: string, enum: [awaiting_manual, manual_confirmed] }
+            buyerNote: { type: string }
+            recipientName: { type: string }
+            phone: { type: string }
+            address: { type: string }
+            trackingNumber: { type: string }
+            carrier: { type: string }
+            requestType: { type: string }
+            requestStatus: { type: string }
+            requestReason: { type: string }
+            createdAt: { type: string }
+            history: { type: array, items: { $ref: "#/components/schemas/CommerceHistory" } }
+    CommerceOrderPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/CommerceOrder" } }
+        nextCursor: { type: string }
+    CommerceOrderActionInput:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [confirm, prepare, complete, manual_paid, cancel, request_cancel, request_return, approve_request, reject_request, tracking] }
+        reason: { type: string, maxLength: 2000 }
+        trackingNumber: { type: string, maxLength: 150 }
+        carrier: { type: string, maxLength: 150 }
+        paymentResolvedManually: { type: boolean }
+    CommerceCouponInput:
+      type: object
+      required: [code, kind, value, minSpendMinor, maxRedemptions, perBuyerLimit, expiresAt]
+      properties:
+        code: { type: string, minLength: 3, maxLength: 40, pattern: "^[A-Za-z0-9_-]+$" }
+        kind: { type: string, enum: [percent, fixed] }
+        value: { type: integer, minimum: 1, maximum: 100000000 }
+        minSpendMinor: { type: integer, minimum: 0, maximum: 100000000 }
+        maxRedemptions: { type: integer, minimum: 1, maximum: 1000000 }
+        perBuyerLimit: { type: integer, minimum: 1, maximum: 1000 }
+        expiresAt: { type: string, format: date-time }
+        productIds: { type: array, maxItems: 100, items: { type: string } }
+    CommerceCoupon:
+      allOf:
+        - { $ref: "#/components/schemas/CommerceCouponInput" }
+        - type: object
+          required: [id, shopId, currency, active, redemptions]
+          properties:
+            id: { type: string }
+            shopId: { type: string }
+            currency: { type: string }
+            active: { type: boolean }
+            redemptions: { type: integer }
+    CommerceCouponStateInput:
+      type: object
+      required: [active]
+      properties:
+        active: { type: boolean }
+    CommerceCampaignInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 150 }
+        productId: { type: string }
+        creatorId: { type: string }
+        couponId: { type: string }
+    CommerceCampaign:
+      type: object
+      required: [id, shopId, name, active, linkPath]
+      properties:
+        id: { type: string }
+        shopId: { type: string }
+        name: { type: string }
+        productId: { type: string }
+        creatorId: { type: string }
+        creatorName: { type: string }
+        couponCode: { type: string }
+        active: { type: boolean }
+        linkPath: { type: string }
+        clicks: { type: integer }
+        carts: { type: integer }
+        orders: { type: integer }
+    CommerceCurrencyMetric:
+      type: object
+      required: [currency, grossOrderValueMinor, completedValueMinor, manualConfirmedValueMinor, processorPaidValueMinor, orderCount]
+      properties:
+        currency: { type: string }
+        grossOrderValueMinor: { type: integer }
+        completedValueMinor: { type: integer }
+        manualConfirmedValueMinor: { type: integer }
+        processorPaidValueMinor: { type: integer }
+        orderCount: { type: integer }
+    CommerceProductMetric:
+      type: object
+      required: [productId, title, units, currency, orderValueMinor]
+      properties:
+        productId: { type: string }
+        title: { type: string }
+        units: { type: integer }
+        currency: { type: string }
+        orderValueMinor: { type: integer }
+    CommerceDashboard:
+      type: object
+      required: [from, to, productCount, lowStockCount, followerCount, pendingOrders, views, clicks, carts, conversions, currencies, topProducts, campaigns]
+      properties:
+        from: { type: string }
+        to: { type: string }
+        productCount: { type: integer }
+        lowStockCount: { type: integer }
+        followerCount: { type: integer }
+        pendingOrders: { type: integer }
+        views: { type: integer }
+        clicks: { type: integer }
+        carts: { type: integer }
+        conversions: { type: integer }
+        currencies: { type: array, items: { $ref: "#/components/schemas/CommerceCurrencyMetric" } }
+        topProducts: { type: array, items: { $ref: "#/components/schemas/CommerceProductMetric" } }
+        campaigns: { type: array, items: { $ref: "#/components/schemas/CommerceCampaign" } }
+    CommerceCustomerInput:
+      type: object
+      required: [notes, labels]
+      properties:
+        notes: { type: string, maxLength: 5000 }
+        labels: { type: array, maxItems: 10, items: { type: string, minLength: 1, maxLength: 50 } }
+    CommerceCustomer:
+      type: object
+      required: [userId, name, username, orderCount, notes, labels, marketingOptIn]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        username: { type: string }
+        orderCount: { type: integer }
+        notes: { type: string }
+        labels: { type: array, items: { type: string } }
+        marketingOptIn: { type: boolean }
+    CommerceCustomerPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/CommerceCustomer" } }
+        nextCursor: { type: string }
+    CommerceContentInput:
+      type: object
+      required: [productIds]
+      properties:
+        productIds: { type: array, maxItems: 5, uniqueItems: true, items: { type: string } }
+    CommerceEventInput:
+      type: object
+      required: [shopId, kind]
+      properties:
+        shopId: { type: string }
+        productId: { type: string }
+        campaignId: { type: string }
+        kind: { type: string, enum: [view, product_click, add_to_cart, campaign_click] }

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
+import { ShoppableProducts } from "@/components/commerce/shoppable";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage, relTime } from "@/lib/format";
 import { useInvalidate } from "@/lib/realtime";
@@ -100,6 +101,8 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           {post.audioMedia ? <audio src={post.audioMedia.url} controls preload="none" className="w-full" aria-label={`Audio from ${post.audioMedia.name}`} /> : null}
         </div>
       ) : null}
+
+      <ShoppableProducts post={post} className="mt-3" />
 
       {post.pollOptions.length ? (
         <div className="mt-4 space-y-2" role="group" aria-label="Poll">

@@ -68,8 +68,21 @@ export const quickReplies = pgTable("quick_replies",{id:id(),userId:uid("user_id
 // Product listings, orders, and immutable line-item snapshots power VastMind's
 // in-app shop. Payment is intentionally recorded as manual until a processor
 // is connected; these tables never store card or bank credentials.
+export const shopStores = pgTable("shop_stores", {
+  id: id(), ownerId: uid("owner_id").unique(), name: text("name").notNull(), slug: text("slug").notNull().unique(),
+  description: text("description").notNull().default(""), category: text("category").notNull().default("General"),
+  currency: text("currency").notNull().default("USD"), policies: text("policies").notNull().default(""),
+  contact: text("contact").notNull().default(""), pickupDetails: text("pickup_details").notNull().default(""),
+  shippingMinor: integer("shipping_minor").notNull().default(0),
+  deliveryEnabled: boolean("delivery_enabled").notNull().default(true), pickupEnabled: boolean("pickup_enabled").notNull().default(false),
+  logoMediaId: text("logo_media_id").references(() => mediaUploads.id, { onDelete: "set null" }),
+  isPublished: boolean("is_published").notNull().default(true), createdAt: created(),
+}, t => [index("shop_stores_published").on(t.isPublished, t.createdAt)]);
+export const insertShopStoreSchema = createInsertSchema(shopStores).omit({ id: true, createdAt: true });
+export type ShopStore = typeof shopStores.$inferSelect;
 export const shopProducts = pgTable("shop_products", {
   id: id(), sellerId: uid("seller_id"), title: text("title").notNull(),
+  shopId: text("shop_id").references(() => shopStores.id),
   description: text("description").notNull().default(""), category: text("category").notNull().default("General"),
   priceMinor: integer("price_minor").notNull(), currency: text("currency").notNull().default("USD"),
   inventory: integer("inventory").notNull().default(0),
@@ -79,16 +92,29 @@ export const shopProducts = pgTable("shop_products", {
 }, t => [index("shop_products_published_time").on(t.isPublished, t.createdAt), index("shop_products_seller_time").on(t.sellerId, t.createdAt)]);
 export const shopOrders = pgTable("shop_orders", {
   id: id(), buyerId: uid("buyer_id"), sellerId: uid("seller_id"),
+  shopId: text("shop_id").references(() => shopStores.id),
   status: text("status").notNull().default("pending"),
   paymentStatus: text("payment_status").notNull().default("awaiting_manual"),
   buyerNote: text("buyer_note").notNull().default(""),
   totalMinor: integer("total_minor").notNull(), currency: text("currency").notNull(),
+  subtotalMinor: integer("subtotal_minor"), discountMinor: integer("discount_minor").notNull().default(0),
+  shippingMinor: integer("shipping_minor").notNull().default(0),
+  fulfillment: text("fulfillment").notNull().default("pickup"),
+  recipientName: text("recipient_name").notNull().default(""), phone: text("phone").notNull().default(""),
+  address: text("address").notNull().default(""), trackingNumber: text("tracking_number").notNull().default(""),
+  carrier: text("carrier").notNull().default(""), couponId: text("coupon_id"), campaignId: text("campaign_id"),
+  requestType: text("request_type").notNull().default(""), requestStatus: text("request_status").notNull().default(""),
+  requestReason: text("request_reason").notNull().default(""),
+  inventoryRestored: boolean("inventory_restored").notNull().default(false), idempotencyKey: text("idempotency_key"),
+  checkoutHash: text("checkout_hash"),
   createdAt: created(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, t => [index("shop_orders_buyer_time").on(t.buyerId, t.createdAt), index("shop_orders_seller_time").on(t.sellerId, t.createdAt)]);
+}, t => [index("shop_orders_buyer_time").on(t.buyerId, t.createdAt), index("shop_orders_seller_time").on(t.sellerId, t.createdAt),
+  uniqueIndex("shop_orders_buyer_idempotency").on(t.buyerId, t.idempotencyKey)]);
 export const shopOrderItems = pgTable("shop_order_items", {
   id: id(), orderId: text("order_id").notNull().references(() => shopOrders.id, { onDelete: "cascade" }),
   productId: text("product_id").notNull().references(() => shopProducts.id),
   title: text("title").notNull(), unitPriceMinor: integer("unit_price_minor").notNull(),
+  variantId: text("variant_id"), variantLabel: text("variant_label"), sku: text("sku"),
   quantity: integer("quantity").notNull(),
 }, t => [index("shop_order_items_order").on(t.orderId)]);
 export const insertShopProductSchema = createInsertSchema(shopProducts).omit({ id: true, createdAt: true, updatedAt: true });

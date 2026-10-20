@@ -106,8 +106,15 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
       assert(communityAccess&&(!communityAccess.is_private||communityAccess.state==="member"),404,"Post media unavailable");
     }
   } else if (m.attached && m.purpose === "product") {
-    const [product]=await query("SELECT seller_id,is_published FROM shop_products WHERE image_media_id=$1",[m.id]);
-    assert(product && (product.is_published || product.seller_id===viewer),404,"Product image unavailable");
+    const [allowed]=await query(`SELECT 1 FROM shop_products p LEFT JOIN shop_stores s ON s.id=p.shop_id
+      WHERE (p.image_media_id=$1 OR EXISTS(SELECT 1 FROM commerce_photos WHERE product_id=p.id AND media_id=$1))
+      AND NOT EXISTS(SELECT 1 FROM blocks WHERE (user_id=$2 AND target_id=p.seller_id) OR (target_id=$2 AND user_id=p.seller_id))
+      AND ((p.is_published AND (s.id IS NULL OR s.is_published)) OR p.seller_id=$2
+        OR EXISTS(SELECT 1 FROM commerce_team WHERE shop_id=s.id AND user_id=$2))
+      UNION ALL SELECT 1 FROM shop_stores s WHERE s.logo_media_id=$1
+      AND NOT EXISTS(SELECT 1 FROM blocks WHERE (user_id=$2 AND target_id=s.owner_id) OR (target_id=$2 AND user_id=s.owner_id))
+      AND (s.is_published OR s.owner_id=$2 OR EXISTS(SELECT 1 FROM commerce_team WHERE shop_id=s.id AND user_id=$2)) LIMIT 1`,[m.id,viewer]);
+    assert(allowed,404,"Shop image unavailable");
   } else assert(m.owner_id===viewer,403,"Media access denied");
   const file = await storage.getObjectEntityFile(m.object_path);
   // Video elements cannot attach Clerk's bearer header to each range request.
