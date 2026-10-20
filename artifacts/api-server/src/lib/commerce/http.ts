@@ -1,10 +1,10 @@
 import { Router, type IRouter } from "express";
-import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import * as schemas from "@workspace/api-zod";
 import { z } from "zod";
 import { assert, blocked, provision, query, transaction, type Query, type Row } from "../social";
 import { changed } from "../realtime";
+import { authenticatedUserId } from "../vastmind-auth";
 
 export type CommerceContext = { u: string; user: Row; p: Record<string, string>; b: any; s: any; q: Query; impact: Set<string> };
 export type CommerceRoute = (method: "get" | "post" | "patch" | "put", path: string, operation: string, handler: (c: CommerceContext) => Promise<unknown>, status?: number) => void;
@@ -26,15 +26,15 @@ function parse(schema: z.ZodType | undefined, value: unknown) {
 export function commerceRouter() {
   const router: IRouter = Router();
   router.use("/commerce", async (req, res, next) => {
-    const auth = getAuth(req);
-    assert(auth.userId, 401, "Authentication required");
+    const userId = await authenticatedUserId(req);
+    assert(userId, 401, "Authentication required");
     if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && req.headers.origin && !req.headers.authorization) {
       const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
       let matches = false;
       try { matches = new URL(req.headers.origin).host === host; } catch { /* Reject malformed origins. */ }
       assert(matches, 403, "Cross-origin request rejected");
     }
-    res.locals.user = await provision(auth.userId);
+    res.locals.user = await provision(userId);
     next();
   });
   const limit = rateLimit({ windowMs: 60_000, limit: 180, keyGenerator: (_req, res) => res.locals.user.id, standardHeaders: "draft-8", legacyHeaders: false });

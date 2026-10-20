@@ -72,8 +72,10 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.7.11",
     "@clerk/react": "^6.17.8",
     "@clerk/themes": "^2.4.57",
+    "better-auth": "^1.7.11",
     "next": "^15.5.28",
     "socket.io-client": "^4.8.4"
   }

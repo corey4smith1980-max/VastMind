@@ -7,6 +7,7 @@ import { getClerkProxyHost } from "../middlewares/clerkProxyMiddleware";
 import { query, chatAllowed, blocked, canDiscover, onlineUsers, provision } from "./social";
 import { logger } from "./logger";
 import { attachCalls } from "./calls";
+import { vastMindAuth } from "./vastmind-auth";
 
 let io:Server|undefined;
 export function changed(users:string[],entity:string,chatId?:string) {
@@ -19,15 +20,20 @@ async function authenticate(req:IncomingMessage, bearer?:string) {
   const headers=new Headers();
   for(const [k,v] of Object.entries(req.headers))if(v)headers.set(k,Array.isArray(v)?v.join(","):v);
   if(bearer)headers.set("authorization",`Bearer ${bearer}`);
-  const state=await clerkClient.authenticateRequest(new Request(`https://${host}${req.url??"/api/socket.io"}`,{headers}),{
-    publishableKey:publishableKeyFromHost(host,process.env.CLERK_PUBLISHABLE_KEY),
-    acceptsToken:"session_token",
-  });
-  const auth=state.toAuth();
-  if(!auth?.userId || !auth.sessionId)throw new Error("Unauthorized");
-  const session=await clerkClient.sessions.getSession(auth.sessionId);
-  if(session.status!=="active")throw new Error("Unauthorized");
-  return {userId:auth.userId,sessionId:auth.sessionId};
+  try {
+    const state=await clerkClient.authenticateRequest(new Request(`https://${host}${req.url??"/api/socket.io"}`,{headers}),{
+      publishableKey:publishableKeyFromHost(host,process.env.CLERK_PUBLISHABLE_KEY),
+      acceptsToken:"session_token",
+    });
+    const auth=state.toAuth();
+    if(auth?.userId && auth.sessionId) {
+      const session=await clerkClient.sessions.getSession(auth.sessionId);
+      if(session.status==="active")return {userId:auth.userId,sessionId:auth.sessionId,provider:"clerk" as const};
+    }
+  } catch { /* A web passkey session is checked below. */ }
+  const session=await vastMindAuth.api.getSession({headers});
+  if(!session?.user.id || !session.session.id)throw new Error("Unauthorized");
+  return {userId:session.user.id,sessionId:session.session.id,provider:"vastmind" as const};
 }
 async function presence(userId:string,online:boolean) {
   const [user]=await query("SELECT * FROM users WHERE id=$1",[userId]);
@@ -71,7 +77,17 @@ export function attachRealtime(server:HttpServer) {
     if(count===0)presence(userId,true).catch(()=>logger.warn("Presence update failed"));
     // Active session checks bound revocation exposure, even for idle listeners.
     const timer=setInterval(async()=>{
-      try{const session=await clerkClient.sessions.getSession(socket.data.sessionId);if(session.status!=="active")socket.disconnect(true);}
+      try{
+        if(socket.data.provider==="clerk") {
+          const session=await clerkClient.sessions.getSession(socket.data.sessionId);
+          if(session.status!=="active")socket.disconnect(true);
+        } else {
+          const headers=new Headers();
+          for(const [key,value] of Object.entries(socket.request.headers))if(value)headers.set(key,Array.isArray(value)?value.join(","):value);
+          const session=await vastMindAuth.api.getSession({headers});
+          if(!session || session.session.id!==socket.data.sessionId)socket.disconnect(true);
+        }
+      }
       catch{socket.disconnect(true);}
     },30_000);
     // The session is revalidated above. A fixed reconnect timer would terminate

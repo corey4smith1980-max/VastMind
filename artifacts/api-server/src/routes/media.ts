@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import { randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
@@ -8,10 +7,11 @@ import { assert, query, provision, transaction, chatAllowed, blocked, canDiscove
 import { storage, mediaTypes, MEDIA_LIMIT, matchesMediaType, mediaShape } from "../lib/media";
 import { issueMediaPlaybackTicket, verifyMediaPlaybackTicket } from "../lib/media-playback";
 import { logger } from "../lib/logger";
+import { authenticatedUserId } from "../lib/vastmind-auth";
 
 const router = Router();
 router.use("/storage", async (req, res, next) => {
-  const { userId } = getAuth(req);
+  const userId = await authenticatedUserId(req);
   if (!userId) {
     const mediaMatch = req.method === "GET" && /^\/media\/([0-9a-f-]+)$/i.exec(req.path);
     const params = mediaMatch ? GetMediaContentParams.safeParse({ mediaId: mediaMatch[1] }) : null;

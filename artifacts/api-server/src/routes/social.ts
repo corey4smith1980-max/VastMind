@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import * as schemas from "@workspace/api-zod";
 import { isValidStickerContent } from "../lib/stickers";
@@ -12,12 +11,13 @@ import { pushConfiguration, validPushEndpoint } from "../lib/push";
 import { mediaTypes } from "../lib/media";
 import { creatorProfile, videoPage, validateCaptions } from "../lib/videos";
 import { verifyMailEnvelopeSignature } from "@workspace/mail-crypto";
+import { authenticatedUserId } from "../lib/vastmind-auth";
 
 const router=Router();
 router.use(async(req,res,next)=>{
-  const auth=getAuth(req);
-  if(!auth.userId){res.status(401).json({error:"Authentication required"});return;}
-  const user=await provision(auth.userId);
+  const userId=await authenticatedUserId(req);
+  if(!userId){res.status(401).json({error:"Authentication required"});return;}
+  const user=await provision(userId);
   res.locals.user=user;
   if(needsUsernameChoice(user.username)&&!(req.path==="/me"&&["GET","PATCH"].includes(req.method))){
     res.status(428).json({error:"Choose a username to continue"});return;

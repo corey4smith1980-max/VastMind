@@ -1,15 +1,15 @@
 import { Router } from "express";
-import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import { GetVideoCapabilitiesResponse, RenderVideoBody, RenderVideoResponse, TranscribeVideoBody, TranscribeVideoResponse } from "@workspace/api-zod";
 import { provision, assert } from "../lib/social";
 import { renderClip, transcribeClip, videoCapabilities } from "../lib/video-processing";
+import { authenticatedUserId } from "../lib/vastmind-auth";
 
 const router = Router();
 // Deliberately outside the social write transaction: processing must never hold
 // the messenger's database lock while waiting for FFmpeg, storage, or speech AI.
 router.use("/video-tools", async (req, res, next) => {
-  const { userId } = getAuth(req);
+  const userId = await authenticatedUserId(req);
   assert(userId, 401, "Authentication required");
   res.locals.videoUser = (await provision(userId)).id;
   if (req.method === "POST" && req.headers.origin && !req.headers.authorization) {

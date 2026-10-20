@@ -15,6 +15,7 @@ const suite = new HPKE.CipherSuite(
 const INFO = utf8ToBytes("vastmind-internal-mail-v1");
 const ENCRYPTION_DERIVATION = utf8ToBytes("vastmind-mail-hpke-x25519-v1");
 const SIGNING_DERIVATION = utf8ToBytes("vastmind-mail-ed25519-v1");
+const ACCOUNT_RECOVERY_DERIVATION = utf8ToBytes("vastmind-account-recovery-ed25519-v1");
 
 export type MailCleartext = { subject: string; body: string };
 export type MailPublicKeys = { encryptionPublicKey: string; signingPublicKey: string };
@@ -32,6 +33,62 @@ export type MailEnvelope = {
 /** Create a 24-word BIP39 phrase. The phrase is never sent to the server. */
 export function createRecoveryPhrase(): string {
   return generateMnemonic(wordlist, 256);
+}
+
+/** A separate key domain proves account recovery without ever sending the phrase to the server. */
+export async function accountRecoveryPublicKey(recoveryPhrase: string): Promise<string> {
+  const mnemonic = recoveryPhrase.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!validateMnemonic(mnemonic, wordlist)) throw new Error("Enter a valid recovery phrase.");
+  const seed = new Uint8Array(await mnemonicToSeed(mnemonic));
+  const signingKey = hkdf(sha256, seed, new Uint8Array(), ACCOUNT_RECOVERY_DERIVATION, 32);
+  seed.fill(0);
+  try {
+    return bytesToHex(ed25519.getPublicKey(signingKey));
+  } finally {
+    signingKey.fill(0);
+  }
+}
+
+/** Sign a one-time server challenge locally; the secret phrase remains on the device. */
+export async function signAccountRecoveryChallenge(
+  recoveryPhrase: string,
+  challenge: string,
+): Promise<{ publicKey: string; signature: string }> {
+  const mnemonic = recoveryPhrase.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!validateMnemonic(mnemonic, wordlist)) throw new Error("Enter a valid recovery phrase.");
+  if (!challenge || challenge.length > 256) throw new Error("Recovery challenge is invalid.");
+  const seed = new Uint8Array(await mnemonicToSeed(mnemonic));
+  const signingKey = hkdf(sha256, seed, new Uint8Array(), ACCOUNT_RECOVERY_DERIVATION, 32);
+  seed.fill(0);
+  try {
+    const message = utf8ToBytes(`vastmind-account-recovery-v1:${challenge}`);
+    return {
+      publicKey: bytesToHex(ed25519.getPublicKey(signingKey)),
+      signature: bytesToHex(ed25519.sign(message, signingKey)),
+    };
+  } finally {
+    signingKey.fill(0);
+  }
+}
+
+/** Validate a recovery proof using only the public key stored for the account. */
+export function verifyAccountRecoveryChallenge(
+  publicKey: string,
+  challenge: string,
+  signature: string,
+): boolean {
+  if (!/^[0-9a-f]{64}$/i.test(publicKey) || !/^[0-9a-f]{128}$/i.test(signature) || !challenge || challenge.length > 256) {
+    return false;
+  }
+  try {
+    return ed25519.verify(
+      hexToBytes(signature),
+      utf8ToBytes(`vastmind-account-recovery-v1:${challenge}`),
+      hexToBytes(publicKey),
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Derive deterministic mail keys so a user-held BIP39 phrase can restore them on another device. */

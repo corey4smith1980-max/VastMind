@@ -11,12 +11,15 @@
     "test": "tsx --test src/lib/*.test.ts"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.11",
+    "@better-auth/passkey": "^1.7.11",
     "@clerk/express": "^2.1.79",
     "@clerk/shared": "^4.40.0",
     "@google-cloud/storage": "^8.4.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/mail-crypto": "workspace:*",
+    "better-auth": "^1.7.11",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",

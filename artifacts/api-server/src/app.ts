@@ -8,6 +8,8 @@ import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import { HttpError } from "./lib/social";
 import type { ErrorRequestHandler } from "express";
+import { toNodeHandler } from "better-auth/node";
+import { vastMindAuth } from "./lib/vastmind-auth";
 
 const app: Express = express();
 
@@ -43,6 +45,9 @@ app.use(cors({
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   maxAge: 600,
 }));
+// Better Auth consumes the raw request stream for passkey/WebAuthn endpoints.
+// Mount it before Express body parsing and keep Clerk available for migration.
+app.all("/api/auth/*splat", toNodeHandler(vastMindAuth));
 app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: false, limit: "32kb" }));
 app.use(
