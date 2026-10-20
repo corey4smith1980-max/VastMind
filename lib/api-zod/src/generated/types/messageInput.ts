@@ -5,6 +5,7 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { MessageInputType } from './messageInputType';
 
 export interface MessageInput {
   /**
@@ -15,4 +16,5 @@ export interface MessageInput {
   /** @nullable */
   replyToId?: string | null;
   mediaId?: string;
+  type?: MessageInputType;
 }

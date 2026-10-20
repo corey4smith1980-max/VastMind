@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MediaAttachment } from './mediaAttachment';
+import type { MessageReaction } from './messageReaction';
 import type { MessageType } from './messageType';
 
 export interface Message {
@@ -20,4 +21,5 @@ export interface Message {
   media?: MediaAttachment;
   createdAt: Date;
   readBy: string[];
+  reactions: MessageReaction[];
 }

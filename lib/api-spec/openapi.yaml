@@ -277,6 +277,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Message"
+  /chats/{chatId}/messages/{messageId}/reactions:
+    post:
+      operationId: toggleMessageReaction
+      tags: [chats]
+      summary: Toggle an emoji reaction on a message
+      parameters:
+        - $ref: "#/components/parameters/ChatId"
+        - in: path
+          name: messageId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageReactionInput"
+      responses:
+        "200":
+          description: Updated emoji reactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageReactionResult"
   /chats/{chatId}/read:
     post:
       operationId: markChatRead
@@ -972,6 +996,124 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Status"
+  /shop/products:
+    get:
+      operationId: listShopProducts
+      tags: [business]
+      summary: Browse published products or the current user's listings
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, maxLength: 100 }
+        - in: query
+          name: sellerId
+          schema: { type: string }
+        - in: query
+          name: mine
+          schema: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Shop products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopProductList"
+    post:
+      operationId: createShopProduct
+      tags: [business]
+      summary: Create a product listing for the signed-in seller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopProductInput"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopProduct"
+  /shop/products/{productId}:
+    patch:
+      operationId: updateShopProduct
+      tags: [business]
+      summary: Update or archive a seller's product
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopProductUpdate"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopProduct"
+  /shop/orders:
+    get:
+      operationId: listShopOrders
+      tags: [business]
+      summary: List buyer or seller orders
+      parameters:
+        - in: query
+          name: scope
+          schema: { type: string, enum: [buyer, seller], default: buyer }
+      responses:
+        "200":
+          description: Orders visible to the signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopOrderList"
+    post:
+      operationId: placeShopOrder
+      tags: [business]
+      summary: Place an order from one seller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopOrderInput"
+      responses:
+        "201":
+          description: Order placed and awaiting manual payment arrangement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopOrder"
+  /shop/orders/{orderId}:
+    patch:
+      operationId: updateShopOrder
+      tags: [business]
+      summary: Update order status or record manual payment confirmation
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopOrderUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopOrder"
   /business/overview:
     get:
       operationId: getBusinessOverview
@@ -1211,7 +1353,7 @@ components:
         userId: { type: string }
     Message:
       type: object
-      required: [id, chatId, senderId, senderName, senderAvatarUrl, content, type, createdAt, readBy]
+      required: [id, chatId, senderId, senderName, senderAvatarUrl, content, type, createdAt, readBy, reactions]
       properties:
         id: { type: string }
         chatId: { type: string }
@@ -1219,13 +1361,17 @@ components:
         senderName: { type: string }
         senderAvatarUrl: { type: ["string", "null"] }
         content: { type: string }
-        type: { type: string, enum: [text, system, image, video, voice] }
+        type: { type: string, enum: [text, system, image, video, voice, sticker] }
         media:
           $ref: "#/components/schemas/MediaAttachment"
         createdAt: { type: string, format: date-time }
         readBy:
           type: array
           items: { type: string }
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageReaction"
     MessageList:
       type: object
       required: [items, nextBefore]
@@ -1242,6 +1388,27 @@ components:
         content: { type: string, minLength: 1, maxLength: 4000 }
         replyToId: { type: ["string", "null"] }
         mediaId: { type: string }
+        type: { type: string, enum: [text, sticker] }
+    MessageReaction:
+      type: object
+      required: [emoji, count, reactedByMe]
+      properties:
+        emoji: { type: string }
+        count: { type: integer }
+        reactedByMe: { type: boolean }
+    MessageReactionInput:
+      type: object
+      required: [emoji]
+      properties:
+        emoji: { type: string, minLength: 1, maxLength: 16 }
+    MessageReactionResult:
+      type: object
+      required: [reactions]
+      properties:
+        reactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageReaction"
     ReadResult:
       type: object
       required: [success]
@@ -1502,7 +1669,7 @@ components:
         name: { type: string, minLength: 1, maxLength: 150 }
         size: { type: integer, minimum: 1, maximum: 26214400 }
         contentType: { type: string }
-        purpose: { type: string, enum: [chat, status, post] }
+        purpose: { type: string, enum: [chat, status, post, product] }
         chatId: { type: string }
     MediaUploadTicket:
       type: object
@@ -1540,6 +1707,109 @@ components:
       required: [isOpen]
       properties:
         isOpen: { type: boolean }
+    ShopProduct:
+      type: object
+      required: [id, sellerId, sellerName, sellerUsername, title, description, category, priceMinor, currency, inventory, isPublished, createdAt, imageMedia]
+      properties:
+        id: { type: string }
+        sellerId: { type: string }
+        sellerName: { type: string }
+        sellerUsername: { type: string }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string }
+        priceMinor: { type: integer }
+        currency: { type: string }
+        inventory: { type: integer }
+        isPublished: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        imageMedia:
+          oneOf:
+            - $ref: "#/components/schemas/MediaAttachment"
+            - type: "null"
+    ShopProductList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ShopProduct"
+    ShopProductInput:
+      type: object
+      required: [title, description, category, priceMinor, currency, inventory]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        category: { type: string, minLength: 1, maxLength: 60 }
+        priceMinor: { type: integer, minimum: 1, maximum: 1000000000 }
+        currency: { type: string, pattern: "^[A-Za-z]{3}$" }
+        inventory: { type: integer, minimum: 0, maximum: 1000000 }
+        imageMediaId: { type: string }
+        isPublished: { type: boolean, default: true }
+    ShopProductUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, maxLength: 2000 }
+        category: { type: string, minLength: 1, maxLength: 60 }
+        priceMinor: { type: integer, minimum: 1, maximum: 1000000000 }
+        currency: { type: string, pattern: "^[A-Za-z]{3}$" }
+        inventory: { type: integer, minimum: 0, maximum: 1000000 }
+        imageMediaId: { type: ["string", "null"] }
+        isPublished: { type: boolean }
+    ShopOrderLineInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId: { type: string }
+        quantity: { type: integer, minimum: 1, maximum: 99 }
+    ShopOrderInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ShopOrderLineInput"
+        buyerNote: { type: string, maxLength: 500 }
+    ShopOrderUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        status: { type: string, enum: [confirmed, preparing, completed, cancelled] }
+        paymentStatus: { type: string, enum: [awaiting_manual, manual_confirmed] }
+    ShopOrderLine:
+      type: object
+      required: [productId, title, unitPriceMinor, quantity]
+      properties:
+        productId: { type: string }
+        title: { type: string }
+        unitPriceMinor: { type: integer }
+        quantity: { type: integer }
+    ShopOrder:
+      type: object
+      required: [id, buyerId, buyerName, sellerId, sellerName, status, paymentStatus, buyerNote, totalMinor, currency, createdAt, updatedAt, items]
+      properties:
+        id: { type: string }
+        buyerId: { type: string }
+        buyerName: { type: string }
+        sellerId: { type: string }
+        sellerName: { type: string }
+        status: { type: string, enum: [pending, confirmed, preparing, completed, cancelled] }
+        paymentStatus: { type: string, enum: [awaiting_manual, manual_confirmed] }
+        buyerNote: { type: string }
+        totalMinor: { type: integer }
+        currency: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShopOrderLine"
+    ShopOrderList:
+      type: array
+      items:
+        $ref: "#/components/schemas/ShopOrder"
     Notification:
       type: object
       required: [id, type, title, body, read, createdAt]

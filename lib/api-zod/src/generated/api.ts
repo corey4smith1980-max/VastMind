@@ -307,7 +307,7 @@ export const GetChatMessagesResponse = zod.object({
   "senderName": zod.string(),
   "senderAvatarUrl": zod.string().nullable(),
   "content": zod.string(),
-  "type": zod.enum(['text', 'system', 'image', 'video', 'voice']),
+  "type": zod.enum(['text', 'system', 'image', 'video', 'voice', 'sticker']),
   "media": zod.object({
   "id": zod.string(),
   "url": zod.string(),
@@ -316,7 +316,12 @@ export const GetChatMessagesResponse = zod.object({
   "name": zod.string()
 }).optional(),
   "createdAt": zod.coerce.date(),
-  "readBy": zod.array(zod.string())
+  "readBy": zod.array(zod.string()),
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number().int(),
+  "reactedByMe": zod.boolean()
+}))
 })),
   "nextBefore": zod.coerce.date().nullable()
 })
@@ -336,7 +341,8 @@ export const sendMessageBodyContentMax = 4000;
 export const SendMessageBody = zod.object({
   "content": zod.string().min(1).max(sendMessageBodyContentMax),
   "replyToId": zod.string().nullish(),
-  "mediaId": zod.string().optional()
+  "mediaId": zod.string().optional(),
+  "type": zod.enum(['text', 'sticker']).optional()
 })
 
 export const SendMessageResponse = zod.object({
@@ -346,7 +352,7 @@ export const SendMessageResponse = zod.object({
   "senderName": zod.string(),
   "senderAvatarUrl": zod.string().nullable(),
   "content": zod.string(),
-  "type": zod.enum(['text', 'system', 'image', 'video', 'voice']),
+  "type": zod.enum(['text', 'system', 'image', 'video', 'voice', 'sticker']),
   "media": zod.object({
   "id": zod.string(),
   "url": zod.string(),
@@ -355,7 +361,37 @@ export const SendMessageResponse = zod.object({
   "name": zod.string()
 }).optional(),
   "createdAt": zod.coerce.date(),
-  "readBy": zod.array(zod.string())
+  "readBy": zod.array(zod.string()),
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number().int(),
+  "reactedByMe": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Toggle an emoji reaction on a message
+ */
+export const ToggleMessageReactionParams = zod.object({
+  "chatId": zod.coerce.string(),
+  "messageId": zod.coerce.string()
+})
+
+export const toggleMessageReactionBodyEmojiMax = 16;
+
+
+
+export const ToggleMessageReactionBody = zod.object({
+  "emoji": zod.string().min(1).max(toggleMessageReactionBodyEmojiMax)
+})
+
+export const ToggleMessageReactionResponse = zod.object({
+  "reactions": zod.array(zod.object({
+  "emoji": zod.string(),
+  "count": zod.number().int(),
+  "reactedByMe": zod.boolean()
+}))
 })
 
 
@@ -1329,7 +1365,7 @@ export const RequestUploadUrlBody = zod.object({
   "name": zod.string().min(1).max(requestUploadUrlBodyNameMax),
   "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
   "contentType": zod.string(),
-  "purpose": zod.enum(['chat', 'status', 'post']),
+  "purpose": zod.enum(['chat', 'status', 'post', 'product']),
   "chatId": zod.string().optional()
 })
 
@@ -1428,6 +1464,256 @@ export const CreateStatusResponse = zod.object({
   "size": zod.number().int(),
   "name": zod.string()
 }).optional()
+})
+
+
+/**
+ * @summary Browse published products or the current user's listings
+ */
+export const listShopProductsQueryQMax = 100;
+
+export const listShopProductsQueryMineDefault = false;
+
+export const ListShopProductsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listShopProductsQueryQMax).optional(),
+  "sellerId": zod.coerce.string().optional(),
+  "mine": zod.coerce.boolean().default(listShopProductsQueryMineDefault)
+})
+
+export const ListShopProductsResponseItem = zod.object({
+  "id": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "sellerUsername": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "priceMinor": zod.number().int(),
+  "currency": zod.string(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "imageMedia": zod.union([zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}),zod.null()])
+})
+export const ListShopProductsResponse = zod.array(ListShopProductsResponseItem)
+
+
+/**
+ * @summary Create a product listing for the signed-in seller
+ */
+export const createShopProductBodyTitleMax = 120;
+
+export const createShopProductBodyDescriptionMax = 2000;
+
+export const createShopProductBodyCategoryMax = 60;
+
+export const createShopProductBodyPriceMinorMax = 1000000000;
+
+export const createShopProductBodyCurrencyRegExp = new RegExp('^[A-Za-z]{3}$');
+export const createShopProductBodyInventoryMin = 0;
+export const createShopProductBodyInventoryMax = 1000000;
+
+export const createShopProductBodyIsPublishedDefault = true;
+
+export const CreateShopProductBody = zod.object({
+  "title": zod.string().min(1).max(createShopProductBodyTitleMax),
+  "description": zod.string().max(createShopProductBodyDescriptionMax),
+  "category": zod.string().min(1).max(createShopProductBodyCategoryMax),
+  "priceMinor": zod.number().int().min(1).max(createShopProductBodyPriceMinorMax),
+  "currency": zod.string().regex(createShopProductBodyCurrencyRegExp),
+  "inventory": zod.number().int().min(createShopProductBodyInventoryMin).max(createShopProductBodyInventoryMax),
+  "imageMediaId": zod.string().optional(),
+  "isPublished": zod.boolean().default(createShopProductBodyIsPublishedDefault)
+})
+
+export const CreateShopProductResponse = zod.object({
+  "id": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "sellerUsername": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "priceMinor": zod.number().int(),
+  "currency": zod.string(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "imageMedia": zod.union([zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Update or archive a seller's product
+ */
+export const UpdateShopProductParams = zod.object({
+  "productId": zod.coerce.string()
+})
+
+export const updateShopProductBodyTitleMax = 120;
+
+export const updateShopProductBodyDescriptionMax = 2000;
+
+export const updateShopProductBodyCategoryMax = 60;
+
+export const updateShopProductBodyPriceMinorMax = 1000000000;
+
+export const updateShopProductBodyCurrencyRegExp = new RegExp('^[A-Za-z]{3}$');
+export const updateShopProductBodyInventoryMin = 0;
+export const updateShopProductBodyInventoryMax = 1000000;
+
+
+
+export const UpdateShopProductBody = zod.object({
+  "title": zod.string().min(1).max(updateShopProductBodyTitleMax).optional(),
+  "description": zod.string().max(updateShopProductBodyDescriptionMax).optional(),
+  "category": zod.string().min(1).max(updateShopProductBodyCategoryMax).optional(),
+  "priceMinor": zod.number().int().min(1).max(updateShopProductBodyPriceMinorMax).optional(),
+  "currency": zod.string().regex(updateShopProductBodyCurrencyRegExp).optional(),
+  "inventory": zod.number().int().min(updateShopProductBodyInventoryMin).max(updateShopProductBodyInventoryMax).optional(),
+  "imageMediaId": zod.string().nullish(),
+  "isPublished": zod.boolean().optional()
+})
+
+export const UpdateShopProductResponse = zod.object({
+  "id": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "sellerUsername": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.string(),
+  "priceMinor": zod.number().int(),
+  "currency": zod.string(),
+  "inventory": zod.number().int(),
+  "isPublished": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "imageMedia": zod.union([zod.object({
+  "id": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string(),
+  "size": zod.number().int(),
+  "name": zod.string()
+}),zod.null()])
+})
+
+
+/**
+ * @summary List buyer or seller orders
+ */
+export const listShopOrdersQueryScopeDefault = `buyer`;
+
+export const ListShopOrdersQueryParams = zod.object({
+  "scope": zod.enum(['buyer', 'seller']).default(listShopOrdersQueryScopeDefault)
+})
+
+export const ListShopOrdersResponseItem = zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "totalMinor": zod.number().int(),
+  "currency": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int()
+}))
+})
+export const ListShopOrdersResponse = zod.array(ListShopOrdersResponseItem)
+
+
+/**
+ * @summary Place an order from one seller
+ */
+export const placeShopOrderBodyItemsItemQuantityMax = 99;
+
+export const placeShopOrderBodyItemsMax = 20;
+
+export const placeShopOrderBodyBuyerNoteMax = 500;
+
+
+
+export const PlaceShopOrderBody = zod.object({
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "quantity": zod.number().int().min(1).max(placeShopOrderBodyItemsItemQuantityMax)
+})).min(1).max(placeShopOrderBodyItemsMax),
+  "buyerNote": zod.string().max(placeShopOrderBodyBuyerNoteMax).optional()
+})
+
+export const PlaceShopOrderResponse = zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "totalMinor": zod.number().int(),
+  "currency": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int()
+}))
+})
+
+
+/**
+ * @summary Update order status or record manual payment confirmation
+ */
+export const UpdateShopOrderParams = zod.object({
+  "orderId": zod.coerce.string()
+})
+
+export const UpdateShopOrderBody = zod.object({
+  "status": zod.enum(['confirmed', 'preparing', 'completed', 'cancelled']).optional(),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']).optional()
+})
+
+export const UpdateShopOrderResponse = zod.object({
+  "id": zod.string(),
+  "buyerId": zod.string(),
+  "buyerName": zod.string(),
+  "sellerId": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending', 'confirmed', 'preparing', 'completed', 'cancelled']),
+  "paymentStatus": zod.enum(['awaiting_manual', 'manual_confirmed']),
+  "buyerNote": zod.string(),
+  "totalMinor": zod.number().int(),
+  "currency": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "title": zod.string(),
+  "unitPriceMinor": zod.number().int(),
+  "quantity": zod.number().int()
+}))
 })
 
 

@@ -15,4 +15,5 @@ export const MessageType = {
   image: 'image',
   video: 'video',
   voice: 'voice',
+  sticker: 'sticker',
 } as const;

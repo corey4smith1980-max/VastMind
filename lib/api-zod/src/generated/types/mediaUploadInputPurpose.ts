@@ -13,4 +13,5 @@ export const MediaUploadInputPurpose = {
   chat: 'chat',
   status: 'status',
   post: 'post',
+  product: 'product',
 } as const;

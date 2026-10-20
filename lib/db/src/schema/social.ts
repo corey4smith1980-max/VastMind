@@ -35,6 +35,10 @@ export const messages = pgTable("messages", { id: id(), chatId: text("chat_id").
   index("messages_chat_time").on(t.chatId,t.createdAt),
   index("messages_content_search").using("gin", sql`to_tsvector('simple', ${t.content})`),
 ]);
+export const messageReactions = pgTable("message_reactions", {
+  messageId: text("message_id").notNull().references(() => messages.id, { onDelete: "cascade" }),
+  userId: uid("user_id"), emoji: text("emoji").notNull(), createdAt: created(),
+}, t => [primaryKey({ columns: [t.messageId, t.userId, t.emoji] }), index("message_reactions_message").on(t.messageId)]);
 export const communities = pgTable("communities",{id:id(),ownerId:uid("owner_id"),name:text("name").notNull(),description:text("description").notNull(),category:text("category").notNull(),isPrivate:boolean("is_private").notNull(),createdAt:created()});
 export const communityMembers = pgTable("community_members",{communityId:text("community_id").notNull().references(()=>communities.id,{onDelete:"cascade"}),userId:uid("user_id"),role:text("role").notNull().default("member"),state:text("state").notNull().default("member")},t=>[primaryKey({columns:[t.communityId,t.userId]})]);
 export const posts = pgTable("posts",{id:id(),authorId:uid("author_id"),communityId:text("community_id").references(()=>communities.id,{onDelete:"cascade"}),content:text("content").notNull(),mediaId:text("media_id"),audioMediaId:text("audio_media_id"),effect:text("effect").notNull().default("none"),captions:jsonb("captions").notNull().default([]),createdAt:created()}, t => [
@@ -61,6 +65,39 @@ export const mediaUploads = pgTable("media_uploads", {
 export const insertMediaUploadSchema = createInsertSchema(mediaUploads).omit({id:true,createdAt:true});
 export type MediaUpload = typeof mediaUploads.$inferSelect;
 export const quickReplies = pgTable("quick_replies",{id:id(),userId:uid("user_id"),label:text("label").notNull(),content:text("content").notNull()});
+// Product listings, orders, and immutable line-item snapshots power VastMind's
+// in-app shop. Payment is intentionally recorded as manual until a processor
+// is connected; these tables never store card or bank credentials.
+export const shopProducts = pgTable("shop_products", {
+  id: id(), sellerId: uid("seller_id"), title: text("title").notNull(),
+  description: text("description").notNull().default(""), category: text("category").notNull().default("General"),
+  priceMinor: integer("price_minor").notNull(), currency: text("currency").notNull().default("USD"),
+  inventory: integer("inventory").notNull().default(0),
+  imageMediaId: text("image_media_id").references(() => mediaUploads.id, { onDelete: "set null" }),
+  isPublished: boolean("is_published").notNull().default(true),
+  createdAt: created(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("shop_products_published_time").on(t.isPublished, t.createdAt), index("shop_products_seller_time").on(t.sellerId, t.createdAt)]);
+export const shopOrders = pgTable("shop_orders", {
+  id: id(), buyerId: uid("buyer_id"), sellerId: uid("seller_id"),
+  status: text("status").notNull().default("pending"),
+  paymentStatus: text("payment_status").notNull().default("awaiting_manual"),
+  buyerNote: text("buyer_note").notNull().default(""),
+  totalMinor: integer("total_minor").notNull(), currency: text("currency").notNull(),
+  createdAt: created(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, t => [index("shop_orders_buyer_time").on(t.buyerId, t.createdAt), index("shop_orders_seller_time").on(t.sellerId, t.createdAt)]);
+export const shopOrderItems = pgTable("shop_order_items", {
+  id: id(), orderId: text("order_id").notNull().references(() => shopOrders.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => shopProducts.id),
+  title: text("title").notNull(), unitPriceMinor: integer("unit_price_minor").notNull(),
+  quantity: integer("quantity").notNull(),
+}, t => [index("shop_order_items_order").on(t.orderId)]);
+export const insertShopProductSchema = createInsertSchema(shopProducts).omit({ id: true, createdAt: true, updatedAt: true });
+export type ShopProduct = typeof shopProducts.$inferSelect;
+export type InsertShopProduct = typeof shopProducts.$inferInsert;
+export const insertShopOrderSchema = createInsertSchema(shopOrders).omit({ id: true, createdAt: true, updatedAt: true });
+export type ShopOrder = typeof shopOrders.$inferSelect;
+export const insertShopOrderItemSchema = createInsertSchema(shopOrderItems).omit({ id: true });
+export type ShopOrderItem = typeof shopOrderItems.$inferSelect;
 export const notifications = pgTable("notifications",{id:id(),userId:uid("user_id"),actorId:uid("actor_id"),type:text("type").notNull(),title:text("title").notNull(),body:text("body").notNull(),read:boolean("read").notNull().default(false),pushSentAt:timestamp("push_sent_at",{withTimezone:true}),createdAt:created()},t=>[index("notifications_user_time").on(t.userId,t.createdAt)]);
 
 export const pushSubscriptions = pgTable("push_subscriptions",{

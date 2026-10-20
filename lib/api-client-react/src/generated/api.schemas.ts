@@ -211,6 +211,7 @@ export const MessageType = {
   image: 'image',
   video: 'video',
   voice: 'voice',
+  sticker: 'sticker',
 } as const;
 
 export interface MediaAttachment {
@@ -219,6 +220,12 @@ export interface MediaAttachment {
   contentType: string;
   size: number;
   name: string;
+}
+
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
 }
 
 export interface Message {
@@ -233,6 +240,7 @@ export interface Message {
   media?: MediaAttachment;
   createdAt: string;
   readBy: string[];
+  reactions: MessageReaction[];
 }
 
 export interface MessageList {
@@ -240,6 +248,14 @@ export interface MessageList {
   /** @nullable */
   nextBefore: string | null;
 }
+
+export type MessageInputType = typeof MessageInputType[keyof typeof MessageInputType];
+
+
+export const MessageInputType = {
+  text: 'text',
+  sticker: 'sticker',
+} as const;
 
 export interface MessageInput {
   /**
@@ -250,6 +266,19 @@ export interface MessageInput {
   /** @nullable */
   replyToId?: string | null;
   mediaId?: string;
+  type?: MessageInputType;
+}
+
+export interface MessageReactionInput {
+  /**
+     * @minLength 1
+     * @maxLength 16
+     */
+  emoji: string;
+}
+
+export interface MessageReactionResult {
+  reactions: MessageReaction[];
 }
 
 export interface ReadResult {
@@ -549,6 +578,7 @@ export const MediaUploadInputPurpose = {
   chat: 'chat',
   status: 'status',
   post: 'post',
+  product: 'product',
 } as const;
 
 export interface MediaUploadInput {
@@ -603,6 +633,169 @@ export interface QuickReplyInput {
 export interface BusinessStatusInput {
   isOpen: boolean;
 }
+
+export interface ShopProduct {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  sellerUsername: string;
+  title: string;
+  description: string;
+  category: string;
+  priceMinor: number;
+  currency: string;
+  inventory: number;
+  isPublished: boolean;
+  createdAt: string;
+  imageMedia: MediaAttachment | null;
+}
+
+export type ShopProductList = ShopProduct[];
+
+export interface ShopProductInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title: string;
+  /** @maxLength 2000 */
+  description: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  category: string;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     */
+  priceMinor: number;
+  /** @pattern ^[A-Za-z]{3}$ */
+  currency: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  inventory: number;
+  imageMediaId?: string;
+  isPublished?: boolean;
+}
+
+export interface ShopProductUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  title?: string;
+  /** @maxLength 2000 */
+  description?: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  category?: string;
+  /**
+     * @minimum 1
+     * @maximum 1000000000
+     */
+  priceMinor?: number;
+  /** @pattern ^[A-Za-z]{3}$ */
+  currency?: string;
+  /**
+     * @minimum 0
+     * @maximum 1000000
+     */
+  inventory?: number;
+  /** @nullable */
+  imageMediaId?: string | null;
+  isPublished?: boolean;
+}
+
+export interface ShopOrderLineInput {
+  productId: string;
+  /**
+     * @minimum 1
+     * @maximum 99
+     */
+  quantity: number;
+}
+
+export interface ShopOrderInput {
+  /**
+     * @minItems 1
+     * @maxItems 20
+     */
+  items: ShopOrderLineInput[];
+  /** @maxLength 500 */
+  buyerNote?: string;
+}
+
+export type ShopOrderUpdateStatus = typeof ShopOrderUpdateStatus[keyof typeof ShopOrderUpdateStatus];
+
+
+export const ShopOrderUpdateStatus = {
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export type ShopOrderUpdatePaymentStatus = typeof ShopOrderUpdatePaymentStatus[keyof typeof ShopOrderUpdatePaymentStatus];
+
+
+export const ShopOrderUpdatePaymentStatus = {
+  awaiting_manual: 'awaiting_manual',
+  manual_confirmed: 'manual_confirmed',
+} as const;
+
+export interface ShopOrderUpdate {
+  status?: ShopOrderUpdateStatus;
+  paymentStatus?: ShopOrderUpdatePaymentStatus;
+}
+
+export interface ShopOrderLine {
+  productId: string;
+  title: string;
+  unitPriceMinor: number;
+  quantity: number;
+}
+
+export type ShopOrderStatus = typeof ShopOrderStatus[keyof typeof ShopOrderStatus];
+
+
+export const ShopOrderStatus = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export type ShopOrderPaymentStatus = typeof ShopOrderPaymentStatus[keyof typeof ShopOrderPaymentStatus];
+
+
+export const ShopOrderPaymentStatus = {
+  awaiting_manual: 'awaiting_manual',
+  manual_confirmed: 'manual_confirmed',
+} as const;
+
+export interface ShopOrder {
+  id: string;
+  buyerId: string;
+  buyerName: string;
+  sellerId: string;
+  sellerName: string;
+  status: ShopOrderStatus;
+  paymentStatus: ShopOrderPaymentStatus;
+  buyerNote: string;
+  totalMinor: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  items: ShopOrderLine[];
+}
+
+export type ShopOrderList = ShopOrder[];
 
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
 
@@ -791,4 +984,25 @@ category?: string;
 export type ListChannelsParams = {
 q?: string;
 };
+
+export type ListShopProductsParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+sellerId?: string;
+mine?: boolean;
+};
+
+export type ListShopOrdersParams = {
+scope?: ListShopOrdersScope;
+};
+
+export type ListShopOrdersScope = typeof ListShopOrdersScope[keyof typeof ListShopOrdersScope];
+
+
+export const ListShopOrdersScope = {
+  buyer: 'buyer',
+  seller: 'seller',
+} as const;
 
