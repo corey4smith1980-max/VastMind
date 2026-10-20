@@ -75,11 +75,16 @@
 /* LIGHT MODE */
 :root {
   --online: 142 58% 40%;
-  --ink: 192 52% 12%;
-  --paper: 38 45% 95%;
-  --bubble-mine: 192 50% 18%;
-  --bubble-mine-fg: 40 50% 95%;
-  --bubble-theirs: 40 50% 99%;
+  --ink: 234 64% 8%;
+  --paper: 222 60% 98%;
+  --brand-cyan: 187 100% 50%;
+  --brand-blue: 221 100% 56%;
+  --brand-violet: 267 100% 60%;
+  --brand-magenta: 294 100% 61%;
+  --brand-gradient: linear-gradient(110deg, #10d9f5 0%, #235dff 48%, #7c35ff 73%, #ed36f5 100%);
+  --bubble-mine: 221 100% 56%;
+  --bubble-mine-fg: 0 0% 100%;
+  --bubble-theirs: 220 60% 99%;
   --button-outline: rgba(0, 0, 0, 0.1);
   --badge-outline: rgba(0, 0, 0, 0.05);
 
@@ -90,67 +95,67 @@
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
-  --background: 38 45% 95%;
+  --background: 222 60% 98%;
 
-  --foreground: 192 48% 13%;
+  --foreground: 232 44% 12%;
 
-  --border: 36 24% 84%;
+  --border: 224 30% 88%;
 
-  --card: 40 50% 98%;
+  --card: 0 0% 100%;
 
-  --card-foreground: 192 48% 13%;
+  --card-foreground: 232 44% 12%;
 
-  --card-border: 36 24% 86%;
+  --card-border: 224 30% 88%;
 
-  --sidebar: 192 52% 12%;
+  --sidebar: 234 64% 8%;
 
-  --sidebar-foreground: 40 40% 92%;
+  --sidebar-foreground: 224 35% 94%;
 
-  --sidebar-border: 192 35% 20%;
+  --sidebar-border: 232 36% 18%;
 
-  --sidebar-primary: 12 84% 56%;
+  --sidebar-primary: 187 100% 50%;
 
-  --sidebar-primary-foreground: 40 60% 97%;
+  --sidebar-primary-foreground: 234 64% 8%;
 
-  --sidebar-accent: 192 40% 19%;
+  --sidebar-accent: 233 43% 16%;
 
-  --sidebar-accent-foreground: 40 45% 95%;
+  --sidebar-accent-foreground: 224 35% 95%;
 
-  --sidebar-ring: 12 84% 56%;
+  --sidebar-ring: 187 100% 50%;
 
-  --popover: 40 50% 98%;
+  --popover: 0 0% 100%;
 
-  --popover-foreground: 192 48% 13%;
+  --popover-foreground: 232 44% 12%;
 
-  --popover-border: 36 24% 84%;
+  --popover-border: 224 30% 88%;
 
-  --primary: 12 82% 52%;
+  --primary: 221 100% 56%;
 
-  --primary-foreground: 40 60% 97%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 192 38% 22%;
+  --secondary: 263 55% 94%;
 
-  --secondary-foreground: 40 45% 95%;
+  --secondary-foreground: 263 65% 30%;
 
-  --muted: 38 30% 90%;
+  --muted: 223 42% 94%;
 
-  --muted-foreground: 192 14% 38%;
+  --muted-foreground: 230 16% 42%;
 
-  --accent: 42 92% 62%;
+  --accent: 187 100% 43%;
 
-  --accent-foreground: 192 52% 12%;
+  --accent-foreground: 234 64% 8%;
 
   --destructive: 352 72% 46%;
 
-  --destructive-foreground: 40 60% 97%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 36 22% 80%;
-  --ring: 12 82% 52%;
-  --chart-1: 12 82% 52%;
-  --chart-2: 192 48% 28%;
-  --chart-3: 42 92% 58%;
-  --chart-4: 168 40% 42%;
-  --chart-5: 340 50% 52%;
+  --input: 224 26% 81%;
+  --ring: 221 100% 56%;
+  --chart-1: 221 100% 56%;
+  --chart-2: 187 100% 43%;
+  --chart-3: 267 100% 60%;
+  --chart-4: 294 100% 52%;
+  --chart-5: 232 44% 32%;
 
   --app-font-sans: var(--font-body), ui-sans-serif, sans-serif;
   --app-font-serif: var(--font-display), ui-serif, serif;
@@ -230,9 +235,13 @@
 }
 
 .dark {
-  --bubble-mine: 14 70% 38%;
-  --bubble-mine-fg: 40 50% 96%;
-  --bubble-theirs: 194 36% 14%;
+  --bubble-mine: 221 100% 61%;
+  --bubble-mine-fg: 234 64% 8%;
+  --bubble-theirs: 233 42% 13%;
+  --brand-cyan: 187 100% 55%;
+  --brand-blue: 221 100% 64%;
+  --brand-violet: 267 100% 67%;
+  --brand-magenta: 294 100% 68%;
   --button-outline: rgba(255, 255, 255, 0.1);
   --badge-outline: rgba(255, 255, 255, 0.05);
 
@@ -242,68 +251,68 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 195 45% 7%;
+  --background: 234 58% 6%;
 
-  --foreground: 40 35% 92%;
+  --foreground: 224 35% 95%;
 
-  --border: 193 30% 17%;
+  --border: 233 30% 17%;
 
-  --card: 194 42% 10%;
+  --card: 233 47% 9%;
 
-  --card-foreground: 40 35% 92%;
+  --card-foreground: 224 35% 95%;
 
-  --card-border: 193 30% 17%;
+  --card-border: 233 30% 17%;
 
-  --sidebar: 196 50% 5%;
+  --sidebar: 235 68% 4%;
 
-  --sidebar-foreground: 40 35% 90%;
+  --sidebar-foreground: 224 35% 94%;
 
-  --sidebar-border: 193 30% 14%;
+  --sidebar-border: 233 32% 14%;
 
-  --sidebar-primary: 14 88% 60%;
+  --sidebar-primary: 187 100% 55%;
 
-  --sidebar-primary-foreground: 195 45% 7%;
+  --sidebar-primary-foreground: 234 58% 6%;
 
-  --sidebar-accent: 194 38% 13%;
+  --sidebar-accent: 233 42% 13%;
 
-  --sidebar-accent-foreground: 40 35% 92%;
+  --sidebar-accent-foreground: 224 35% 95%;
 
-  --sidebar-ring: 14 88% 60%;
+  --sidebar-ring: 187 100% 55%;
 
-  --popover: 194 42% 10%;
+  --popover: 233 47% 9%;
 
-  --popover-foreground: 40 35% 92%;
+  --popover-foreground: 224 35% 95%;
 
-  --popover-border: 193 30% 19%;
+  --popover-border: 233 30% 19%;
 
-  --primary: 14 88% 60%;
+  --primary: 221 100% 64%;
 
-  --primary-foreground: 195 45% 7%;
+  --primary-foreground: 234 58% 6%;
 
-  --secondary: 192 30% 20%;
+  --secondary: 263 45% 21%;
 
-  --secondary-foreground: 40 35% 92%;
+  --secondary-foreground: 224 35% 95%;
 
-  --muted: 194 30% 14%;
+  --muted: 233 36% 14%;
 
-  --muted-foreground: 190 12% 64%;
+  --muted-foreground: 225 15% 66%;
 
-  --accent: 42 90% 60%;
+  --accent: 294 100% 62%;
 
-  --accent-foreground: 195 45% 7%;
+  --accent-foreground: 234 58% 6%;
 
   --destructive: 352 70% 56%;
 
-  --destructive-foreground: 40 60% 97%;
+  --destructive-foreground: 0 0% 100%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
-  --input: 193 26% 24%;
-  --ring: 14 88% 60%;
-  --chart-1: 14 88% 60%;
-  --chart-2: 180 35% 50%;
-  --chart-3: 42 90% 60%;
-  --chart-4: 168 40% 50%;
-  --chart-5: 340 55% 62%;
+  --input: 233 28% 24%;
+  --ring: 221 100% 64%;
+  --chart-1: 221 100% 64%;
+  --chart-2: 187 100% 55%;
+  --chart-3: 267 100% 67%;
+  --chart-4: 294 100% 68%;
+  --chart-5: 224 35% 72%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
@@ -449,6 +458,12 @@
 
 /* ---------- VastMind signature details ---------- */
 .font-display { font-family: var(--font-display-face), serif; letter-spacing: -0.02em; }
+.brand-gradient-text {
+  background: var(--brand-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
 .grain::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: .06; mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");

@@ -1,29 +1,34 @@
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 export function VastMindMark({ size = 30 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 64 64" {...(Platform.OS === 'web' ? {} : { accessibilityElementsHidden: true })}>
-      <Rect width={64} height={64} rx={18} fill="#10262b" />
-      <Path d="M19 21l13 23 13-23" fill="none" stroke="#f4ece0" strokeWidth={6.5} strokeLinecap="round" strokeLinejoin="round" />
-      <Circle cx={19} cy={21} r={5} fill="#e8562b" />
-      <Circle cx={45} cy={21} r={5} fill="#f5c04a" />
-    </Svg>
+    <Image
+      source={require('../assets/images/vastmind-mark.png')}
+      style={{ width: size, height: size }}
+      resizeMode="contain"
+      accessibilityIgnoresInvertColors
+      {...(Platform.OS === 'web' ? {} : { accessibilityElementsHidden: true })}
+    />
   );
 }
 
 export function AppBrand({ size = 30, fontSize = 19 }: { size?: number; fontSize?: number }) {
-  const colors = useColors();
   return (
-    <View style={styles.brandRow} accessibilityRole="header" accessibilityLabel="VastMind">
+    <View style={styles.brandRow} accessibilityRole="header" accessibilityLabel="VastMind. All your socials, one mind.">
       <VastMindMark size={size} />
-      <Text style={[styles.brandName, { color: colors.forest, fontSize }]}>VastMind</Text>
+      <Image
+        source={require('../assets/images/vastmind-wordmark.png')}
+        style={{ width: fontSize * 5.9, height: fontSize }}
+        resizeMode="contain"
+        accessibilityLabel="VastMind"
+        accessibilityIgnoresInvertColors
+      />
     </View>
   );
 }

@@ -2,13 +2,13 @@
   "id": "./",
   "name": "VastMind",
   "short_name": "VastMind",
-  "description": "Your chats, friends, creator videos and communities, together.",
+  "description": "All your socials. One mind. Chat, connect, manage, and grow with VastMind.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f0e6",
-  "theme_color": "#10262b",
+  "background_color": "#070918",
+  "theme_color": "#070918",
   "icons": [
     {
       "src": "./icon-192.png",

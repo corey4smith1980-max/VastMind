@@ -10,8 +10,8 @@ export function AuthFrame({ children, quote }: { children: React.ReactNode; quot
       <aside className="relative hidden overflow-hidden bg-sidebar lg:block">
         <img src={`${basePath}/hero-switchboard.jpg`} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
         <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--ink))] via-[hsl(var(--ink)/0.35)] to-transparent" />
-        <div className="relative flex h-full flex-col justify-between p-10 text-[#f4ece0]">
-          <Link href="/" className="flex items-center gap-3"><BrandMark /><Wordmark className="text-[#f4ece0]" /></Link>
+        <div className="relative flex h-full flex-col justify-between p-10 text-white">
+          <Link href="/" className="flex items-center gap-3"><BrandMark /><Wordmark /></Link>
           <p className="font-display max-w-md text-4xl font-semibold leading-tight">{quote}</p>
         </div>
       </aside>

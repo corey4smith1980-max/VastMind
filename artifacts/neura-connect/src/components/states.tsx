@@ -3,19 +3,21 @@ import type { LucideIcon } from "lucide-react";
 import { RotateCw, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BrandMark } from "@/components/brand";
 import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { basePath } from "@/lib/base";
 
 // ---------- Boot: shown while the client-only providers load ----------
 export function BootScreen() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-5 bg-background">
-      <div className="relative">
-        <span className="pulse-ring absolute inset-0 rounded-[18px] bg-primary/30" />
-        <BrandMark className="relative h-14 w-14" />
-      </div>
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">Patching you through</p>
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030615] px-5">
+      <img
+        src={`${basePath}/vastmind-splash.png`}
+        alt="VastMind — All your socials. One mind."
+        className="max-h-[min(78dvh,820px)] w-full max-w-[min(88vw,820px)] object-contain"
+        draggable={false}
+      />
+      <p className="sr-only" role="status">Loading VastMind. All your socials, one mind.</p>
     </div>
   );
 }

@@ -15,7 +15,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/vastmind-adaptive-foreground.png",
         "monochromeImage": "./assets/images/vastmind-monochrome.png",
-        "backgroundColor": "#10262b"
+        "backgroundColor": "#030615"
       }
     },
     "web": {
@@ -26,7 +26,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#f8f4ec",
+          "backgroundColor": "#030615",
           "image": "./assets/images/vastmind-splash.png",
           "resizeMode": "contain"
         }

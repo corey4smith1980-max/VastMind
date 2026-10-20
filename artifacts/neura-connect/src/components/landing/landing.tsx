@@ -63,13 +63,16 @@ export function Landing() {
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-10 md:grid-cols-[1.15fr_1fr] md:pt-16">
         <div className="rise">
           <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-online" /> The everyday social switchboard
+            <span className="h-1.5 w-1.5 rounded-full bg-online" /> All your socials · one mind
           </p>
           <h1 className="font-display mt-6 text-[clamp(2.8rem,7.5vw,6rem)] font-extrabold leading-[0.92]">
-            Your people,<br /><span className="text-primary">on one line.</span>
+            All your socials,<br /><span className="brand-gradient-text">one mind.</span>
           </h1>
           <p className="mt-6 max-w-lg text-lg text-muted-foreground">
             Friends, neighbours, the running club and the shop that does your coffee — chats, communities, channels and a calm feed, without five different apps.
+          </p>
+          <p className="mt-4 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Chat <span className="text-[#08cfe9]">•</span> Connect <span className="text-[#3568ff]">•</span> Manage <span className="text-[#823cff]">•</span> Grow
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12 rounded-full px-7 text-base"><Link href="/sign-up">Open your line <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>

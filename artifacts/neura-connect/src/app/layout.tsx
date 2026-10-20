@@ -11,15 +11,15 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", displ
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export const metadata: Metadata = {
-  title: "VastMind — your people, on one line",
+  title: "VastMind — All your socials. One mind.",
   applicationName: "VastMind",
-  description: "VastMind brings private chats, groups, short videos, communities, channels, and business conversations together.",
+  description: "All your socials in one mind: chat, connect, manage a business, and grow with your communities on VastMind.",
   manifest: `${base}/manifest.webmanifest`,
   appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "default" },
   icons: {
     icon: [
-      { url: `${base}/favicon.svg?v=vastmind`, type: "image/svg+xml" },
       { url: `${base}/favicon-32.png`, type: "image/png", sizes: "32x32" },
+      { url: `${base}/icon-192.png`, type: "image/png", sizes: "192x192" },
     ],
     apple: { url: `${base}/apple-touch-icon.png`, sizes: "180x180" },
   },
@@ -29,8 +29,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f0e6" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a1a1e" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f8ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#070918" },
   ],
 };
 
