@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { EMOJI, EMOJI_CATEGORIES, EMOJI_STICKERS, SKIN_TONES, TONEABLE_EMOJI, VASTMIND_STICKERS, type EmojiCategory } from "@/components/chats/emoji-data";
+import { EMOJI, EMOJI_CATEGORIES, EMOJI_STICKERS, SKIN_TONES, TONEABLE_EMOJI, VASTMIND_STICKERS, vastMindEmojiMotion, type EmojiCategory } from "@/components/chats/emoji-data";
 import { basePath } from "@/lib/base";
 
 /** Optional composer tools only prepare a draft; the member confirms by sending. */
@@ -94,7 +94,7 @@ export function ComposerTools({ append, sendSticker }: { append: (text: string) 
       <PopoverContent align="start" side="top" className="w-[min(22rem,calc(100vw-1.5rem))] rounded-2xl p-3">
         <div className="mb-2 flex gap-1 rounded-xl bg-muted p-1" role="tablist" aria-label="Emoji and stickers">
           <button type="button" role="tab" aria-selected={tab === "emoji"} onClick={() => setTab("emoji")} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${tab === "emoji" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>Emoji</button>
-          <button type="button" role="tab" aria-selected={tab === "stickers"} onClick={() => setTab("stickers")} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${tab === "stickers" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>Stickers</button>
+          <button type="button" role="tab" aria-selected={tab === "stickers"} onClick={() => setTab("stickers")} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${tab === "stickers" ? "bg-card shadow-sm" : "text-muted-foreground"}`}>Premium & stickers</button>
         </div>
         {tab === "emoji" ? <>
           <label className="relative block">
@@ -119,18 +119,19 @@ export function ComposerTools({ append, sendSticker }: { append: (text: string) 
             {!filteredEmoji.length ? <p className="col-span-8 py-6 text-center text-xs text-muted-foreground">{category === "recent" ? "Your recently used emoji will appear here." : category === "favorites" ? "Tap a star to save favorites." : "No emoji found."}</p> : null}
           </div>
         </> : <div className="max-h-64 space-y-3 overflow-y-auto scrollbar-thin">
-          <section aria-label="VastMind original emoji pack">
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">VastMind originals · 35 stickers</p>
+          <section aria-label="VastMind premium animated emoji pack">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary">VastMind Premium · 35 animated originals</p>
+            <p className="mb-2 text-xs text-muted-foreground">Preview access is unlocked while billing is prepared. No purchase or payment is active.</p>
             <div className="grid grid-cols-5 gap-1">
               {VASTMIND_STICKERS.map((sticker) => <button key={sticker.token} type="button" onClick={() => chooseVastMindSticker(sticker.token)}
                 title={`Send ${sticker.label}`} aria-label={`Send ${sticker.label} VastMind sticker`}
                 className="grid h-14 place-items-center rounded-xl bg-gradient-to-br from-primary/10 via-card to-accent/20 transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary">
-                <img src={`${basePath}/emojis/vastmind/${sticker.file}`} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-11 w-11 object-contain" />
+                <img src={`${basePath}/emojis/vastmind/${sticker.file}`} alt="" aria-hidden="true" loading="lazy" decoding="async" className={`h-11 w-11 object-contain vm-premium-emoji vm-emoji-${vastMindEmojiMotion(sticker.token)}`} />
               </button>)}
             </div>
           </section>
           {EMOJI_STICKERS.map((pack) => <section key={pack.name} aria-label={`${pack.name} sticker pack`}>
-            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{pack.name} · VastMind originals</p>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{pack.name} · Free static Unicode</p>
             <div className="grid grid-cols-4 gap-1">
               {pack.items.map((symbol) => <button key={`${pack.name}-${symbol}`} type="button" onClick={() => chooseSticker(symbol)} title={`Send ${symbol} sticker`} aria-label={`Send ${symbol} sticker`} className="grid h-14 place-items-center rounded-xl bg-gradient-to-br from-primary/10 via-card to-accent/20 text-3xl transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary">{symbol}</button>)}
             </div>

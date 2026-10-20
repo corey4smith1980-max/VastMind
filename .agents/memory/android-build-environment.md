@@ -14,3 +14,9 @@ Remove regenerable native compiler intermediates before publishing hosted servic
 **Why:** Native Gradle builds leave very large shared libraries inside dependency directories; a subsequent publish passed all compilation steps but failed streaming one of these files into the deployment image.
 
 **How to apply:** Treat native intermediates as disposable caches. After another APK build, ensure the hosted deployment cleanup still runs; package-size failures after successful compilation are not necessarily application startup or database failures.
+
+Exclude workspace Gradle user-home caches and general tool caches from hosted deployment images, not only native compiler intermediates. Preserve runtime dependencies and generated mobile bundles required by serving processes.
+
+**Why:** A hosted publish completed compilation but exceeded the 8 GiB container-layer limit because local native/tool caches were packaged; the emoji image assets were small and were not the cause.
+
+**How to apply:** Check deployment logs before treating an “image size” failure as a picture-size problem. Keep native build caches available locally but outside the published image.

@@ -4,16 +4,13 @@
 # No need to store the pnpm store twice.
 .local
 
-# Local dependency installs and tool caches are recreated by the deployment build.
-**/node_modules/
+# Tool caches are not runtime dependencies. Keep node_modules and static-build:
+# Next.js and the mobile installer need those production files when serving.
 /.cache/
 **/.expo/
 
 # Native Gradle caches are only needed for local Android builds, not hosted app services.
 /artifacts/social-chat/android/.gradle-user-home/
-
-# The mobile service regenerates this production bundle during its build step.
-/artifacts/social-chat/static-build/
 
 # Downloadable native builds and other generated outputs.
 /generated-artifacts/

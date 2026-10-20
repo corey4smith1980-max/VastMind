@@ -32,3 +32,9 @@ VastMind Mail is for communication within the web and mobile apps only, not publ
 **Why:** The user explicitly clarified the internal-only scope, non-tracking intent, and that the organization should not control users' message content.
 
 **How to apply:** Do not require external mail hosting or DNS for internal aliases. Preserve the distinction between encrypted content, visible delivery metadata, and account authentication. The user has not approved changing the existing sign-in system.
+
+Ordinary emoji should be free and static. VastMind-specific premium emoji should be animated and intended for paid access; billing is deferred until a payment provider is activated.
+
+**Why:** The user requested static ordinary emoji and animated VastMind premium emoji, after previously choosing to build premium features now and add billing later.
+
+**How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.

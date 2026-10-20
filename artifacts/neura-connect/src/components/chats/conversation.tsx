@@ -28,7 +28,7 @@ import { useInvalidate, useIsOnline, usePollInterval, useRealtime } from "@/lib/
 import { cn } from "@/lib/utils";
 import { useCall } from "@/components/calling/call-provider";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
-import { VASTMIND_STICKERS } from "@/components/chats/emoji-data";
+import { VASTMIND_STICKERS, vastMindEmojiMotion } from "@/components/chats/emoji-data";
 import { basePath } from "@/lib/base";
 
 const PAGE = 40;
@@ -49,7 +49,7 @@ function Bubble({ m, mine, showName, others, onReact }: { m: Message; mine: bool
         {!mine && showName ? <p className="mb-0.5 text-xs font-semibold text-primary">{m.senderName}</p> : null}
         {m.media ? <MediaPreview media={m.media} /> : null}
         {vastMindSticker ? <img src={`${basePath}/emojis/vastmind/${vastMindSticker.file}`} alt={vastMindSticker.label}
-          loading="lazy" decoding="async" className="h-24 w-24 object-contain" /> : (
+          loading="lazy" decoding="async" className={`h-24 w-24 object-contain vm-premium-emoji vm-emoji-${vastMindEmojiMotion(m.content)}`} /> : (
           <p className={cn("whitespace-pre-wrap break-words leading-snug", sticker ? "text-6xl" : "text-[15px]")}>{sticker ? m.content : m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
             /^https?:\/\//.test(part) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a> : part
           )}</p>

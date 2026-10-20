@@ -477,6 +477,20 @@
 }
 .bubble-mine { background: hsl(var(--bubble-mine)); color: hsl(var(--bubble-mine-fg)); }
 .bubble-theirs { background: hsl(var(--bubble-theirs)); color: hsl(var(--foreground)); }
+/* Premium artwork uses lightweight local motion rather than large GIF downloads. */
+.vm-premium-emoji { transform-origin: center; }
+.vm-emoji-bounce { animation: vm-emoji-bounce 1.5s ease-in-out infinite; }
+.vm-emoji-pulse { animation: vm-emoji-pulse 1.8s ease-in-out infinite; }
+.vm-emoji-wiggle { animation: vm-emoji-wiggle 1.6s ease-in-out infinite; }
+.vm-emoji-float { animation: vm-emoji-float 2.2s ease-in-out infinite; }
+.vm-emoji-spark { animation: vm-emoji-spark 2s ease-in-out infinite; }
+@keyframes vm-emoji-bounce { 0%,100% { transform:translateY(0) scale(1); } 45% { transform:translateY(-7px) scale(1.04); } 65% { transform:translateY(1px) scale(.96); } }
+@keyframes vm-emoji-pulse { 0%,100% { transform:scale(.96); } 50% { transform:scale(1.09); } }
+@keyframes vm-emoji-wiggle { 0%,100% { transform:rotate(-5deg); } 50% { transform:rotate(5deg); } }
+@keyframes vm-emoji-float { 0%,100% { transform:translateY(3px); } 50% { transform:translateY(-4px); } }
+@keyframes vm-emoji-spark { 0%,100% { transform:scale(.95) rotate(-3deg); } 50% { transform:scale(1.08) rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .vm-premium-emoji { animation:none !important; } }
+
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .rise { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes typing-dot { 0%,80%,100% { transform: translateY(0); opacity: .4 } 40% { transform: translateY(-3px); opacity: 1 } }

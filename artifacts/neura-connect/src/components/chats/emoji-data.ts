@@ -92,3 +92,10 @@ export const VASTMIND_STICKERS = [
 
 export const TONEABLE_EMOJI = new Set(["👋","✋","👌","🤌","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","👇","👍","👎","✊","👊","👏","🙌","🙏","💪"]);
 export const SKIN_TONES = ["🏻","🏼","🏽","🏾","🏿"];
+
+// Motion is rendered locally, keeping the original premium pack small and offline-ready.
+export function vastMindEmojiMotion(token: string) {
+  const motions = ["bounce", "pulse", "wiggle", "float", "spark"] as const;
+  const number = Number(token.match(/^vm_(\d+)_/)?.[1] ?? 1);
+  return motions[(number - 1) % motions.length] ?? "pulse";
+}

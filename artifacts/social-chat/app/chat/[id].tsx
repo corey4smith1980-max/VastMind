@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useGetChatMessages, getGetChatMessagesQueryKey, Message as ApiMessage, type MediaAttachment } from '@workspace/api-client-react';
 import { MobileMediaPicker, MobileMediaPreview, MobileVoiceRecorder } from '@/components/Media';
@@ -11,7 +11,7 @@ import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { Message } from '@/types';
 import { useMobileRealtime } from '@/state/Realtime';
-import { VastMindEmojiPicker } from '@/components/VastMindEmojiPicker';
+import { AnimatedVastMindEmoji, VastMindEmojiPicker } from '@/components/VastMindEmojiPicker';
 import { findVastMindEmoji } from '@/components/vastmind-emoji-data';
 
 type RenderMessage = Message & { read: boolean; media?:MediaAttachment; type?:ApiMessage['type'] };
@@ -102,7 +102,7 @@ export default function ChatDetailScreen() {
           <View style={[styles.messageRow, item.mine ? styles.mineRow : styles.theirRow]}>
             <View style={[styles.bubble, item.type === 'sticker' ? styles.stickerBubble : item.mine ? { backgroundColor: colors.forest } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
               {item.media?<MobileMediaPreview media={item.media}/>:null}
-              {sticker ? <Image source={sticker.source} accessibilityLabel={sticker.label} resizeMode="contain" style={styles.stickerImage} /> :
+              {sticker ? <AnimatedVastMindEmoji source={sticker.source} token={sticker.token} label={sticker.label} size={92} /> :
                 <Text style={[styles.messageText, { color: item.mine ? colors.primaryForeground : colors.foreground }]}>{item.text}</Text>}
               <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.type === 'sticker' ? colors.mutedForeground : item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather accessibilityLabel={item.read ? 'Read by another member' : 'Sent'} name={item.read ? 'check-circle' : 'check'} size={12} color={colors.lime} /> : null}</View>
             </View>
@@ -112,7 +112,8 @@ export default function ChatDetailScreen() {
         ListFooterComponent={history.data?.nextBefore ? <Pressable onPress={() => setBefore(history.data?.nextBefore ?? undefined)}><Text style={{ color: colors.primary, padding: 16 }}>Load earlier messages</Text></Pressable> : null}
       />
       <View style={[styles.composerWrap, { backgroundColor: colors.background, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
-        <VastMindEmojiPicker visible={emojiPickerOpen} onClose={() => setEmojiPickerOpen(false)} onSelect={(token) => { void sendSticker(token); }} />
+        <VastMindEmojiPicker visible={emojiPickerOpen} onClose={() => setEmojiPickerOpen(false)} onSelect={(token) => { void sendSticker(token); }}
+          onSelectEmoji={(symbol) => { changeDraft(draft + symbol); setEmojiPickerOpen(false); }} />
         {attachment?<Pressable accessibilityLabel="Remove attachment" onPress={()=>setAttachment(undefined)}><Text style={{color:colors.foreground,padding:8}}>{attachment.name} · Remove</Text></Pressable>:null}
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Open VastMind emoji pack" onPress={() => { Keyboard.dismiss(); setEmojiPickerOpen(value => !value); }} disabled={sending} style={styles.emojiButton}>
