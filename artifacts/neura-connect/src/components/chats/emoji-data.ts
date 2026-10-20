@@ -51,5 +51,44 @@ export const EMOJI_STICKERS = [
   {name:"Everyday",items:["☕","🍕","🧋","🐱","🐶","🌙","🎧","📚","🪴","🚀","🎁","👋"]},
 ];
 
+/** The 35 bundled VastMind originals are sent as sticker tokens across web and mobile. */
+export const VASTMIND_STICKERS = [
+  { token: "vm_01_happy", label: "Happy", file: "VastMind_01_happy.png" },
+  { token: "vm_02_laugh", label: "Laugh", file: "VastMind_02_laugh.png" },
+  { token: "vm_03_wink", label: "Wink", file: "VastMind_03_wink.png" },
+  { token: "vm_04_love", label: "Love", file: "VastMind_04_love.png" },
+  { token: "vm_05_sad", label: "Sad", file: "VastMind_05_sad.png" },
+  { token: "vm_06_cry", label: "Crying", file: "VastMind_06_cry.png" },
+  { token: "vm_07_surprised", label: "Surprised", file: "VastMind_07_surprised.png" },
+  { token: "vm_08_cool", label: "Cool", file: "VastMind_08_cool.png" },
+  { token: "vm_09_sleepy", label: "Sleepy", file: "VastMind_09_sleepy.png" },
+  { token: "vm_10_thinking", label: "Thinking", file: "VastMind_10_thinking.png" },
+  { token: "vm_11_blush", label: "Blush", file: "VastMind_11_blush.png" },
+  { token: "vm_12_starstruck", label: "Starstruck", file: "VastMind_12_starstruck.png" },
+  { token: "vm_13_kiss", label: "Kiss", file: "VastMind_13_kiss.png" },
+  { token: "vm_14_neutral", label: "Neutral", file: "VastMind_14_neutral.png" },
+  { token: "vm_15_nervous", label: "Nervous", file: "VastMind_15_nervous.png" },
+  { token: "vm_16_angry", label: "Angry", file: "VastMind_16_angry.png" },
+  { token: "vm_17_ai_robot", label: "AI robot", file: "VastMind_17_ai_robot.png" },
+  { token: "vm_18_cold", label: "Cold", file: "VastMind_18_cold.png" },
+  { token: "vm_19_hot", label: "Hot", file: "VastMind_19_hot.png" },
+  { token: "vm_20_party", label: "Party", file: "VastMind_20_party.png" },
+  { token: "vm_21_vip", label: "VIP", file: "VastMind_21_vip.png" },
+  { token: "vm_22_verified", label: "Verified", file: "VastMind_22_verified.png" },
+  { token: "vm_23_online", label: "Online", file: "VastMind_23_online.png" },
+  { token: "vm_24_notification", label: "Notification", file: "VastMind_24_notification.png" },
+  { token: "vm_25_typing", label: "Typing", file: "VastMind_25_typing.png" },
+  { token: "vm_26_logo_vastmind", label: "VastMind", file: "VastMind_26_logo_vastmind.png" },
+  { token: "vm_27_logo_sparkle", label: "VastMind sparkle", file: "VastMind_27_logo_sparkle.png" },
+  { token: "vm_28_logo_love", label: "VastMind love", file: "VastMind_28_logo_love.png" },
+  { token: "vm_29_logo_pink", label: "VastMind pink", file: "VastMind_29_logo_pink.png" },
+  { token: "vm_30_logo_green", label: "VastMind green", file: "VastMind_30_logo_green.png" },
+  { token: "vm_31_logo_gold", label: "VastMind gold", file: "VastMind_31_logo_gold.png" },
+  { token: "vm_32_logo_round_badge", label: "VastMind round badge", file: "VastMind_32_logo_round_badge.png" },
+  { token: "vm_33_logo_app_icon", label: "VastMind app icon", file: "VastMind_33_logo_app_icon.png" },
+  { token: "vm_34_logo_new_message", label: "VastMind new message", file: "VastMind_34_logo_new_message.png" },
+  { token: "vm_35_logo_verified", label: "VastMind verified", file: "VastMind_35_logo_verified.png" },
+] as const;
+
 export const TONEABLE_EMOJI = new Set(["👋","✋","👌","🤌","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","👇","👍","👎","✊","👊","👏","🙌","🙏","💪"]);
 export const SKIN_TONES = ["🏻","🏼","🏽","🏾","🏿"];

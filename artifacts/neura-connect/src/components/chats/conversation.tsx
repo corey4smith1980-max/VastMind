@@ -28,6 +28,8 @@ import { useInvalidate, useIsOnline, usePollInterval, useRealtime } from "@/lib/
 import { cn } from "@/lib/utils";
 import { useCall } from "@/components/calling/call-provider";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
+import { VASTMIND_STICKERS } from "@/components/chats/emoji-data";
+import { basePath } from "@/lib/base";
 
 const PAGE = 40;
 const byTime = (a: Message, b: Message) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -39,15 +41,19 @@ function Bubble({ m, mine, showName, others, onReact }: { m: Message; mine: bool
   }
   const readByOthers = m.readBy.filter((id) => id !== m.senderId).length;
   const sticker = m.type === "sticker";
+  const vastMindSticker = sticker ? VASTMIND_STICKERS.find((item) => item.token === m.content) : undefined;
   return (
     <div className={cn("rise flex gap-2", mine ? "justify-end" : "justify-start")} data-testid={`message-${m.id}`}>
       {!mine && showName ? <UserAvatar id={m.senderId} name={m.senderName} src={m.senderAvatarUrl} size="sm" className="mt-auto" /> : !mine ? <span className="w-8 shrink-0" /> : null}
       <div className={cn("max-w-[78%] rounded-[1.15rem] px-3.5 py-2 shadow-[0_1px_0_hsl(var(--ink)/.06)] sm:max-w-[64%]", sticker ? "border-0 bg-transparent px-1 shadow-none" : mine ? "bubble-mine rounded-br-md" : "bubble-theirs rounded-bl-md border")}>
         {!mine && showName ? <p className="mb-0.5 text-xs font-semibold text-primary">{m.senderName}</p> : null}
         {m.media ? <MediaPreview media={m.media} /> : null}
-        <p className={cn("whitespace-pre-wrap break-words leading-snug", sticker ? "text-6xl" : "text-[15px]")}>{sticker ? m.content : m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
-          /^https?:\/\//.test(part) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a> : part
-        )}</p>
+        {vastMindSticker ? <img src={`${basePath}/emojis/vastmind/${vastMindSticker.file}`} alt={vastMindSticker.label}
+          loading="lazy" decoding="async" className="h-24 w-24 object-contain" /> : (
+          <p className={cn("whitespace-pre-wrap break-words leading-snug", sticker ? "text-6xl" : "text-[15px]")}>{sticker ? m.content : m.content.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+            /^https?:\/\//.test(part) ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all">{part}</a> : part
+          )}</p>
+        )}
         {m.reactions.length ? <div className="mt-1 flex flex-wrap gap-1" aria-label="Message reactions">
           {m.reactions.map((reaction) => <button key={reaction.emoji} type="button" aria-pressed={reaction.reactedByMe} aria-label={`${reaction.emoji}, ${reaction.count} reactions`} onClick={() => onReact(m.id,reaction.emoji)} className={cn("rounded-full border px-2 py-0.5 text-xs",reaction.reactedByMe?"border-primary bg-primary/10":"bg-card/70")}>{reaction.emoji} {reaction.count}</button>)}
         </div> : null}

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import * as schemas from "@workspace/api-zod";
+import { isValidStickerContent } from "../lib/stickers";
 import { z } from "zod";
 import { query, transaction, provision, profile, summary, blocked, canDiscover, canMessage, membership, chatAllowed, conversation, message, community, postAccess, post, channelAccess, channel, updateShape, notify, uuid, assert, HttpError, onlineUsers, toggleFollow, blockMember, type Query, type Row } from "../lib/social";
 import { changed, evictChat, disconnectUser } from "../lib/realtime";
@@ -203,7 +204,7 @@ route("post","/chats/:chatId/messages","SendMessage",async c=>{
   const m=await chatAllowed(c.p.chatId,c.u,c.q);
   if(m.type==="private")for(const target of await c.q("SELECT user_id FROM chat_members WHERE chat_id=$1 AND user_id<>$2",[c.p.chatId,c.u]))await canMessage(c.u,target.user_id,c.q);
   if(c.b.replyToId)assert((await c.q("SELECT id FROM messages WHERE id=$1 AND chat_id=$2",[c.b.replyToId,c.p.chatId])).length,400,"Reply must reference this conversation");
-  if(c.b.type==="sticker")assert(!c.b.mediaId && c.b.content.length<=12 && /\p{Extended_Pictographic}/u.test(c.b.content),400,"Stickers must be a single emoji");
+  if(c.b.type==="sticker")assert(!c.b.mediaId && isValidStickerContent(c.b.content),400,"Stickers must be a supported emoji or VastMind original");
   const media=await claimMedia(c.b.mediaId,c.u,"chat",c.p.chatId,c.q);
   const type=media?(media.content_type.startsWith("image/")?"image":media.content_type.startsWith("video/")?"video":"voice"):(c.b.type??"text");
   const [sent]=await c.q("INSERT INTO messages (id,chat_id,sender_id,content,reply_to_id,media_id,type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",[uuid(),c.p.chatId,c.u,c.b.content,c.b.replyToId??null,media?.id??null,type]);

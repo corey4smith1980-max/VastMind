@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Image, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useGetChatMessages, getGetChatMessagesQueryKey, Message as ApiMessage, type MediaAttachment } from '@workspace/api-client-react';
 import { MobileMediaPicker, MobileMediaPreview, MobileVoiceRecorder } from '@/components/Media';
@@ -11,8 +11,10 @@ import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { Message } from '@/types';
 import { useMobileRealtime } from '@/state/Realtime';
+import { VastMindEmojiPicker } from '@/components/VastMindEmojiPicker';
+import { findVastMindEmoji } from '@/components/vastmind-emoji-data';
 
-type RenderMessage = Message & { read: boolean; media?:MediaAttachment };
+type RenderMessage = Message & { read: boolean; media?:MediaAttachment; type?:ApiMessage['type'] };
 
 export default function ChatDetailScreen() {
   const colors = useColors();
@@ -30,6 +32,7 @@ export default function ChatDetailScreen() {
   const [draft, setDraft] = useState('');
   const [attachment,setAttachment]=useState<MediaAttachment>();
   const [sending, setSending] = useState(false);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const typers = typing[id] ?? [];
   useEffect(() => joinChat(id), [id, joinChat]);
   useEffect(() => {
@@ -66,9 +69,16 @@ export default function ChatDetailScreen() {
     if (sent) { setDraft('');setAttachment(undefined); sendTyping(id, false); }
     setSending(false);
   };
+  const sendSticker = async (token: string) => {
+    if (sending) return;
+    setSending(true);
+    const sent = await sendMessage(conversation.id, token, undefined, 'sticker');
+    if (sent) setEmojiPickerOpen(false);
+    setSending(false);
+  };
   const messages: RenderMessage[] = [...new Map([...older, ...(latest.data?.items ?? [])].map(m => [m.id, m])).values()]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map(m => ({ id: m.id, text: m.content, media:m.media, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString(), read: m.readBy.some(reader => reader !== profile?.id) }));
+    .map(m => ({ id: m.id, text: m.content, media:m.media, type:m.type, mine: m.senderId === profile?.id, time: new Date(m.createdAt).toLocaleString(), read: m.readBy.some(reader => reader !== profile?.id) }));
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: colors.background }]} behavior="padding" keyboardVerticalOffset={0}>
@@ -86,20 +96,28 @@ export default function ChatDetailScreen() {
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.messageList}
-        renderItem={({ item }) => (
+        renderItem={({ item }) => {
+          const sticker = item.type === 'sticker' ? findVastMindEmoji(item.text) : undefined;
+          return (
           <View style={[styles.messageRow, item.mine ? styles.mineRow : styles.theirRow]}>
-            <View style={[styles.bubble, item.mine ? { backgroundColor: colors.forest } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+            <View style={[styles.bubble, item.type === 'sticker' ? styles.stickerBubble : item.mine ? { backgroundColor: colors.forest } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
               {item.media?<MobileMediaPreview media={item.media}/>:null}
-              <Text style={[styles.messageText, { color: item.mine ? colors.primaryForeground : colors.foreground }]}>{item.text}</Text>
-              <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather accessibilityLabel={item.read ? 'Read by another member' : 'Sent'} name={item.read ? 'check-circle' : 'check'} size={12} color={colors.lime} /> : null}</View>
+              {sticker ? <Image source={sticker.source} accessibilityLabel={sticker.label} resizeMode="contain" style={styles.stickerImage} /> :
+                <Text style={[styles.messageText, { color: item.mine ? colors.primaryForeground : colors.foreground }]}>{item.text}</Text>}
+              <View style={styles.messageTimeRow}><Text style={[styles.messageTime, { color: item.type === 'sticker' ? colors.mutedForeground : item.mine ? colors.primaryForeground : colors.mutedForeground }]}>{item.time}</Text>{item.mine ? <Feather accessibilityLabel={item.read ? 'Read by another member' : 'Sent'} name={item.read ? 'check-circle' : 'check'} size={12} color={colors.lime} /> : null}</View>
             </View>
           </View>
-        )}
+          );
+        }}
         ListFooterComponent={history.data?.nextBefore ? <Pressable onPress={() => setBefore(history.data?.nextBefore ?? undefined)}><Text style={{ color: colors.primary, padding: 16 }}>Load earlier messages</Text></Pressable> : null}
       />
       <View style={[styles.composerWrap, { backgroundColor: colors.background, paddingBottom: Platform.OS === 'web' ? 34 : Math.max(insets.bottom, 10) }]}>
+        <VastMindEmojiPicker visible={emojiPickerOpen} onClose={() => setEmojiPickerOpen(false)} onSelect={(token) => { void sendSticker(token); }} />
         {attachment?<Pressable accessibilityLabel="Remove attachment" onPress={()=>setAttachment(undefined)}><Text style={{color:colors.foreground,padding:8}}>{attachment.name} · Remove</Text></Pressable>:null}
         <View style={[styles.composer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open VastMind emoji pack" onPress={() => { Keyboard.dismiss(); setEmojiPickerOpen(value => !value); }} disabled={sending} style={styles.emojiButton}>
+            <Feather name="smile" size={19} color={colors.forest} />
+          </Pressable>
           <MobileMediaPicker purpose="chat" chatId={id} onChange={setAttachment} disabled={sending}/>
           <MobileVoiceRecorder chatId={id} onChange={setAttachment} disabled={sending}/>
           <TextInput accessibilityLabel="Write a message" testID="message-input" placeholder="Write a message…" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={changeDraft} onSubmitEditing={send} returnKeyType="send" maxLength={4000} style={[styles.input, { color: colors.foreground }]} />
@@ -123,6 +141,8 @@ const styles = StyleSheet.create({
   mineRow: { justifyContent: 'flex-end' },
   theirRow: { justifyContent: 'flex-start' },
   bubble: { maxWidth: '83%', paddingHorizontal: 13, paddingTop: 10, paddingBottom: 7, borderRadius: 17 },
+  stickerBubble: { maxWidth: '83%', paddingHorizontal: 2, paddingTop: 2, paddingBottom: 5, borderRadius: 10 },
+  stickerImage: { width: 92, height: 92 },
   messageText: { fontSize: 14, lineHeight: 20 },
   messageTimeRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 3 },
   messageTime: { fontSize: 9 },
@@ -133,6 +153,7 @@ const styles = StyleSheet.create({
   quickChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 6 },
   quickChipText: { fontSize: 10, fontWeight: '600' },
   composer: { minHeight: 49, borderWidth: 1, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 7 },
+  emojiButton: { width: 31, height: 36, alignItems: 'center', justifyContent: 'center' },
   attach: { width: 31, height: 36, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, minHeight: 42, fontSize: 14, paddingVertical: 8 },
   sendButton: { width: 35, height: 35, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },

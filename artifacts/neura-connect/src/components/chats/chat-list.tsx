@@ -8,6 +8,7 @@ import { EmptyState, ErrorState, RowSkeleton } from "@/components/states";
 import { UserAvatar } from "@/components/user-avatar";
 import { ConnectionPill } from "@/components/shell/connection-pill";
 import { chatTitle, otherMember } from "@/components/chats/helpers";
+import { VASTMIND_STICKERS } from "@/components/chats/emoji-data";
 import { useMe } from "@/lib/me";
 import { chatTime } from "@/lib/format";
 import { usePollInterval, useRealtime } from "@/lib/realtime";
@@ -56,6 +57,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
           const isGroup = c.type === "group";
           const t = (typing[c.id] ?? []).filter((x) => x.userId !== me.id);
           const active = c.id === activeId;
+          const lastSticker = VASTMIND_STICKERS.find((item) => item.token === c.lastMessage);
           return (
             <button key={c.id} role="listitem" onClick={() => onSelect(c.id)} data-testid={`row-chat-${c.id}`}
               className={cn("rise group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors duration-150", active ? "bg-primary/10" : "hover:bg-muted")}
@@ -72,7 +74,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
                 </span>
                 <span className="mt-0.5 flex items-center justify-between gap-2">
                   <span className={cn("truncate text-sm", t.length ? "italic text-primary" : c.unreadCount ? "font-medium text-foreground" : "text-muted-foreground")}>
-                    {t.length ? `${t[0].name.split(" ")[0]} is typing…` : c.lastMessage ?? (isGroup ? `${c.memberCount} members` : "Say hello")}
+                    {t.length ? `${t[0].name.split(" ")[0]} is typing…` : lastSticker ? `Sticker · ${lastSticker.label}` : c.lastMessage ?? (isGroup ? `${c.memberCount} members` : "Say hello")}
                   </span>
                   {c.unreadCount ? <span className="min-w-[20px] rounded-full bg-primary px-1.5 text-center font-mono text-[11px] font-bold leading-5 text-primary-foreground" aria-label={`${c.unreadCount} unread`}>{c.unreadCount}</span> : null}
                 </span>

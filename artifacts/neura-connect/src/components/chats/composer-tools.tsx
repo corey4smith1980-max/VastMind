@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
-import { EMOJI, EMOJI_CATEGORIES, EMOJI_STICKERS, SKIN_TONES, TONEABLE_EMOJI, type EmojiCategory } from "@/components/chats/emoji-data";
+import { EMOJI, EMOJI_CATEGORIES, EMOJI_STICKERS, SKIN_TONES, TONEABLE_EMOJI, VASTMIND_STICKERS, type EmojiCategory } from "@/components/chats/emoji-data";
+import { basePath } from "@/lib/base";
 
 /** Optional composer tools only prepare a draft; the member confirms by sending. */
 export function ComposerTools({ append, sendSticker }: { append: (text: string) => void; sendSticker?: (emoji: string) => void }) {
@@ -65,6 +66,11 @@ export function ComposerTools({ append, sendSticker }: { append: (text: string) 
     else append(symbol);
     setOpen(false);
   }
+  function chooseVastMindSticker(token: string) {
+    if (sendSticker) sendSticker(token);
+    else append(token);
+    setOpen(false);
+  }
   function toggleFavorite(symbol: string) {
     setFavorites((items) => items.includes(symbol) ? items.filter((item) => item !== symbol) : [symbol, ...items].slice(0, 100));
   }
@@ -113,13 +119,23 @@ export function ComposerTools({ append, sendSticker }: { append: (text: string) 
             {!filteredEmoji.length ? <p className="col-span-8 py-6 text-center text-xs text-muted-foreground">{category === "recent" ? "Your recently used emoji will appear here." : category === "favorites" ? "Tap a star to save favorites." : "No emoji found."}</p> : null}
           </div>
         </> : <div className="max-h-64 space-y-3 overflow-y-auto scrollbar-thin">
+          <section aria-label="VastMind original emoji pack">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">VastMind originals · 35 stickers</p>
+            <div className="grid grid-cols-5 gap-1">
+              {VASTMIND_STICKERS.map((sticker) => <button key={sticker.token} type="button" onClick={() => chooseVastMindSticker(sticker.token)}
+                title={`Send ${sticker.label}`} aria-label={`Send ${sticker.label} VastMind sticker`}
+                className="grid h-14 place-items-center rounded-xl bg-gradient-to-br from-primary/10 via-card to-accent/20 transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary">
+                <img src={`${basePath}/emojis/vastmind/${sticker.file}`} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-11 w-11 object-contain" />
+              </button>)}
+            </div>
+          </section>
           {EMOJI_STICKERS.map((pack) => <section key={pack.name} aria-label={`${pack.name} sticker pack`}>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{pack.name} · VastMind originals</p>
             <div className="grid grid-cols-4 gap-1">
               {pack.items.map((symbol) => <button key={`${pack.name}-${symbol}`} type="button" onClick={() => chooseSticker(symbol)} title={`Send ${symbol} sticker`} aria-label={`Send ${symbol} sticker`} className="grid h-14 place-items-center rounded-xl bg-gradient-to-br from-primary/10 via-card to-accent/20 text-3xl transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-primary">{symbol}</button>)}
             </div>
           </section>)}
-          <p className="text-[11px] leading-relaxed text-muted-foreground">Choose a sticker to send it as its own message. Custom and animated packs can be added later.</p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">Choose a sticker to send it as its own message.</p>
         </div>}
         <Button type="button" variant="outline" className="mt-3 w-full" disabled={locating} onClick={location}>
           {locating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />} Add current location

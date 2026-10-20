@@ -1,0 +1,42 @@
+// Static requires let Metro bundle each VastMind original for offline use.
+export const VASTMIND_EMOJIS = [
+  { token: "vm_01_happy", label: "Happy", source: require("../assets/vastmind-emojis/VastMind_01_happy.png") },
+  { token: "vm_02_laugh", label: "Laugh", source: require("../assets/vastmind-emojis/VastMind_02_laugh.png") },
+  { token: "vm_03_wink", label: "Wink", source: require("../assets/vastmind-emojis/VastMind_03_wink.png") },
+  { token: "vm_04_love", label: "Love", source: require("../assets/vastmind-emojis/VastMind_04_love.png") },
+  { token: "vm_05_sad", label: "Sad", source: require("../assets/vastmind-emojis/VastMind_05_sad.png") },
+  { token: "vm_06_cry", label: "Crying", source: require("../assets/vastmind-emojis/VastMind_06_cry.png") },
+  { token: "vm_07_surprised", label: "Surprised", source: require("../assets/vastmind-emojis/VastMind_07_surprised.png") },
+  { token: "vm_08_cool", label: "Cool", source: require("../assets/vastmind-emojis/VastMind_08_cool.png") },
+  { token: "vm_09_sleepy", label: "Sleepy", source: require("../assets/vastmind-emojis/VastMind_09_sleepy.png") },
+  { token: "vm_10_thinking", label: "Thinking", source: require("../assets/vastmind-emojis/VastMind_10_thinking.png") },
+  { token: "vm_11_blush", label: "Blush", source: require("../assets/vastmind-emojis/VastMind_11_blush.png") },
+  { token: "vm_12_starstruck", label: "Starstruck", source: require("../assets/vastmind-emojis/VastMind_12_starstruck.png") },
+  { token: "vm_13_kiss", label: "Kiss", source: require("../assets/vastmind-emojis/VastMind_13_kiss.png") },
+  { token: "vm_14_neutral", label: "Neutral", source: require("../assets/vastmind-emojis/VastMind_14_neutral.png") },
+  { token: "vm_15_nervous", label: "Nervous", source: require("../assets/vastmind-emojis/VastMind_15_nervous.png") },
+  { token: "vm_16_angry", label: "Angry", source: require("../assets/vastmind-emojis/VastMind_16_angry.png") },
+  { token: "vm_17_ai_robot", label: "AI robot", source: require("../assets/vastmind-emojis/VastMind_17_ai_robot.png") },
+  { token: "vm_18_cold", label: "Cold", source: require("../assets/vastmind-emojis/VastMind_18_cold.png") },
+  { token: "vm_19_hot", label: "Hot", source: require("../assets/vastmind-emojis/VastMind_19_hot.png") },
+  { token: "vm_20_party", label: "Party", source: require("../assets/vastmind-emojis/VastMind_20_party.png") },
+  { token: "vm_21_vip", label: "VIP", source: require("../assets/vastmind-emojis/VastMind_21_vip.png") },
+  { token: "vm_22_verified", label: "Verified", source: require("../assets/vastmind-emojis/VastMind_22_verified.png") },
+  { token: "vm_23_online", label: "Online", source: require("../assets/vastmind-emojis/VastMind_23_online.png") },
+  { token: "vm_24_notification", label: "Notification", source: require("../assets/vastmind-emojis/VastMind_24_notification.png") },
+  { token: "vm_25_typing", label: "Typing", source: require("../assets/vastmind-emojis/VastMind_25_typing.png") },
+  { token: "vm_26_logo_vastmind", label: "VastMind", source: require("../assets/vastmind-emojis/VastMind_26_logo_vastmind.png") },
+  { token: "vm_27_logo_sparkle", label: "VastMind sparkle", source: require("../assets/vastmind-emojis/VastMind_27_logo_sparkle.png") },
+  { token: "vm_28_logo_love", label: "VastMind love", source: require("../assets/vastmind-emojis/VastMind_28_logo_love.png") },
+  { token: "vm_29_logo_pink", label: "VastMind pink", source: require("../assets/vastmind-emojis/VastMind_29_logo_pink.png") },
+  { token: "vm_30_logo_green", label: "VastMind green", source: require("../assets/vastmind-emojis/VastMind_30_logo_green.png") },
+  { token: "vm_31_logo_gold", label: "VastMind gold", source: require("../assets/vastmind-emojis/VastMind_31_logo_gold.png") },
+  { token: "vm_32_logo_round_badge", label: "VastMind round badge", source: require("../assets/vastmind-emojis/VastMind_32_logo_round_badge.png") },
+  { token: "vm_33_logo_app_icon", label: "VastMind app icon", source: require("../assets/vastmind-emojis/VastMind_33_logo_app_icon.png") },
+  { token: "vm_34_logo_new_message", label: "VastMind new message", source: require("../assets/vastmind-emojis/VastMind_34_logo_new_message.png") },
+  { token: "vm_35_logo_verified", label: "VastMind verified", source: require("../assets/vastmind-emojis/VastMind_35_logo_verified.png") },
+] as const;
+
+export function findVastMindEmoji(token: string) {
+  return VASTMIND_EMOJIS.find((emoji) => emoji.token === token);
+}
