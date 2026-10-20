@@ -15,7 +15,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "monochromeImage": "./assets/images/vastmind-monochrome.png",
-        "backgroundColor": "#01010F"
+        "backgroundColor": "#01010E"
       }
     },
     "web": {
