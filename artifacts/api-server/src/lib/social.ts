@@ -144,7 +144,10 @@ export async function message(m:Row,viewer:string,q:Query=query,readState?:Row[]
   const u=await summary(m.sender_id,viewer,q);
   const readers=readState?readState.filter(r=>r.last_read_at && new Date(r.last_read_at)>=new Date(m.created_at)):await q("SELECT user_id FROM chat_members WHERE chat_id=$1 AND last_read_at>=$2",[m.chat_id,m.created_at]);
   const [media] = m.media_id ? await q("SELECT * FROM media_uploads WHERE id=$1 AND ready=true",[m.media_id]) : [];
+  const reactions = await q(`SELECT emoji,count(*)::int AS count,bool_or(user_id=$2) AS "reactedByMe"
+    FROM message_reactions WHERE message_id=$1 GROUP BY emoji ORDER BY emoji`,[m.id,viewer]);
   return {id:m.id,chatId:m.chat_id,senderId:m.sender_id,senderName:u.name,senderAvatarUrl:u.avatarUrl,content:m.content,type:m.type,createdAt:m.created_at,readBy:[...new Set([m.sender_id,...readers.map(r=>r.user_id)])],
+    reactions,
     ...(media?{media:{id:media.id,url:`/api/storage/media/${media.id}`,name:media.name,contentType:media.content_type,size:Number(media.size)}}:{})};
 }
 export async function community(id:string,viewer:string,q:Query=query) {

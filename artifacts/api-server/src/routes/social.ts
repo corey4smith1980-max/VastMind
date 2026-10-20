@@ -48,7 +48,7 @@ function route(method:"get"|"post"|"patch"|"put"|"delete",path:string,operation:
     const s=validate(registry[`${operation}QueryParams`],req.query) as any;
     for(const value of Object.values(s))assert(typeof value!=="string" || value.length<=200,400,"Query is too long");
     const b=validate(registry[`${operation}Body`],req.body) as any;
-    if(b && typeof b==="object")for(const [key,value] of Object.entries(b))if(typeof value==="string" && !["bio","status"].includes(key))assert(value.trim().length>0,400,"Text must not be blank");
+    if(b && typeof b==="object")for(const [key,value] of Object.entries(b))if(typeof value==="string" && !["bio","status","description","buyerNote"].includes(key))assert(value.trim().length>0,400,"Text must not be blank");
     const c:Context={u:res.locals.user.id,user:res.locals.user,p,b,s,q:query,impact:new Set([res.locals.user.id]),entity:path.split("/")[1]};
     const run=async(q:Query)=>{
       c.q=q;
@@ -203,14 +203,26 @@ route("post","/chats/:chatId/messages","SendMessage",async c=>{
   const m=await chatAllowed(c.p.chatId,c.u,c.q);
   if(m.type==="private")for(const target of await c.q("SELECT user_id FROM chat_members WHERE chat_id=$1 AND user_id<>$2",[c.p.chatId,c.u]))await canMessage(c.u,target.user_id,c.q);
   if(c.b.replyToId)assert((await c.q("SELECT id FROM messages WHERE id=$1 AND chat_id=$2",[c.b.replyToId,c.p.chatId])).length,400,"Reply must reference this conversation");
+  if(c.b.type==="sticker")assert(!c.b.mediaId && c.b.content.length<=12 && /\p{Extended_Pictographic}/u.test(c.b.content),400,"Stickers must be a single emoji");
   const media=await claimMedia(c.b.mediaId,c.u,"chat",c.p.chatId,c.q);
-  const type=media?(media.content_type.startsWith("image/")?"image":media.content_type.startsWith("video/")?"video":"voice"):"text";
+  const type=media?(media.content_type.startsWith("image/")?"image":media.content_type.startsWith("video/")?"video":"voice"):(c.b.type??"text");
   const [sent]=await c.q("INSERT INTO messages (id,chat_id,sender_id,content,reply_to_id,media_id,type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *",[uuid(),c.p.chatId,c.u,c.b.content,c.b.replyToId??null,media?.id??null,type]);
   await c.q("UPDATE chat_members SET last_read_at=$1 WHERE chat_id=$2 AND user_id=$3",[sent.created_at,c.p.chatId,c.u]);
   await chatImpact(c,c.p.chatId);
   for(const target of c.impact)await notify(c.q,target,c.u,"message","New message","You have a new message.");
   return message(sent,c.u,c.q);
 },201);
+route("post","/chats/:chatId/messages/:messageId/reactions","ToggleMessageReaction",async c=>{
+  await chatAllowed(c.p.chatId,c.u,c.q);
+  assert(/\p{Extended_Pictographic}/u.test(c.b.emoji),400,"Choose an emoji reaction");
+  assert((await c.q("SELECT id FROM messages WHERE id=$1 AND chat_id=$2",[c.p.messageId,c.p.chatId])).length,404,"Message not found");
+  const removed=await c.q("DELETE FROM message_reactions WHERE message_id=$1 AND user_id=$2 AND emoji=$3 RETURNING message_id",[c.p.messageId,c.u,c.b.emoji]);
+  if(!removed.length)await c.q("INSERT INTO message_reactions (message_id,user_id,emoji) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING",[c.p.messageId,c.u,c.b.emoji]);
+  c.chatId=c.p.chatId;await chatImpact(c,c.p.chatId);
+  const reactions=await c.q(`SELECT emoji,count(*)::int AS count,bool_or(user_id=$2) AS "reactedByMe"
+    FROM message_reactions WHERE message_id=$1 GROUP BY emoji ORDER BY emoji`,[c.p.messageId,c.u]);
+  return {reactions};
+});
 route("post","/chats/:chatId/read","MarkChatRead",async c=>{await chatAllowed(c.p.chatId,c.u,c.q);await c.q("UPDATE chat_members SET last_read_at=now() WHERE chat_id=$1 AND user_id=$2",[c.p.chatId,c.u]);await chatImpact(c,c.p.chatId);return {success:true};});
 route("post","/chats/:chatId/members","AddChatMember",async c=>{
   await membership(c.p.chatId,c.u,c.q,true);await groupAddition(c,c.p.chatId,c.b.userId);await chatImpact(c,c.p.chatId);return conversation(c.p.chatId,c.u,c.q);
