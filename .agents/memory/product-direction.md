@@ -11,7 +11,9 @@ The product's user-facing name is “VastMind.”
 
 **Why:** The user requested “Update App name to VastMind and update app icon and logo,” superseding the earlier I AM name.
 
-**How to apply:** Use VastMind for customer-facing branding; a rename does not by itself require changing existing routing prefixes or account identities.
+**How to apply:** Use VastMind for customer-facing branding and preserve existing account identities. The main published URL should serve the web app at `/`; keep the mobile installer at `/mobile/`.
+
+**Why:** The user explicitly chose the web app rather than the installer for the main published link.
 
 Use Replit-managed Clerk and Replit Postgres. The initial media deferral ended when the user selected Replit App Storage for uploads.
 
