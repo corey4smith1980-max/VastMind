@@ -14,3 +14,9 @@ In this multi-artifact autoscale setup, deployment logs also probed the API serv
 **Why:** The failed release logged `/api` as unhealthy while `/api/healthz` returned 200; later `/api` failures followed service termination from the web health-check failure.
 
 **How to apply:** When publishing multiple services, verify both the artifact mount root and its explicit startup path. Do not put database checks or private details in the public readiness response.
+
+Production-mode verification must not share `.next` with a running Next development server.
+
+**Why:** This Next 15 setup uses the same output directory in both modes. Preview requests can replace production output and cause a misleading “Could not find a production build” error from `next start`.
+
+**How to apply:** Pause the managed web preview before a production build/readiness check, then restore its workflow when verification is complete.
