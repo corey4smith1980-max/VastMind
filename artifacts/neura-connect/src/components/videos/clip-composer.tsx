@@ -284,7 +284,9 @@ export function ClipComposer({ onClose }: { onClose: (published?: boolean) => vo
               </div>
             </> : source ? (view === "result" && rendered ? renderedPlayback.url ? <video key={rendered.media.id} src={renderedPlayback.url} controls playsInline className="absolute inset-0 h-full w-full object-contain" aria-label="Rendered preview" data-testid="video-rendered-preview" />
               : <p role={renderedPlayback.error ? "alert" : "status"} className="max-w-[260px] p-5 text-center text-white/80">{renderedPlayback.error ? "The preview couldn't load." : "Preparing your private preview…"}</p>
-              : <video key={sourceUrl} src={sourceUrl} controls muted playsInline className={cn("absolute inset-0 h-full w-full object-contain", mirror && "-scale-x-100", previewEffect[effect])} aria-label="Source clip" onLoadedMetadata={(e) => { e.currentTarget.currentTime = start; }} />)
+              : sourceUrl
+                ? <video key={sourceUrl} src={sourceUrl} controls muted playsInline className={cn("absolute inset-0 h-full w-full object-contain", mirror && "-scale-x-100", previewEffect[effect])} aria-label="Source clip" onLoadedMetadata={(e) => { e.currentTarget.currentTime = start; }} />
+                : <p role="status" className="flex items-center gap-2 p-5 text-sm text-white/75" data-testid="video-source-preview-loading"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Preparing your clip preview…</p>)
             : <div className="max-w-[270px] p-5 text-center">
               <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-white/20 bg-white/10"><Film className="h-7 w-7" /></div>
               <p className="font-display text-2xl">A small moment, well told.</p>
