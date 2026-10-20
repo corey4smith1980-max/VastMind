@@ -10,7 +10,7 @@ import { basePath } from "@/lib/base";
 // ---------- Boot: shown while the client-only providers load ----------
 export function BootScreen() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#010102]">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030611]">
       <img
         src={`${basePath}/vastmind-splash.png`}
         alt="VastMind — All your socials. One mind. Chat, connect, manage, grow."

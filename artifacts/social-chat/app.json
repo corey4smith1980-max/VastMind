@@ -26,12 +26,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#010102",
+          "backgroundColor": "#030611",
           "image": "./assets/images/vastmind-splash.png",
           "imageWidth": 320,
           "resizeMode": "contain",
           "dark": {
-            "backgroundColor": "#010102",
+            "backgroundColor": "#030611",
             "image": "./assets/images/vastmind-splash.png"
           }
         }
