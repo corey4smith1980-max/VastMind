@@ -3391,3 +3391,311 @@ export const MarkNotificationReadResponse = zod.object({
 })
 
 
+/**
+ * @summary Get the signed-in user's internal VastMind mail address and public-key status
+ */
+export const getMailAccountResponseEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const getMailAccountResponseSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const GetMailAccountResponse = zod.object({
+  "address": zod.string().nullable(),
+  "keyReady": zod.boolean(),
+  "encryptionPublicKey": zod.string().regex(getMailAccountResponseEncryptionPublicKeyRegExp).nullable(),
+  "signingPublicKey": zod.string().regex(getMailAccountResponseSigningPublicKeyRegExp).nullable()
+})
+
+
+/**
+ * @summary Register immutable public encryption and signing keys
+ */
+export const registerMailKeysBodyEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const registerMailKeysBodySigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const RegisterMailKeysBody = zod.object({
+  "encryptionPublicKey": zod.string().regex(registerMailKeysBodyEncryptionPublicKeyRegExp),
+  "signingPublicKey": zod.string().regex(registerMailKeysBodySigningPublicKeyRegExp)
+})
+
+export const registerMailKeysResponseEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const registerMailKeysResponseSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const RegisterMailKeysResponse = zod.object({
+  "address": zod.string().nullable(),
+  "keyReady": zod.boolean(),
+  "encryptionPublicKey": zod.string().regex(registerMailKeysResponseEncryptionPublicKeyRegExp).nullable(),
+  "signingPublicKey": zod.string().regex(registerMailKeysResponseSigningPublicKeyRegExp).nullable()
+})
+
+
+/**
+ * @summary Search existing VastMind users who have activated internal mail
+ */
+export const searchMailRecipientsQueryQMin = 2;
+export const searchMailRecipientsQueryQMax = 80;
+
+
+
+export const SearchMailRecipientsQueryParams = zod.object({
+  "q": zod.coerce.string().min(searchMailRecipientsQueryQMin).max(searchMailRecipientsQueryQMax)
+})
+
+export const searchMailRecipientsResponseEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const searchMailRecipientsResponseSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+
+
+export const SearchMailRecipientsResponseItem = zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "address": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "encryptionPublicKey": zod.string().regex(searchMailRecipientsResponseEncryptionPublicKeyRegExp),
+  "signingPublicKey": zod.string().regex(searchMailRecipientsResponseSigningPublicKeyRegExp)
+})
+export const SearchMailRecipientsResponse = zod.array(SearchMailRecipientsResponseItem)
+
+
+/**
+ * @summary List the signed-in user's internal mail threads
+ */
+export const listMailThreadsQueryBoxDefault = `inbox`;
+
+export const ListMailThreadsQueryParams = zod.object({
+  "box": zod.enum(['inbox', 'sent', 'archived']).default(listMailThreadsQueryBoxDefault)
+})
+
+export const listMailThreadsResponseContactEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailThreadsResponseContactSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailThreadsResponseLastMessageOneSenderSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailThreadsResponseLastMessageOneEnvelopeEncapsulatedSecretRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailThreadsResponseLastMessageOneEnvelopeCiphertextMin = 32;
+export const listMailThreadsResponseLastMessageOneEnvelopeCiphertextMax = 65536;
+
+
+export const listMailThreadsResponseLastMessageOneEnvelopeCiphertextRegExp = new RegExp('^[a-f0-9]+$');
+export const listMailThreadsResponseLastMessageOneEnvelopeSignatureRegExp = new RegExp('^[a-f0-9]{128}$');
+
+
+export const ListMailThreadsResponseItem = zod.object({
+  "id": zod.string(),
+  "contact": zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "address": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "encryptionPublicKey": zod.string().regex(listMailThreadsResponseContactEncryptionPublicKeyRegExp),
+  "signingPublicKey": zod.string().regex(listMailThreadsResponseContactSigningPublicKeyRegExp)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "unreadCount": zod.number().int(),
+  "archived": zod.boolean(),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string(),
+  "threadId": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderUsername": zod.string(),
+  "senderSigningPublicKey": zod.string().regex(listMailThreadsResponseLastMessageOneSenderSigningPublicKeyRegExp),
+  "createdAt": zod.coerce.date(),
+  "envelope": zod.object({
+  "encapsulatedSecret": zod.string().regex(listMailThreadsResponseLastMessageOneEnvelopeEncapsulatedSecretRegExp),
+  "ciphertext": zod.string().min(listMailThreadsResponseLastMessageOneEnvelopeCiphertextMin).max(listMailThreadsResponseLastMessageOneEnvelopeCiphertextMax).regex(listMailThreadsResponseLastMessageOneEnvelopeCiphertextRegExp),
+  "signature": zod.string().regex(listMailThreadsResponseLastMessageOneEnvelopeSignatureRegExp)
+})
+}),zod.null()])
+})
+export const ListMailThreadsResponse = zod.array(ListMailThreadsResponseItem)
+
+
+/**
+ * @summary Start an internal mail thread using a username@vastmind.com address
+ */
+export const createMailThreadBodyAddressMin = 15;
+export const createMailThreadBodyAddressMax = 120;
+
+
+export const createMailThreadBodyAddressRegExp = new RegExp('^[A-Za-z0-9._-]+@vastmind\\.com$');
+
+
+export const CreateMailThreadBody = zod.object({
+  "address": zod.string().min(createMailThreadBodyAddressMin).max(createMailThreadBodyAddressMax).regex(createMailThreadBodyAddressRegExp)
+})
+
+export const createMailThreadResponseContactEncryptionPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createMailThreadResponseContactSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createMailThreadResponseLastMessageOneSenderSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createMailThreadResponseLastMessageOneEnvelopeEncapsulatedSecretRegExp = new RegExp('^[a-f0-9]{64}$');
+export const createMailThreadResponseLastMessageOneEnvelopeCiphertextMin = 32;
+export const createMailThreadResponseLastMessageOneEnvelopeCiphertextMax = 65536;
+
+
+export const createMailThreadResponseLastMessageOneEnvelopeCiphertextRegExp = new RegExp('^[a-f0-9]+$');
+export const createMailThreadResponseLastMessageOneEnvelopeSignatureRegExp = new RegExp('^[a-f0-9]{128}$');
+
+
+export const CreateMailThreadResponse = zod.object({
+  "id": zod.string(),
+  "contact": zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "address": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "encryptionPublicKey": zod.string().regex(createMailThreadResponseContactEncryptionPublicKeyRegExp),
+  "signingPublicKey": zod.string().regex(createMailThreadResponseContactSigningPublicKeyRegExp)
+}),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "unreadCount": zod.number().int(),
+  "archived": zod.boolean(),
+  "lastMessage": zod.union([zod.object({
+  "id": zod.string(),
+  "threadId": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderUsername": zod.string(),
+  "senderSigningPublicKey": zod.string().regex(createMailThreadResponseLastMessageOneSenderSigningPublicKeyRegExp),
+  "createdAt": zod.coerce.date(),
+  "envelope": zod.object({
+  "encapsulatedSecret": zod.string().regex(createMailThreadResponseLastMessageOneEnvelopeEncapsulatedSecretRegExp),
+  "ciphertext": zod.string().min(createMailThreadResponseLastMessageOneEnvelopeCiphertextMin).max(createMailThreadResponseLastMessageOneEnvelopeCiphertextMax).regex(createMailThreadResponseLastMessageOneEnvelopeCiphertextRegExp),
+  "signature": zod.string().regex(createMailThreadResponseLastMessageOneEnvelopeSignatureRegExp)
+})
+}),zod.null()])
+})
+
+
+/**
+ * @summary List ciphertext envelopes addressed to the signed-in member
+ */
+export const ListMailMessagesParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const listMailMessagesQueryLimitDefault = 40;
+export const listMailMessagesQueryLimitMax = 100;
+
+
+
+export const ListMailMessagesQueryParams = zod.object({
+  "before": zod.date().optional(),
+  "limit": zod.coerce.number().int().min(1).max(listMailMessagesQueryLimitMax).default(listMailMessagesQueryLimitDefault)
+})
+
+export const listMailMessagesResponseItemsItemSenderSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailMessagesResponseItemsItemEnvelopeEncapsulatedSecretRegExp = new RegExp('^[a-f0-9]{64}$');
+export const listMailMessagesResponseItemsItemEnvelopeCiphertextMin = 32;
+export const listMailMessagesResponseItemsItemEnvelopeCiphertextMax = 65536;
+
+
+export const listMailMessagesResponseItemsItemEnvelopeCiphertextRegExp = new RegExp('^[a-f0-9]+$');
+export const listMailMessagesResponseItemsItemEnvelopeSignatureRegExp = new RegExp('^[a-f0-9]{128}$');
+
+
+export const ListMailMessagesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "threadId": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderUsername": zod.string(),
+  "senderSigningPublicKey": zod.string().regex(listMailMessagesResponseItemsItemSenderSigningPublicKeyRegExp),
+  "createdAt": zod.coerce.date(),
+  "envelope": zod.object({
+  "encapsulatedSecret": zod.string().regex(listMailMessagesResponseItemsItemEnvelopeEncapsulatedSecretRegExp),
+  "ciphertext": zod.string().min(listMailMessagesResponseItemsItemEnvelopeCiphertextMin).max(listMailMessagesResponseItemsItemEnvelopeCiphertextMax).regex(listMailMessagesResponseItemsItemEnvelopeCiphertextRegExp),
+  "signature": zod.string().regex(listMailMessagesResponseItemsItemEnvelopeSignatureRegExp)
+})
+})),
+  "nextBefore": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Store one encrypted message envelope per thread member
+ */
+export const SendMailMessageParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const sendMailMessageBodyEnvelopesItemOneEncapsulatedSecretRegExp = new RegExp('^[a-f0-9]{64}$');
+export const sendMailMessageBodyEnvelopesItemOneCiphertextMin = 32;
+export const sendMailMessageBodyEnvelopesItemOneCiphertextMax = 65536;
+
+
+export const sendMailMessageBodyEnvelopesItemOneCiphertextRegExp = new RegExp('^[a-f0-9]+$');
+export const sendMailMessageBodyEnvelopesItemOneSignatureRegExp = new RegExp('^[a-f0-9]{128}$');
+export const sendMailMessageBodyEnvelopesMin = 2;
+export const sendMailMessageBodyEnvelopesMax = 2;
+
+
+
+export const SendMailMessageBody = zod.object({
+  "envelopes": zod.array(zod.object({
+  "encapsulatedSecret": zod.string().regex(sendMailMessageBodyEnvelopesItemOneEncapsulatedSecretRegExp),
+  "ciphertext": zod.string().min(sendMailMessageBodyEnvelopesItemOneCiphertextMin).max(sendMailMessageBodyEnvelopesItemOneCiphertextMax).regex(sendMailMessageBodyEnvelopesItemOneCiphertextRegExp),
+  "signature": zod.string().regex(sendMailMessageBodyEnvelopesItemOneSignatureRegExp)
+}).and(zod.object({
+  "recipientId": zod.string()
+}))).min(sendMailMessageBodyEnvelopesMin).max(sendMailMessageBodyEnvelopesMax)
+})
+
+export const sendMailMessageResponseSenderSigningPublicKeyRegExp = new RegExp('^[a-f0-9]{64}$');
+export const sendMailMessageResponseEnvelopeEncapsulatedSecretRegExp = new RegExp('^[a-f0-9]{64}$');
+export const sendMailMessageResponseEnvelopeCiphertextMin = 32;
+export const sendMailMessageResponseEnvelopeCiphertextMax = 65536;
+
+
+export const sendMailMessageResponseEnvelopeCiphertextRegExp = new RegExp('^[a-f0-9]+$');
+export const sendMailMessageResponseEnvelopeSignatureRegExp = new RegExp('^[a-f0-9]{128}$');
+
+
+export const SendMailMessageResponse = zod.object({
+  "id": zod.string(),
+  "threadId": zod.string(),
+  "senderId": zod.string(),
+  "senderName": zod.string(),
+  "senderUsername": zod.string(),
+  "senderSigningPublicKey": zod.string().regex(sendMailMessageResponseSenderSigningPublicKeyRegExp),
+  "createdAt": zod.coerce.date(),
+  "envelope": zod.object({
+  "encapsulatedSecret": zod.string().regex(sendMailMessageResponseEnvelopeEncapsulatedSecretRegExp),
+  "ciphertext": zod.string().min(sendMailMessageResponseEnvelopeCiphertextMin).max(sendMailMessageResponseEnvelopeCiphertextMax).regex(sendMailMessageResponseEnvelopeCiphertextRegExp),
+  "signature": zod.string().regex(sendMailMessageResponseEnvelopeSignatureRegExp)
+})
+})
+
+
+/**
+ * @summary Update the member's internal mail read receipt
+ */
+export const MarkMailThreadReadParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const MarkMailThreadReadResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary Archive or restore a thread for the signed-in member
+ */
+export const SetMailThreadArchivedParams = zod.object({
+  "threadId": zod.coerce.string()
+})
+
+export const SetMailThreadArchivedBody = zod.object({
+  "archived": zod.boolean()
+})
+
+export const SetMailThreadArchivedResponse = zod.object({
+  "archived": zod.boolean()
+})
+
+

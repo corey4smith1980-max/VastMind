@@ -11,6 +11,7 @@ import { claimMedia, mediaShape } from "../lib/media";
 import { pushConfiguration, validPushEndpoint } from "../lib/push";
 import { mediaTypes } from "../lib/media";
 import { creatorProfile, videoPage, validateCaptions } from "../lib/videos";
+import { verifyMailEnvelopeSignature } from "@workspace/mail-crypto";
 
 const router=Router();
 router.use(async(req,res,next)=>{
@@ -547,4 +548,275 @@ route("get","/business/quick-replies","ListQuickReplies",async c=>c.q("SELECT id
 route("post","/business/quick-replies","CreateQuickReply",async c=>(await c.q("INSERT INTO quick_replies (id,user_id,label,content) VALUES ($1,$2,$3,$4) RETURNING id,label,content",[uuid(),c.u,c.b.label,c.b.content]))[0],201);
 route("get","/notifications","ListNotifications",async c=>(await c.q(`SELECT n.* FROM notifications n WHERE user_id=$1 AND NOT EXISTS(SELECT 1 FROM blocks WHERE (user_id=$1 AND target_id=n.actor_id) OR (target_id=$1 AND user_id=n.actor_id)) ORDER BY created_at DESC LIMIT 100`,[c.u])).map(r=>({id:r.id,type:r.type,title:r.title,body:r.body,read:r.read,createdAt:r.created_at})));
 route("post","/notifications/:notificationId/read","MarkNotificationRead",async c=>{assert((await c.q("UPDATE notifications SET read=true WHERE id=$1 AND user_id=$2 RETURNING id",[c.p.notificationId,c.u])).length);return {success:true};});
+
+// Internal mail stores only public identity keys, routing metadata, and signed ciphertext envelopes.
+// Subject and body are encrypted by the sender's device before any request reaches this router.
+function mailAccount(c:Context,key?:Row) {
+  const username=typeof c.user.username==="string"?c.user.username:null;
+  return {
+    address:username?`${username}@vastmind.com`:null,
+    keyReady:Boolean(key),
+    encryptionPublicKey:key?.encryption_public_key??null,
+    signingPublicKey:key?.signing_public_key??null,
+  };
+}
+function mailContact(row:Row) {
+  return {
+    userId:row.contact_id,
+    name:row.contact_name,
+    username:row.contact_username,
+    address:`${row.contact_username}@vastmind.com`,
+    avatarUrl:row.contact_avatar_url??null,
+    encryptionPublicKey:row.contact_encryption_public_key,
+    signingPublicKey:row.contact_signing_public_key,
+  };
+}
+function mailMessageShape(row:Row) {
+  return {
+    id:row.message_id,
+    threadId:row.thread_id,
+    senderId:row.sender_id,
+    senderName:row.sender_name,
+    senderUsername:row.sender_username,
+    senderSigningPublicKey:row.sender_signing_public_key,
+    createdAt:row.message_created_at,
+    envelope:{
+      encapsulatedSecret:row.encapsulated_secret,
+      ciphertext:row.ciphertext,
+      signature:row.signature,
+    },
+  };
+}
+function mailThreadShape(row:Row) {
+  const latest=row.last_message_id?mailMessageShape({
+    message_id:row.last_message_id,
+    thread_id:row.id,
+    sender_id:row.last_sender_id,
+    sender_name:row.last_sender_name,
+    sender_username:row.last_sender_username,
+    sender_signing_public_key:row.last_sender_signing_public_key,
+    message_created_at:row.last_message_created_at,
+    encapsulated_secret:row.last_encapsulated_secret,
+    ciphertext:row.last_ciphertext,
+    signature:row.last_signature,
+  }):null;
+  return {
+    id:row.id,
+    contact:mailContact(row),
+    createdAt:row.thread_created_at,
+    updatedAt:row.thread_updated_at,
+    unreadCount:Number(row.unread_count??0),
+    archived:Boolean(row.archived),
+    lastMessage:latest,
+  };
+}
+async function mailThreadQuery(q:Query,threadId:string,userId:string) {
+  const rows=await q(`SELECT t.id,t.created_at AS thread_created_at,t.updated_at AS thread_updated_at,
+      (mine.archived_at IS NOT NULL) AS archived,
+      other.user_id AS contact_id,u.name AS contact_name,u.username AS contact_username,u.avatar_url AS contact_avatar_url,
+      contact_key.encryption_public_key AS contact_encryption_public_key,
+      contact_key.signing_public_key AS contact_signing_public_key,
+      (SELECT COUNT(*)::int FROM mail_messages unread
+        WHERE unread.thread_id=t.id AND unread.sender_id<>$2
+          AND unread.created_at>COALESCE(mine.last_read_at,'epoch'::timestamptz)) AS unread_count,
+      latest.id AS last_message_id,latest.sender_id AS last_sender_id,latest.sender_name AS last_sender_name,
+      latest.sender_username AS last_sender_username,latest.sender_signing_public_key AS last_sender_signing_public_key,
+      latest.created_at AS last_message_created_at,latest.encapsulated_secret AS last_encapsulated_secret,
+      latest.ciphertext AS last_ciphertext,latest.signature AS last_signature
+    FROM mail_threads t
+    JOIN mail_members mine ON mine.thread_id=t.id AND mine.user_id=$2
+    JOIN mail_members other ON other.thread_id=t.id AND other.user_id<>$2
+    JOIN users u ON u.id=other.user_id
+    JOIN mail_keys contact_key ON contact_key.user_id=u.id
+    LEFT JOIN LATERAL (
+      SELECT m.id,m.sender_id,sender.name AS sender_name,sender.username AS sender_username,
+        sender_key.signing_public_key AS sender_signing_public_key,m.created_at,
+        envelope.encapsulated_secret,envelope.ciphertext,envelope.signature
+      FROM mail_messages m
+      JOIN users sender ON sender.id=m.sender_id
+      JOIN mail_keys sender_key ON sender_key.user_id=m.sender_id
+      JOIN mail_envelopes envelope ON envelope.message_id=m.id AND envelope.recipient_id=$2
+      WHERE m.thread_id=t.id ORDER BY m.created_at DESC LIMIT 1
+    ) latest ON true
+    WHERE t.id=$1 LIMIT 1`,[threadId,userId]);
+  return rows[0]?mailThreadShape(rows[0]):null;
+}
+
+route("get","/mail/account","GetMailAccount",async c=>{
+  const [key]=await c.q("SELECT encryption_public_key,signing_public_key FROM mail_keys WHERE user_id=$1",[c.u]);
+  return mailAccount(c,key);
+});
+route("put","/mail/keys","RegisterMailKeys",async c=>{
+  const [existing]=await c.q("SELECT encryption_public_key,signing_public_key FROM mail_keys WHERE user_id=$1",[c.u]);
+  if(existing) {
+    assert(existing.encryption_public_key===c.b.encryptionPublicKey&&existing.signing_public_key===c.b.signingPublicKey,409,"This recovery phrase does not match the mail identity already registered to this account.");
+    return mailAccount(c,existing);
+  }
+  await c.q(`INSERT INTO mail_keys (user_id,encryption_public_key,signing_public_key)
+    VALUES ($1,$2,$3) ON CONFLICT (user_id) DO NOTHING`,[c.u,c.b.encryptionPublicKey,c.b.signingPublicKey]);
+  const [registered]=await c.q("SELECT encryption_public_key,signing_public_key FROM mail_keys WHERE user_id=$1",[c.u]);
+  assert(registered?.encryption_public_key===c.b.encryptionPublicKey&&registered?.signing_public_key===c.b.signingPublicKey,409,"This account already has a different mail identity. Restore it with its original recovery phrase.");
+  return mailAccount(c,registered);
+});
+route("get","/mail/recipients","SearchMailRecipients",async c=>{
+  const term=String(c.s.q).trim().toLowerCase().replace(/[\\%_]/g,char=>`\\${char}`);
+  assert(term.length>=2,400,"Search for at least two characters.");
+  const candidates=await c.q(`SELECT u.id,u.name,u.username,u.avatar_url,k.encryption_public_key,k.signing_public_key
+    FROM users u JOIN mail_keys k ON k.user_id=u.id
+    WHERE u.id<>$1 AND u.username IS NOT NULL
+      AND (lower(u.username) LIKE $2 OR lower(u.name) LIKE $2)
+      AND NOT EXISTS (SELECT 1 FROM blocks b WHERE
+        (b.user_id=$1 AND b.target_id=u.id) OR (b.user_id=u.id AND b.target_id=$1))
+    ORDER BY lower(u.name),lower(u.username) LIMIT 30`,[c.u,`%${term}%`]);
+  const visible=[];
+  for(const candidate of candidates) {
+    try { await canMessage(c.u,candidate.id,c.q); }
+    catch(error) {
+      if(error instanceof HttpError&&error.status===403)continue;
+      throw error;
+    }
+    visible.push({
+      userId:candidate.id,name:candidate.name,username:candidate.username,
+      address:`${candidate.username}@vastmind.com`,avatarUrl:candidate.avatar_url??null,
+      encryptionPublicKey:candidate.encryption_public_key,signingPublicKey:candidate.signing_public_key,
+    });
+  }
+  return visible;
+});
+route("get","/mail/threads","ListMailThreads",async c=>{
+  const box=c.s.box??"inbox";
+  const rows=await c.q(`SELECT t.id,t.created_at AS thread_created_at,t.updated_at AS thread_updated_at,
+      (mine.archived_at IS NOT NULL) AS archived,
+      other.user_id AS contact_id,u.name AS contact_name,u.username AS contact_username,u.avatar_url AS contact_avatar_url,
+      contact_key.encryption_public_key AS contact_encryption_public_key,
+      contact_key.signing_public_key AS contact_signing_public_key,
+      (SELECT COUNT(*)::int FROM mail_messages unread
+        WHERE unread.thread_id=t.id AND unread.sender_id<>$1
+          AND unread.created_at>COALESCE(mine.last_read_at,'epoch'::timestamptz)) AS unread_count,
+      latest.id AS last_message_id,latest.sender_id AS last_sender_id,latest.sender_name AS last_sender_name,
+      latest.sender_username AS last_sender_username,latest.sender_signing_public_key AS last_sender_signing_public_key,
+      latest.created_at AS last_message_created_at,latest.encapsulated_secret AS last_encapsulated_secret,
+      latest.ciphertext AS last_ciphertext,latest.signature AS last_signature
+    FROM mail_members mine
+    JOIN mail_threads t ON t.id=mine.thread_id
+    JOIN mail_members other ON other.thread_id=t.id AND other.user_id<>$1
+    JOIN users u ON u.id=other.user_id
+    JOIN mail_keys contact_key ON contact_key.user_id=u.id
+    LEFT JOIN LATERAL (
+      SELECT m.id,m.sender_id,sender.name AS sender_name,sender.username AS sender_username,
+        sender_key.signing_public_key AS sender_signing_public_key,m.created_at,
+        envelope.encapsulated_secret,envelope.ciphertext,envelope.signature
+      FROM mail_messages m
+      JOIN users sender ON sender.id=m.sender_id
+      JOIN mail_keys sender_key ON sender_key.user_id=m.sender_id
+      JOIN mail_envelopes envelope ON envelope.message_id=m.id AND envelope.recipient_id=$1
+      WHERE m.thread_id=t.id ORDER BY m.created_at DESC LIMIT 1
+    ) latest ON true
+    WHERE mine.user_id=$1 AND (
+      ($2='inbox' AND mine.archived_at IS NULL) OR
+      ($2='archived' AND mine.archived_at IS NOT NULL) OR
+      ($2='sent' AND EXISTS (SELECT 1 FROM mail_messages sent WHERE sent.thread_id=t.id AND sent.sender_id=$1))
+    )
+    ORDER BY COALESCE(latest.created_at,t.updated_at) DESC LIMIT 200`,[c.u,box]);
+  return rows.map(mailThreadShape);
+});
+route("post","/mail/threads","CreateMailThread",async c=>{
+  const address=String(c.b.address).trim().toLowerCase();
+  const match=/^([a-z0-9._-]{3,80})@vastmind\.com$/.exec(address);
+  assert(match,400,"Use an internal username@vastmind.com address.");
+  const username=match[1];
+  const [recipient]=await c.q(`SELECT u.id,u.username FROM users u JOIN mail_keys k ON k.user_id=u.id
+    WHERE lower(u.username)=lower($1)`,[username]);
+  assert(recipient,404,"No active VastMind mail account was found for that address.");
+  assert(recipient.id!==c.u,400,"Choose another VastMind member for this conversation.");
+  await canMessage(c.u,recipient.id,c.q);
+  const [block]=await c.q("SELECT 1 FROM blocks WHERE (user_id=$1 AND target_id=$2) OR (user_id=$2 AND target_id=$1) LIMIT 1",[c.u,recipient.id]);
+  assert(!block,403,"Mail cannot be started between these accounts.");
+  const [ownKey]=await c.q("SELECT user_id FROM mail_keys WHERE user_id=$1",[c.u]);
+  assert(ownKey,409,"Set up your recovery phrase before starting a mail conversation.");
+  const members=[c.u,recipient.id].sort();
+  const directKey=members.join(":");
+  const [thread]=await c.q(`INSERT INTO mail_threads (id,direct_key) VALUES ($1,$2)
+    ON CONFLICT (direct_key) DO UPDATE SET updated_at=mail_threads.updated_at RETURNING id`,[uuid(),directKey]);
+  for(const member of members)await c.q("INSERT INTO mail_members (thread_id,user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",[thread.id,member]);
+  c.impact.add(recipient.id);
+  const result=await mailThreadQuery(c.q,thread.id,c.u);
+  assert(result,500,"Could not create the mail conversation.");
+  return result;
+},201);
+route("get","/mail/threads/:threadId/messages","ListMailMessages",async c=>{
+  const [membershipRow]=await c.q("SELECT last_read_at FROM mail_members WHERE thread_id=$1 AND user_id=$2",[c.p.threadId,c.u]);
+  assert(membershipRow,404,"Mail thread not found.");
+  const limit=Math.min(100,Math.max(1,Number(c.s.limit??40)));
+  const before=c.s.before?new Date(c.s.before):null;
+  const rows=await c.q(`SELECT m.id AS message_id,m.thread_id,m.sender_id,sender.name AS sender_name,
+      sender.username AS sender_username,sender_key.signing_public_key AS sender_signing_public_key,
+      m.created_at AS message_created_at,e.encapsulated_secret,e.ciphertext,e.signature
+    FROM mail_messages m
+    JOIN users sender ON sender.id=m.sender_id
+    JOIN mail_keys sender_key ON sender_key.user_id=m.sender_id
+    JOIN mail_envelopes e ON e.message_id=m.id AND e.recipient_id=$2
+    WHERE m.thread_id=$1 AND ($3::timestamptz IS NULL OR m.created_at<$3)
+    ORDER BY m.created_at DESC LIMIT $4`,[c.p.threadId,c.u,before,limit+1]);
+  const hasMore=rows.length>limit;
+  const selected=rows.slice(0,limit);
+  const items=selected.reverse().map(mailMessageShape);
+  return {items,nextBefore:hasMore?items[0]?.createdAt??null:null};
+});
+route("post","/mail/threads/:threadId/messages","SendMailMessage",async c=>{
+  const members=await c.q(`SELECT mm.user_id,k.encryption_public_key FROM mail_members mm
+    LEFT JOIN mail_keys k ON k.user_id=mm.user_id WHERE mm.thread_id=$1 ORDER BY mm.user_id`,[c.p.threadId]);
+  assert(members.length===2&&members.some(member=>member.user_id===c.u),404,"Mail thread not found.");
+  const otherMember=members.find(member=>member.user_id!==c.u);
+  assert(otherMember,404,"Mail thread not found.");
+  await canMessage(c.u,otherMember.user_id,c.q);
+  const block=await c.q("SELECT 1 FROM blocks WHERE (user_id=$1 AND target_id=$2) OR (user_id=$2 AND target_id=$1) LIMIT 1",[c.u,otherMember.user_id]);
+  assert(!block,403,"Mail cannot be sent between these accounts.");
+  assert(members.every(member=>member.encryption_public_key),409,"All thread members must activate internal mail first.");
+  const recipientIds=c.b.envelopes.map((envelope:Row)=>envelope.recipientId);
+  assert(new Set(recipientIds).size===members.length&&members.every(member=>recipientIds.includes(member.user_id)),400,"Provide one encrypted copy for each thread member.");
+  const [senderKey]=await c.q("SELECT signing_public_key FROM mail_keys WHERE user_id=$1",[c.u]);
+  assert(senderKey,409,"Your device does not have an active mail identity.");
+  const messageId=uuid();
+  for(const envelope of c.b.envelopes) {
+    const valid=verifyMailEnvelopeSignature({
+      threadId:c.p.threadId,senderId:c.u,recipientId:envelope.recipientId,
+      senderSigningPublicKey:senderKey.signing_public_key,
+      encapsulatedSecret:envelope.encapsulatedSecret,ciphertext:envelope.ciphertext,signature:envelope.signature,
+    });
+    assert(valid,400,"A message envelope failed sender verification.");
+  }
+  const [messageRow]=await c.q(`INSERT INTO mail_messages (id,thread_id,sender_id) VALUES ($1,$2,$3)
+    RETURNING id,thread_id,sender_id,created_at`,[messageId,c.p.threadId,c.u]);
+  for(const envelope of c.b.envelopes)await c.q(`INSERT INTO mail_envelopes
+    (message_id,recipient_id,encapsulated_secret,ciphertext,signature) VALUES ($1,$2,$3,$4,$5)`,
+    [messageId,envelope.recipientId,envelope.encapsulatedSecret,envelope.ciphertext,envelope.signature]);
+  await c.q("UPDATE mail_threads SET updated_at=NOW() WHERE id=$1",[c.p.threadId]);
+  for(const member of members)c.impact.add(member.user_id);
+  const ownEnvelope=c.b.envelopes.find((envelope:Row)=>envelope.recipientId===c.u);
+  assert(ownEnvelope,400,"A sender copy is required for the Sent mailbox.");
+  return {
+    id:messageRow.id,threadId:messageRow.thread_id,senderId:c.u,
+    senderName:c.user.name,senderUsername:c.user.username,
+    senderSigningPublicKey:senderKey.signing_public_key,createdAt:messageRow.created_at,
+    envelope:{
+      encapsulatedSecret:ownEnvelope.encapsulatedSecret,
+      ciphertext:ownEnvelope.ciphertext,
+      signature:ownEnvelope.signature,
+    },
+  };
+},201);
+route("patch","/mail/threads/:threadId/read","MarkMailThreadRead",async c=>{
+  const rows=await c.q("UPDATE mail_members SET last_read_at=NOW() WHERE thread_id=$1 AND user_id=$2 RETURNING user_id",[c.p.threadId,c.u]);
+  assert(rows.length,404,"Mail thread not found.");
+  const others=await c.q("SELECT user_id FROM mail_members WHERE thread_id=$1 AND user_id<>$2",[c.p.threadId,c.u]);
+  for(const other of others)c.impact.add(other.user_id);
+  return {success:true};
+});
+route("patch","/mail/threads/:threadId/archive","SetMailThreadArchived",async c=>{
+  const rows=await c.q(`UPDATE mail_members SET archived_at=CASE WHEN $3 THEN COALESCE(archived_at,NOW()) ELSE NULL END
+    WHERE thread_id=$1 AND user_id=$2 RETURNING archived_at`,[c.p.threadId,c.u,c.b.archived]);
+  assert(rows.length,404,"Mail thread not found.");
+  return {archived:Boolean(rows[0].archived_at)};
+});
 export default router;

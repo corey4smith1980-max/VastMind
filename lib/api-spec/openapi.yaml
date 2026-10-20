@@ -1245,6 +1245,171 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReadResult"
+  /mail/account:
+    get:
+      operationId: getMailAccount
+      tags: [mail]
+      summary: Get the signed-in user's internal VastMind mail address and public-key status
+      responses:
+        "200":
+          description: Internal mail account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailAccount"
+  /mail/keys:
+    put:
+      operationId: registerMailKeys
+      tags: [mail]
+      summary: Register immutable public encryption and signing keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailKeysInput"
+      responses:
+        "200":
+          description: Public keys registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailAccount"
+  /mail/recipients:
+    get:
+      operationId: searchMailRecipients
+      tags: [mail]
+      summary: Search existing VastMind users who have activated internal mail
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 80 }
+      responses:
+        "200":
+          description: Internal mail recipients
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailContactList"
+  /mail/threads:
+    get:
+      operationId: listMailThreads
+      tags: [mail]
+      summary: List the signed-in user's internal mail threads
+      parameters:
+        - in: query
+          name: box
+          schema: { type: string, enum: [inbox, sent, archived], default: inbox }
+      responses:
+        "200":
+          description: Mailbox thread summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailThreadList"
+    post:
+      operationId: createMailThread
+      tags: [mail]
+      summary: Start an internal mail thread using a username@vastmind.com address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailThreadInput"
+      responses:
+        "201":
+          description: Internal mail thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailThread"
+  /mail/threads/{threadId}/messages:
+    get:
+      operationId: listMailMessages
+      tags: [mail]
+      summary: List ciphertext envelopes addressed to the signed-in member
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: before
+          schema: { type: string, format: date-time }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 40 }
+      responses:
+        "200":
+          description: Encrypted mail history page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailMessagePage"
+    post:
+      operationId: sendMailMessage
+      tags: [mail]
+      summary: Store one encrypted message envelope per thread member
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailMessageInput"
+      responses:
+        "201":
+          description: Encrypted mail message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailMessage"
+  /mail/threads/{threadId}/read:
+    patch:
+      operationId: markMailThreadRead
+      tags: [mail]
+      summary: Update the member's internal mail read receipt
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Read state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailReadResult"
+  /mail/threads/{threadId}/archive:
+    patch:
+      operationId: setMailThreadArchived
+      tags: [mail]
+      summary: Archive or restore a thread for the signed-in member
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MailArchiveInput"
+      responses:
+        "200":
+          description: Archive state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailArchiveResult"
 components:
   parameters:
     UserId:
@@ -1893,4 +2058,118 @@ components:
       required: [approve]
       properties:
         approve: { type: boolean }
+    MailAccount:
+      type: object
+      required: [address, keyReady, encryptionPublicKey, signingPublicKey]
+      properties:
+        address: { type: ["string", "null"] }
+        keyReady: { type: boolean }
+        encryptionPublicKey: { type: ["string", "null"], pattern: "^[a-f0-9]{64}$" }
+        signingPublicKey: { type: ["string", "null"], pattern: "^[a-f0-9]{64}$" }
+    MailKeysInput:
+      type: object
+      required: [encryptionPublicKey, signingPublicKey]
+      properties:
+        encryptionPublicKey: { type: string, pattern: "^[a-f0-9]{64}$" }
+        signingPublicKey: { type: string, pattern: "^[a-f0-9]{64}$" }
+    MailContact:
+      type: object
+      required: [userId, name, username, address, avatarUrl, encryptionPublicKey, signingPublicKey]
+      properties:
+        userId: { type: string }
+        name: { type: string }
+        username: { type: string }
+        address: { type: string }
+        avatarUrl: { type: ["string", "null"] }
+        encryptionPublicKey: { type: string, pattern: "^[a-f0-9]{64}$" }
+        signingPublicKey: { type: string, pattern: "^[a-f0-9]{64}$" }
+    MailContactList:
+      type: array
+      items:
+        $ref: "#/components/schemas/MailContact"
+    MailEnvelope:
+      type: object
+      required: [encapsulatedSecret, ciphertext, signature]
+      properties:
+        encapsulatedSecret: { type: string, pattern: "^[a-f0-9]{64}$" }
+        ciphertext: { type: string, minLength: 32, maxLength: 65536, pattern: "^[a-f0-9]+$" }
+        signature: { type: string, pattern: "^[a-f0-9]{128}$" }
+    MailMessage:
+      type: object
+      required: [id, threadId, senderId, senderName, senderUsername, senderSigningPublicKey, createdAt, envelope]
+      properties:
+        id: { type: string }
+        threadId: { type: string }
+        senderId: { type: string }
+        senderName: { type: string }
+        senderUsername: { type: string }
+        senderSigningPublicKey: { type: string, pattern: "^[a-f0-9]{64}$" }
+        createdAt: { type: string, format: date-time }
+        envelope:
+          $ref: "#/components/schemas/MailEnvelope"
+    MailMessagePage:
+      type: object
+      required: [items, nextBefore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MailMessage"
+        nextBefore: { type: ["string", "null"], format: date-time }
+    MailThread:
+      type: object
+      required: [id, contact, createdAt, updatedAt, unreadCount, archived, lastMessage]
+      properties:
+        id: { type: string }
+        contact:
+          $ref: "#/components/schemas/MailContact"
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        unreadCount: { type: integer }
+        archived: { type: boolean }
+        lastMessage:
+          oneOf:
+            - $ref: "#/components/schemas/MailMessage"
+            - type: "null"
+    MailThreadList:
+      type: array
+      items:
+        $ref: "#/components/schemas/MailThread"
+    MailThreadInput:
+      type: object
+      required: [address]
+      properties:
+        address: { type: string, minLength: 15, maxLength: 120, pattern: "^[A-Za-z0-9._-]+@vastmind\\.com$" }
+    MailEnvelopeInput:
+      allOf:
+        - $ref: "#/components/schemas/MailEnvelope"
+        - type: object
+          required: [recipientId]
+          properties:
+            recipientId: { type: string }
+    MailMessageInput:
+      type: object
+      required: [envelopes]
+      properties:
+        envelopes:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/MailEnvelopeInput"
+    MailReadResult:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
+    MailArchiveInput:
+      type: object
+      required: [archived]
+      properties:
+        archived: { type: boolean }
+    MailArchiveResult:
+      type: object
+      required: [archived]
+      properties:
+        archived: { type: boolean }
 

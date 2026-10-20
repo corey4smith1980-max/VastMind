@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/react";
 import {
-  Bell, Briefcase, CircleDashed, Clapperboard, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, UsersRound,
+  Bell, Briefcase, CircleDashed, Clapperboard, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, UsersRound, Mail,
 } from "lucide-react";
 import { useGetMyProfile, useListNotifications, useListChats, getGetMyProfileQueryKey, getListNotificationsQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { BrandMark } from "@/components/brand";
@@ -22,6 +22,7 @@ import { UsernameSetup } from "@/components/shell/username-setup";
 // ---------- Navigation model ----------
 const NAV = [
   { href: "/chats", label: "Chats", icon: MessagesSquare, primary: true },
+  { href: "/mail", label: "Mail", icon: Mail },
   { href: "/feed", label: "Feed", icon: Newspaper, primary: true },
   { href: "/videos", label: "Videos", icon: Clapperboard, primary: true },
   { href: "/statuses", label: "Status", icon: CircleDashed, primary: true },

@@ -83,8 +83,22 @@ import type {
   ListChannelsParams,
   ListChatsParams,
   ListCommunitiesParams,
+  ListMailMessagesParams,
+  ListMailThreadsParams,
   ListShopOrdersParams,
   ListShopProductsParams,
+  MailAccount,
+  MailArchiveInput,
+  MailArchiveResult,
+  MailContactList,
+  MailKeysInput,
+  MailMessage,
+  MailMessageInput,
+  MailMessagePage,
+  MailReadResult,
+  MailThread,
+  MailThreadInput,
+  MailThreadList,
   MediaAttachment,
   MediaUploadInput,
   MediaUploadTicket,
@@ -117,6 +131,7 @@ import type {
   RenderVideoBody,
   ReportInput,
   ReportResult,
+  SearchMailRecipientsParams,
   SearchUsersParams,
   ShopOrder,
   ShopOrderInput,
@@ -7979,5 +7994,767 @@ export const useMarkNotificationRead = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getMarkNotificationReadMutationOptions(options));
+    }
+
+export const getGetMailAccountUrl = () => {
+
+
+
+
+  return `/api/mail/account`
+}
+
+/**
+ * @summary Get the signed-in user's internal VastMind mail address and public-key status
+ */
+export const getMailAccount = async ( options?: Parameters<typeof customFetch>[1]): Promise<MailAccount> => {
+
+  return customFetch<MailAccount>(getGetMailAccountUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMailAccountQueryKey = () => {
+    return [
+    `/api/mail/account`
+    ] as const;
+    }
+
+
+export const getGetMailAccountQueryOptions = <TData = Awaited<ReturnType<typeof getMailAccount>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMailAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMailAccountQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMailAccount>>> = ({ signal }) => getMailAccount({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMailAccount>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMailAccountQueryResult = NonNullable<Awaited<ReturnType<typeof getMailAccount>>>
+export type GetMailAccountQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the signed-in user's internal VastMind mail address and public-key status
+ */
+
+export function useGetMailAccount<TData = Awaited<ReturnType<typeof getMailAccount>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMailAccount>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMailAccountQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterMailKeysUrl = () => {
+
+
+
+
+  return `/api/mail/keys`
+}
+
+/**
+ * @summary Register immutable public encryption and signing keys
+ */
+export const registerMailKeys = async (mailKeysInput: MailKeysInput, options?: Parameters<typeof customFetch>[1]): Promise<MailAccount> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MailAccount>(getRegisterMailKeysUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mailKeysInput)
+  }
+);}
+
+
+
+
+
+export const getRegisterMailKeysMutationKey = () => ['registerMailKeys'] as const;
+
+export const getRegisterMailKeysMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMailKeys>>, TError,RegisterMailKeysMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerMailKeys>>, TError,RegisterMailKeysMutationVariables, TContext> => {
+
+const mutationKey = getRegisterMailKeysMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerMailKeys>>, RegisterMailKeysMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerMailKeys(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterMailKeysMutationResult = NonNullable<Awaited<ReturnType<typeof registerMailKeys>>>
+    export type RegisterMailKeysMutationBody = BodyType<MailKeysInput>
+    export type RegisterMailKeysMutationError = ErrorType<unknown>
+    export type RegisterMailKeysMutationVariables = {data: BodyType<MailKeysInput>}
+
+    /**
+ * @summary Register immutable public encryption and signing keys
+ */
+export const useRegisterMailKeys = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerMailKeys>>, TError,RegisterMailKeysMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerMailKeys>>,
+        TError,
+        RegisterMailKeysMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRegisterMailKeysMutationOptions(options));
+    }
+
+export const getSearchMailRecipientsUrl = (params: SearchMailRecipientsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/mail/recipients?${stringifiedParams}` : `/api/mail/recipients`
+}
+
+/**
+ * @summary Search existing VastMind users who have activated internal mail
+ */
+export const searchMailRecipients = async (params: SearchMailRecipientsParams, options?: Parameters<typeof customFetch>[1]): Promise<MailContactList> => {
+
+  return customFetch<MailContactList>(getSearchMailRecipientsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchMailRecipientsQueryKey = (params?: SearchMailRecipientsParams,) => {
+    return [
+    `/api/mail/recipients`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchMailRecipientsQueryOptions = <TData = Awaited<ReturnType<typeof searchMailRecipients>>, TError = ErrorType<unknown>>(params: SearchMailRecipientsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchMailRecipients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchMailRecipientsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchMailRecipients>>> = ({ signal }) => searchMailRecipients(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchMailRecipients>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchMailRecipientsQueryResult = NonNullable<Awaited<ReturnType<typeof searchMailRecipients>>>
+export type SearchMailRecipientsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search existing VastMind users who have activated internal mail
+ */
+
+export function useSearchMailRecipients<TData = Awaited<ReturnType<typeof searchMailRecipients>>, TError = ErrorType<unknown>>(
+ params: SearchMailRecipientsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchMailRecipients>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchMailRecipientsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListMailThreadsUrl = (params?: ListMailThreadsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/mail/threads?${stringifiedParams}` : `/api/mail/threads`
+}
+
+/**
+ * @summary List the signed-in user's internal mail threads
+ */
+export const listMailThreads = async (params?: ListMailThreadsParams, options?: Parameters<typeof customFetch>[1]): Promise<MailThreadList> => {
+
+  return customFetch<MailThreadList>(getListMailThreadsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMailThreadsQueryKey = (params?: ListMailThreadsParams,) => {
+    return [
+    `/api/mail/threads`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMailThreadsQueryOptions = <TData = Awaited<ReturnType<typeof listMailThreads>>, TError = ErrorType<unknown>>(params?: ListMailThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMailThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMailThreadsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMailThreads>>> = ({ signal }) => listMailThreads(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMailThreads>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMailThreadsQueryResult = NonNullable<Awaited<ReturnType<typeof listMailThreads>>>
+export type ListMailThreadsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the signed-in user's internal mail threads
+ */
+
+export function useListMailThreads<TData = Awaited<ReturnType<typeof listMailThreads>>, TError = ErrorType<unknown>>(
+ params?: ListMailThreadsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMailThreads>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMailThreadsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMailThreadUrl = () => {
+
+
+
+
+  return `/api/mail/threads`
+}
+
+/**
+ * @summary Start an internal mail thread using a username@vastmind.com address
+ */
+export const createMailThread = async (mailThreadInput: MailThreadInput, options?: Parameters<typeof customFetch>[1]): Promise<MailThread> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MailThread>(getCreateMailThreadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mailThreadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMailThreadMutationKey = () => ['createMailThread'] as const;
+
+export const getCreateMailThreadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMailThread>>, TError,CreateMailThreadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMailThread>>, TError,CreateMailThreadMutationVariables, TContext> => {
+
+const mutationKey = getCreateMailThreadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMailThread>>, CreateMailThreadMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMailThread(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMailThreadMutationResult = NonNullable<Awaited<ReturnType<typeof createMailThread>>>
+    export type CreateMailThreadMutationBody = BodyType<MailThreadInput>
+    export type CreateMailThreadMutationError = ErrorType<unknown>
+    export type CreateMailThreadMutationVariables = {data: BodyType<MailThreadInput>}
+
+    /**
+ * @summary Start an internal mail thread using a username@vastmind.com address
+ */
+export const useCreateMailThread = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMailThread>>, TError,CreateMailThreadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMailThread>>,
+        TError,
+        CreateMailThreadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateMailThreadMutationOptions(options));
+    }
+
+export const getListMailMessagesUrl = (threadId: string,
+    params?: ListMailMessagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/mail/threads/${threadId}/messages?${stringifiedParams}` : `/api/mail/threads/${threadId}/messages`
+}
+
+/**
+ * @summary List ciphertext envelopes addressed to the signed-in member
+ */
+export const listMailMessages = async (threadId: string,
+    params?: ListMailMessagesParams, options?: Parameters<typeof customFetch>[1]): Promise<MailMessagePage> => {
+
+  return customFetch<MailMessagePage>(getListMailMessagesUrl(threadId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMailMessagesQueryKey = (threadId: string,
+    params?: ListMailMessagesParams,) => {
+    return [
+    `/api/mail/threads/${threadId}/messages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMailMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listMailMessages>>, TError = ErrorType<unknown>>(threadId: string,
+    params?: ListMailMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMailMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMailMessagesQueryKey(threadId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMailMessages>>> = ({ signal }) => listMailMessages(threadId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: threadId !== null && threadId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMailMessages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMailMessagesQueryResult = NonNullable<Awaited<ReturnType<typeof listMailMessages>>>
+export type ListMailMessagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List ciphertext envelopes addressed to the signed-in member
+ */
+
+export function useListMailMessages<TData = Awaited<ReturnType<typeof listMailMessages>>, TError = ErrorType<unknown>>(
+ threadId: string,
+    params?: ListMailMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMailMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMailMessagesQueryOptions(threadId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSendMailMessageUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/mail/threads/${threadId}/messages`
+}
+
+/**
+ * @summary Store one encrypted message envelope per thread member
+ */
+export const sendMailMessage = async (threadId: string,
+    mailMessageInput: MailMessageInput, options?: Parameters<typeof customFetch>[1]): Promise<MailMessage> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MailMessage>(getSendMailMessageUrl(threadId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mailMessageInput)
+  }
+);}
+
+
+
+
+
+export const getSendMailMessageMutationKey = () => ['sendMailMessage'] as const;
+
+export const getSendMailMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendMailMessage>>, TError,SendMailMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendMailMessage>>, TError,SendMailMessageMutationVariables, TContext> => {
+
+const mutationKey = getSendMailMessageMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendMailMessage>>, SendMailMessageMutationVariables> = (props) => {
+          const {threadId,data} = props ?? {};
+
+          return  sendMailMessage(threadId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendMailMessageMutationResult = NonNullable<Awaited<ReturnType<typeof sendMailMessage>>>
+    export type SendMailMessageMutationBody = BodyType<MailMessageInput>
+    export type SendMailMessageMutationError = ErrorType<unknown>
+    export type SendMailMessageMutationVariables = {threadId: string;data: BodyType<MailMessageInput>}
+
+    /**
+ * @summary Store one encrypted message envelope per thread member
+ */
+export const useSendMailMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendMailMessage>>, TError,SendMailMessageMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendMailMessage>>,
+        TError,
+        SendMailMessageMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSendMailMessageMutationOptions(options));
+    }
+
+export const getMarkMailThreadReadUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/mail/threads/${threadId}/read`
+}
+
+/**
+ * @summary Update the member's internal mail read receipt
+ */
+export const markMailThreadRead = async (threadId: string, options?: Parameters<typeof customFetch>[1]): Promise<MailReadResult> => {
+
+  return customFetch<MailReadResult>(getMarkMailThreadReadUrl(threadId),
+  {
+    ...options,
+    method: 'PATCH'
+
+
+  }
+);}
+
+
+
+
+
+export const getMarkMailThreadReadMutationKey = () => ['markMailThreadRead'] as const;
+
+export const getMarkMailThreadReadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markMailThreadRead>>, TError,MarkMailThreadReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markMailThreadRead>>, TError,MarkMailThreadReadMutationVariables, TContext> => {
+
+const mutationKey = getMarkMailThreadReadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markMailThreadRead>>, MarkMailThreadReadMutationVariables> = (props) => {
+          const {threadId} = props ?? {};
+
+          return  markMailThreadRead(threadId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkMailThreadReadMutationResult = NonNullable<Awaited<ReturnType<typeof markMailThreadRead>>>
+
+    export type MarkMailThreadReadMutationError = ErrorType<unknown>
+    export type MarkMailThreadReadMutationVariables = {threadId: string}
+
+    /**
+ * @summary Update the member's internal mail read receipt
+ */
+export const useMarkMailThreadRead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markMailThreadRead>>, TError,MarkMailThreadReadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markMailThreadRead>>,
+        TError,
+        MarkMailThreadReadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMarkMailThreadReadMutationOptions(options));
+    }
+
+export const getSetMailThreadArchivedUrl = (threadId: string,) => {
+
+
+
+
+  return `/api/mail/threads/${threadId}/archive`
+}
+
+/**
+ * @summary Archive or restore a thread for the signed-in member
+ */
+export const setMailThreadArchived = async (threadId: string,
+    mailArchiveInput: MailArchiveInput, options?: Parameters<typeof customFetch>[1]): Promise<MailArchiveResult> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MailArchiveResult>(getSetMailThreadArchivedUrl(threadId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mailArchiveInput)
+  }
+);}
+
+
+
+
+
+export const getSetMailThreadArchivedMutationKey = () => ['setMailThreadArchived'] as const;
+
+export const getSetMailThreadArchivedMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMailThreadArchived>>, TError,SetMailThreadArchivedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setMailThreadArchived>>, TError,SetMailThreadArchivedMutationVariables, TContext> => {
+
+const mutationKey = getSetMailThreadArchivedMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMailThreadArchived>>, SetMailThreadArchivedMutationVariables> = (props) => {
+          const {threadId,data} = props ?? {};
+
+          return  setMailThreadArchived(threadId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetMailThreadArchivedMutationResult = NonNullable<Awaited<ReturnType<typeof setMailThreadArchived>>>
+    export type SetMailThreadArchivedMutationBody = BodyType<MailArchiveInput>
+    export type SetMailThreadArchivedMutationError = ErrorType<unknown>
+    export type SetMailThreadArchivedMutationVariables = {threadId: string;data: BodyType<MailArchiveInput>}
+
+    /**
+ * @summary Archive or restore a thread for the signed-in member
+ */
+export const useSetMailThreadArchived = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMailThreadArchived>>, TError,SetMailThreadArchivedMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setMailThreadArchived>>,
+        TError,
+        SetMailThreadArchivedMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetMailThreadArchivedMutationOptions(options));
     }
 

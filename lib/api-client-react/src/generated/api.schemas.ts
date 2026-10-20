@@ -864,6 +864,120 @@ export interface MembershipDecisionInput {
   approve: boolean;
 }
 
+export interface MailAccount {
+  /** @nullable */
+  address: string | null;
+  keyReady: boolean;
+  /**
+     * @nullable
+     * @pattern ^[a-f0-9]{64}$
+     */
+  encryptionPublicKey: string | null;
+  /**
+     * @nullable
+     * @pattern ^[a-f0-9]{64}$
+     */
+  signingPublicKey: string | null;
+}
+
+export interface MailKeysInput {
+  /** @pattern ^[a-f0-9]{64}$ */
+  encryptionPublicKey: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  signingPublicKey: string;
+}
+
+export interface MailContact {
+  userId: string;
+  name: string;
+  username: string;
+  address: string;
+  /** @nullable */
+  avatarUrl: string | null;
+  /** @pattern ^[a-f0-9]{64}$ */
+  encryptionPublicKey: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  signingPublicKey: string;
+}
+
+export type MailContactList = MailContact[];
+
+export interface MailEnvelope {
+  /** @pattern ^[a-f0-9]{64}$ */
+  encapsulatedSecret: string;
+  /**
+     * @minLength 32
+     * @maxLength 65536
+     * @pattern ^[a-f0-9]+$
+     */
+  ciphertext: string;
+  /** @pattern ^[a-f0-9]{128}$ */
+  signature: string;
+}
+
+export interface MailMessage {
+  id: string;
+  threadId: string;
+  senderId: string;
+  senderName: string;
+  senderUsername: string;
+  /** @pattern ^[a-f0-9]{64}$ */
+  senderSigningPublicKey: string;
+  createdAt: string;
+  envelope: MailEnvelope;
+}
+
+export interface MailMessagePage {
+  items: MailMessage[];
+  /** @nullable */
+  nextBefore: string | null;
+}
+
+export interface MailThread {
+  id: string;
+  contact: MailContact;
+  createdAt: string;
+  updatedAt: string;
+  unreadCount: number;
+  archived: boolean;
+  lastMessage: MailMessage | null;
+}
+
+export type MailThreadList = MailThread[];
+
+export interface MailThreadInput {
+  /**
+     * @minLength 15
+     * @maxLength 120
+     * @pattern ^[A-Za-z0-9._-]+@vastmind\.com$
+     */
+  address: string;
+}
+
+export type MailEnvelopeInput = MailEnvelope & {
+  recipientId: string;
+};
+
+export interface MailMessageInput {
+  /**
+     * @minItems 2
+     * @maxItems 2
+     */
+  envelopes: MailEnvelopeInput[];
+}
+
+export interface MailReadResult {
+  success: boolean;
+}
+
+export interface MailArchiveInput {
+  archived: boolean;
+}
+
+export interface MailArchiveResult {
+  archived: boolean;
+}
+
 export interface CommerceAcknowledgement {
   success: boolean;
 }
@@ -1758,4 +1872,34 @@ export const ListShopOrdersScope = {
   buyer: 'buyer',
   seller: 'seller',
 } as const;
+
+export type SearchMailRecipientsParams = {
+/**
+ * @minLength 2
+ * @maxLength 80
+ */
+q: string;
+};
+
+export type ListMailThreadsParams = {
+box?: ListMailThreadsBox;
+};
+
+export type ListMailThreadsBox = typeof ListMailThreadsBox[keyof typeof ListMailThreadsBox];
+
+
+export const ListMailThreadsBox = {
+  inbox: 'inbox',
+  sent: 'sent',
+  archived: 'archived',
+} as const;
+
+export type ListMailMessagesParams = {
+before?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+};
 

@@ -32,6 +32,9 @@ node_modules
 /connect.lock
 /coverage
 /generated-artifacts/
+/artifacts/social-chat/android/.gradle-user-home/
+/artifacts/social-chat/static-build/
+**/.expo/
 /libpeerconnection.log
 npm-debug.log
 yarn-error.log
