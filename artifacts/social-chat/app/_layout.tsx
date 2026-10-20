@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -46,8 +45,7 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const isDark = useColorScheme() === 'dark';
-  const splashBackground = isDark ? '#080817' : '#F7F8FC';
+  const splashBackground = '#010102';
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,

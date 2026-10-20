@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "default" },
   icons: {
     icon: [
+      { url: `${base}/favicon.ico`, sizes: "any" },
+      { url: `${base}/favicon.svg`, type: "image/svg+xml" },
       { url: `${base}/favicon-32.png`, type: "image/png", sizes: "32x32" },
       { url: `${base}/icon-192.png`, type: "image/png", sizes: "192x192" },
     ],
@@ -28,10 +30,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f8ff" },
-    { media: "(prefers-color-scheme: dark)", color: "#070918" },
-  ],
+  themeColor: "#010102",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
