@@ -27,5 +27,6 @@ export interface Post {
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;
   effect: PostEffect;
+  isAnonymous: boolean;
   captions?: CaptionCue[];
 }

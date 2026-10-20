@@ -27,9 +27,8 @@ export async function provision(userId: string) {
   let [user] = await query("SELECT * FROM users WHERE id=$1", [userId]);
   if (!user) {
     const identity = await clerkClient.users.getUser(userId);
-    const username = `member_${randomUUID().replaceAll("-","").slice(0,24)}`;
     await query(`INSERT INTO users (id,name,username,email,avatar_url) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO NOTHING`,
-      [userId, [identity.firstName,identity.lastName].filter(Boolean).join(" ") || identity.username || "Member",username,
+      [userId, [identity.firstName,identity.lastName].filter(Boolean).join(" ") || identity.username || "Member",null,
         identity.emailAddresses.find(e=>e.id===identity.primaryEmailAddressId)?.emailAddress ?? null,identity.imageUrl || null]);
     [user] = await query("SELECT * FROM users WHERE id=$1",[userId]);
   }
@@ -103,7 +102,7 @@ export async function summary(id:string,viewer:string,q:Query=query) {
   return {
     id,
     name: hidden ? "Member" : u.name,
-    username: hidden ? "" : u.username,
+    username: hidden ? "" : u.username ?? "",
     avatarUrl: hidden ? null : u.avatar_url,
     online: !hidden && u.show_online_status && onlineUsers.has(id),
     mutualCommunities: hidden ? 0 : mutual.n,
@@ -112,7 +111,7 @@ export async function summary(id:string,viewer:string,q:Query=query) {
   };
 }
 export function profile(u:Row) {
-  return {id:u.id,name:u.name,username:u.username,email:u.email,avatarUrl:u.avatar_url,bio:u.bio,status:u.status,online:onlineUsers.has(u.id),
+  return {id:u.id,name:u.name,username:u.username??"",email:u.email,avatarUrl:u.avatar_url,bio:u.bio,status:u.status,online:onlineUsers.has(u.id),
     privacy:{allowMessagesFrom:u.allow_messages_from,profileVisibility:u.profile_visibility,showOnlineStatus:u.show_online_status,showLastSeen:u.show_last_seen}};
 }
 export async function membership(chatId:string,userId:string,q:Query=query,admin=false) {
@@ -176,7 +175,8 @@ export async function post(id:string,viewer:string,q:Query=query) {
   const shape=(r:Row|null|undefined)=>r?{id:r.id,url:`/api/storage/media/${r.id}`,name:r.name,contentType:r.content_type,size:Number(r.size)}:null;
   const mediaId=p.media_id?mediaRows.find(m=>m.id===p.media_id):null;
   const audioId=p.audio_media_id?mediaRows.find(m=>m.id===p.audio_media_id):null;
-  return {id,author:await summary(p.author_id,viewer,q),content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none",captions:p.captions||[]};
+  const author=p.is_anonymous?{id:"anonymous",name:"Anonymous member",username:"",avatarUrl:null,online:false,mutualCommunities:0,following:false,lastSeenAt:null}:await summary(p.author_id,viewer,q);
+  return {id,author,content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none",captions:p.captions||[],isAnonymous:Boolean(p.is_anonymous)};
 }
 export function updateShape(u:Row) {return {id:u.id,channelId:u.channel_id,content:u.content,pinned:u.pinned,createdAt:u.created_at};}
 export async function channelAccess(id:string,viewer:string,q:Query=query,owner=false) {

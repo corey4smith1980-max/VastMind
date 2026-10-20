@@ -59,6 +59,7 @@ export interface ProfileUpdate {
   /**
      * @minLength 3
      * @maxLength 32
+     * @pattern ^[A-Za-z0-9_]+$
      */
   username?: string;
   /**
@@ -338,6 +339,7 @@ export interface Post {
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;
   effect: PostEffect;
+  isAnonymous: boolean;
   captions?: CaptionCue[];
 }
 
@@ -388,6 +390,7 @@ export interface PostInput {
   mediaId?: string;
   audioMediaId?: string;
   effect?: PostInputEffect;
+  isAnonymous?: boolean;
   /** @maxItems 60 */
   captions?: CaptionCue[];
 }

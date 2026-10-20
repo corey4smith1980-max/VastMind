@@ -15,14 +15,19 @@ export default function FeedScreen() {
   const { state, profile, createPost, loading } = useAppStore();
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [anonymous, setAnonymous] = useState(false);
   return <PageFrame>
     <AppHeader /><StorageNotice />
     <Pressable accessibilityLabel="Open stories" onPress={()=>router.push("/stories")} style={{paddingVertical:12}}><Text style={{color:colors.primary,fontWeight:"700"}}>Stories · share for 24 hours</Text></Pressable>
     <Eyebrow>{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</Eyebrow>
     <Text style={[styles.heading, { color: colors.foreground }]}>A little closer,{'\n'}wherever you are.</Text>
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <View style={styles.row}><Avatar initials={initials(profile?.name ?? '')} size={38} tone="lime" /><TextInput accessibilityLabel="Write a community post" placeholder="What’s on your mind?" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={setDraft} multiline style={{ flex: 1, color: colors.foreground, minHeight: 60 }} /></View>
-      <Pressable disabled={busy || !draft.trim()} onPress={async () => { setBusy(true); if (await createPost(draft)) setDraft(''); setBusy(false); }} style={[styles.button, { backgroundColor: colors.primary }]}><Text style={{ color: colors.primaryForeground }}>{busy ? 'Sharing…' : 'Share'}</Text></Pressable>
+        <View style={styles.row}><Avatar initials={initials(profile?.name ?? '')} size={38} tone="lime" /><TextInput accessibilityLabel="Write a community post" placeholder="What’s on your mind?" placeholderTextColor={colors.mutedForeground} value={draft} onChangeText={setDraft} multiline style={{ flex: 1, color: colors.foreground, minHeight: 60 }} /></View>
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: anonymous }} onPress={() => setAnonymous(value => !value)} style={[styles.anonymousToggle, { borderColor: colors.border }]}>
+          <Feather name={anonymous ? "check-square" : "square"} size={17} color={anonymous ? colors.primary : colors.mutedForeground} />
+          <View style={{ flex: 1 }}><Text style={{ color: colors.foreground, fontWeight: "700", fontSize: 12 }}>Post anonymously</Text><Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Your profile won’t appear on the post.</Text></View>
+        </Pressable>
+        <Pressable disabled={busy || !draft.trim()} onPress={async () => { setBusy(true); if (await createPost(draft, anonymous)) { setDraft(''); setAnonymous(false); } setBusy(false); }} style={[styles.button, { backgroundColor: colors.primary }]}><Text style={{ color: colors.primaryForeground }}>{busy ? 'Sharing…' : 'Share'}</Text></Pressable>
     </View>
     <Text style={[styles.section, { color: colors.foreground }]}>Around your circle</Text>
     {!loading && !state.posts.length && <Text style={{ color: colors.mutedForeground }}>No posts yet. Share a thought with your community.</Text>}
@@ -37,7 +42,7 @@ function PostCard({ post }: { post: FeedPost }) {
   const [busy, setBusy] = useState(false);
   const submit = async () => { if (!draft.trim() || busy) return; setBusy(true); if (await addComment(post.id, draft)) setDraft(''); setBusy(false); };
   return <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-    <View style={styles.row}><Avatar initials={post.initials} size={42} tone="blue" /><View style={{ flex: 1 }}><Text style={{ color: colors.foreground, fontWeight: '700' }}>{post.author}</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{post.subtitle} · {post.time}</Text></View></View>
+    <View style={styles.row}><Avatar initials={post.isAnonymous ? "?" : post.initials} size={42} tone={post.isAnonymous ? "gold" : "blue"} /><View style={{ flex: 1 }}><Text style={{ color: colors.foreground, fontWeight: '700' }}>{post.author}</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{post.subtitle} · {post.time}</Text></View></View>
     <Text style={{ color: colors.foreground, lineHeight: 22, marginVertical: 16 }}>{post.text}</Text>
     <ContentProducts postId={post.id} isAuthor={!!profile && post.authorId === profile.id} tone="light" />
     <Pressable onPress={async () => { await toggleLike(post.id); }} style={styles.row}><Feather name="heart" size={19} color={post.liked ? colors.primary : colors.mutedForeground} /><Text style={{ color: colors.mutedForeground }}>{post.likes} · {comments.data?.length ?? 0} replies</Text></Pressable>
@@ -52,4 +57,5 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 20, padding: 15, marginBottom: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   button: { alignSelf: 'flex-end', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 13, marginTop: 12 },
+  anonymousToggle: { flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: 1, borderRadius: 13, paddingHorizontal: 11, paddingVertical: 9, marginTop: 8 },
 });

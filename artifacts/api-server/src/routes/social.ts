@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import * as schemas from "@workspace/api-zod";
 import { isValidStickerContent } from "../lib/stickers";
+import { isValidChosenUsername, needsUsernameChoice, normalizeUsername } from "../lib/usernames";
 import { z } from "zod";
 import { query, transaction, provision, profile, summary, blocked, canDiscover, canMessage, membership, chatAllowed, conversation, message, community, postAccess, post, channelAccess, channel, updateShape, notify, uuid, assert, HttpError, onlineUsers, toggleFollow, blockMember, type Query, type Row } from "../lib/social";
 import { changed, evictChat, disconnectUser } from "../lib/realtime";
@@ -15,7 +16,11 @@ const router=Router();
 router.use(async(req,res,next)=>{
   const auth=getAuth(req);
   if(!auth.userId){res.status(401).json({error:"Authentication required"});return;}
-  res.locals.user=await provision(auth.userId);
+  const user=await provision(auth.userId);
+  res.locals.user=user;
+  if(needsUsernameChoice(user.username)&&!(req.path==="/me"&&["GET","PATCH"].includes(req.method))){
+    res.status(428).json({error:"Choose a username to continue"});return;
+  }
   next();
 });
 router.use(rateLimit({windowMs:60_000,limit:240,keyGenerator:(_req,res)=>res.locals.user.id,standardHeaders:"draft-8",legacyHeaders:false}));
@@ -103,10 +108,15 @@ async function groupAddition(c:Context,id:string,target:string) {
 }
 route("get","/me","GetMyProfile",async c=>profile(c.user));
 route("patch","/me","UpdateMyProfile",async c=>{
-  if(c.b.username!==undefined)assert(/^[a-zA-Z0-9_]{3,32}$/.test(c.b.username),400,"Username must be 3–32 letters, numbers or underscores");
+  const username=c.b.username===undefined?undefined:normalizeUsername(c.b.username);
+  if(username!==undefined){
+    assert(isValidChosenUsername(username),400,"Username must be 3–32 letters, numbers or underscores, and cannot be an auto-generated handle");
+    const [taken]=await c.q("SELECT id FROM users WHERE lower(username)=$1 AND id<>$2",[username,c.u]);
+    assert(!taken,409,"That username is already taken");
+  }
   if(c.b.avatarUrl!==undefined && c.b.avatarUrl!==null)assert(c.b.avatarUrl===c.user.avatar_url,400,"Avatar uploads are not available yet");
   const map:Record<string,string>={name:"name",username:"username",bio:"bio",status:"status",avatarUrl:"avatar_url"};
-  for(const [key,col] of Object.entries(map))if(c.b[key]!==undefined)await c.q(`UPDATE users SET ${col}=$1 WHERE id=$2`,[c.b[key],c.u]);
+  for(const [key,col] of Object.entries(map))if(c.b[key]!==undefined)await c.q(`UPDATE users SET ${col}=$1 WHERE id=$2`,[key==="username"?username:c.b[key],c.u]);
   return profile((await c.q("SELECT * FROM users WHERE id=$1",[c.u]))[0]);
 });
 route("put","/me/privacy","UpdatePrivacySettings",async c=>{
@@ -115,7 +125,7 @@ route("put","/me/privacy","UpdatePrivacySettings",async c=>{
   return c.b;
 });
 route("get","/users/search","SearchUsers",async c=>{
-  const rows=await c.q("SELECT * FROM users WHERE id<>$1 AND (name ILIKE $2 OR username ILIKE $2) ORDER BY name LIMIT 60",[c.u,`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`]);
+  const rows=await c.q("SELECT * FROM users WHERE id<>$1 AND username<>'' AND (name ILIKE $2 OR username ILIKE $2) ORDER BY name LIMIT 60",[c.u,`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`]);
   const result=[];for(const row of rows)if(await canDiscover(c.u,row,c.q))result.push(await summary(row.id,c.u,c.q));return result;
 });
 // People discovery and directed follows.
@@ -294,7 +304,7 @@ route("post","/posts","CreatePost",async c=>{
   assert(!soundtrack||soundtrack.content_type.startsWith("audio/"),400,"Choose an audio track");
   assert(!main||!main.content_type.startsWith("audio/"),400,"Choose a photo or video clip");
   assert(!main||!c.b.pollOptions||c.b.pollOptions.length===0,400,"A media post can't be a poll");
-  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,content,media_id,audio_media_id,effect,captions) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",[id,c.u,c.b.communityId??null,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions)]);
+  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,content,media_id,audio_media_id,effect,captions,is_anonymous) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)",[id,c.u,c.b.communityId??null,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions),c.b.isAnonymous??false]);
   for(const label of c.b.pollOptions??[])await c.q("INSERT INTO poll_options (id,post_id,label) VALUES ($1,$2,$3)",[uuid(),id,label]);
   await feedImpact(c,c.b.communityId??null);return post(id,c.u,c.q);
 },201);

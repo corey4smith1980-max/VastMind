@@ -5,7 +5,7 @@ import { createInsertSchema } from "drizzle-zod";
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
 const created = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), name: text("name").notNull(), username: text("username").notNull(),
+  id: text("id").primaryKey(), name: text("name").notNull(), username: text("username"),
   email: text("email"), avatarUrl: text("avatar_url"), bio: text("bio"), status: text("status"),
   allowMessagesFrom: text("allow_messages_from").notNull().default("everyone"),
   profileVisibility: text("profile_visibility").notNull().default("everyone"),
@@ -41,7 +41,7 @@ export const messageReactions = pgTable("message_reactions", {
 }, t => [primaryKey({ columns: [t.messageId, t.userId, t.emoji] }), index("message_reactions_message").on(t.messageId)]);
 export const communities = pgTable("communities",{id:id(),ownerId:uid("owner_id"),name:text("name").notNull(),description:text("description").notNull(),category:text("category").notNull(),isPrivate:boolean("is_private").notNull(),createdAt:created()});
 export const communityMembers = pgTable("community_members",{communityId:text("community_id").notNull().references(()=>communities.id,{onDelete:"cascade"}),userId:uid("user_id"),role:text("role").notNull().default("member"),state:text("state").notNull().default("member")},t=>[primaryKey({columns:[t.communityId,t.userId]})]);
-export const posts = pgTable("posts",{id:id(),authorId:uid("author_id"),communityId:text("community_id").references(()=>communities.id,{onDelete:"cascade"}),content:text("content").notNull(),mediaId:text("media_id"),audioMediaId:text("audio_media_id"),effect:text("effect").notNull().default("none"),captions:jsonb("captions").notNull().default([]),createdAt:created()}, t => [
+export const posts = pgTable("posts",{id:id(),authorId:uid("author_id"),communityId:text("community_id").references(()=>communities.id,{onDelete:"cascade"}),content:text("content").notNull(),mediaId:text("media_id"),audioMediaId:text("audio_media_id"),effect:text("effect").notNull().default("none"),captions:jsonb("captions").notNull().default([]),isAnonymous:boolean("is_anonymous").notNull().default(false),createdAt:created()}, t => [
   index("posts_content_search").using("gin", sql`to_tsvector('simple', ${t.content})`),
 ]);
 export const reactions = pgTable("reactions",{postId:text("post_id").notNull().references(()=>posts.id,{onDelete:"cascade"}),userId:uid("user_id"),reaction:text("reaction").notNull()},t=>[primaryKey({columns:[t.postId,t.userId]})]);

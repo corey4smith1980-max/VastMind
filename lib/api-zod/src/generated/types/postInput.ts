@@ -25,6 +25,7 @@ export interface PostInput {
   mediaId?: string;
   audioMediaId?: string;
   effect?: PostInputEffect;
+  isAnonymous?: boolean;
   /** @maxItems 60 */
   captions?: CaptionCue[];
 }

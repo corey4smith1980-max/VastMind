@@ -17,6 +17,7 @@ import { MeContext } from "@/lib/me";
 import { CallProvider } from "@/components/calling/call-provider";
 import { usePollInterval } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
+import { UsernameSetup } from "@/components/shell/username-setup";
 
 // ---------- Navigation model ----------
 const NAV = [
@@ -56,8 +57,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const enabled = isLoaded && !!isSignedIn;
   const poll = usePollInterval(30_000);
   const me = useGetMyProfile({ query: { enabled, queryKey: getGetMyProfileQueryKey() } });
-  const notes = useListNotifications({ query: { enabled, queryKey: getListNotificationsQueryKey(), refetchInterval: poll } });
-  const chats = useListChats(undefined, { query: { enabled, queryKey: getListChatsQueryKey(), refetchInterval: poll } });
+  const needsUsername = !me.data?.username || /^member_[a-f0-9]{24}$/i.test(me.data.username);
+  const appReady = enabled && !!me.data && !needsUsername;
+  const notes = useListNotifications({ query: { enabled: appReady, queryKey: getListNotificationsQueryKey(), refetchInterval: poll } });
+  const chats = useListChats(undefined, { query: { enabled: appReady, queryKey: getListChatsQueryKey(), refetchInterval: poll } });
 
   useEffect(() => setMoreOpen(false), [pathname]);
 
@@ -69,6 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
+  if (needsUsername) return <UsernameSetup name={me.data.name} onComplete={() => me.refetch()} />;
 
   const unreadNotes = (notes.data ?? []).filter((n) => !n.read).length;
   const unreadChats = (chats.data ?? []).reduce((s, c) => s + c.unreadCount, 0);

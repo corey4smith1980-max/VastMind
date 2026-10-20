@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, SendHorizontal, ThumbsUp, Check } from "lucide-react";
+import { EyeOff, Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, SendHorizontal, ThumbsUp, Check } from "lucide-react";
 import {
   useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
   type Post, type ReactionInputReaction,
@@ -78,10 +78,11 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   return (
     <article className="rise rounded-[1.6rem] border bg-card p-4 sm:p-5" style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }} data-testid={`card-post-${post.id}`}>
       <header className="flex items-center gap-3">
-        <UserAvatar id={post.author.id} name={post.author.name} src={post.author.avatarUrl} online={post.author.online} />
+        {post.isAnonymous ? <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"><EyeOff className="h-4 w-4" /></span>
+          : <UserAvatar id={post.author.id} name={post.author.name} src={post.author.avatarUrl} online={post.author.online} />}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{post.author.name} <span className="font-normal text-muted-foreground">@{post.author.username}</span></p>
-          <p className="text-xs text-muted-foreground">{relTime(post.createdAt)}{post.communityName ? <> · in <span className="font-medium text-primary">{post.communityName}</span></> : null}</p>
+          <p className="truncate font-semibold">{post.isAnonymous ? "Anonymous member" : <>{post.author.name} <span className="font-normal text-muted-foreground">@{post.author.username}</span></>}</p>
+          <p className="text-xs text-muted-foreground">{post.isAnonymous ? "Posted anonymously · " : ""}{relTime(post.createdAt)}{post.communityName ? <> · in <span className="font-medium text-primary">{post.communityName}</span></> : null}</p>
         </div>
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{post.content}</p>
@@ -91,10 +92,10 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           {post.media.contentType.startsWith("video/") ? (
             <video src={post.media.url} controls playsInline preload="metadata"
               className={cn("max-h-[560px] w-full bg-[hsl(192_52%_9%)] object-contain", post.effect === "warm" && "sepia-[.2] saturate-[1.15]", post.effect === "mono" && "grayscale", post.effect === "soft" && "brightness-[1.06] saturate-[.82]")}
-              aria-label={`Video attachment from ${post.author.name}`} data-testid={`video-post-media-${post.id}`} />
+              aria-label={`Video attachment from ${post.isAnonymous ? "anonymous member" : post.author.name}`} data-testid={`video-post-media-${post.id}`} />
           ) : post.media.contentType.startsWith("image/") ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.media.url} alt={post.media.name || `Photo from ${post.author.name}`} loading="lazy"
+            <img src={post.media.url} alt={post.media.name || `Photo from ${post.isAnonymous ? "anonymous member" : post.author.name}`} loading="lazy"
               className={cn("max-h-[560px] w-full object-contain", post.effect === "warm" && "sepia-[.2] saturate-[1.15]", post.effect === "mono" && "grayscale", post.effect === "soft" && "brightness-[1.06] saturate-[.82]")}
               data-testid={`image-post-media-${post.id}`} />
           ) : null}
@@ -102,7 +103,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         </div>
       ) : null}
 
-      <ShoppableProducts post={post} className="mt-3" />
+      {!post.isAnonymous ? <ShoppableProducts post={post} className="mt-3" /> : null}
 
       {post.pollOptions.length ? (
         <div className="mt-4 space-y-2" role="group" aria-label="Poll">

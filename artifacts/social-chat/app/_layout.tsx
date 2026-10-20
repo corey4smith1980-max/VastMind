@@ -18,6 +18,7 @@ import { ClerkProvider } from '@clerk/expo';
 import { tokenCache } from '@clerk/expo/token-cache';
 import { setBaseUrl } from '@workspace/api-client-react';
 import { AuthGate } from '@/components/AuthGate';
+import { UsernameSetupGate } from '@/components/UsernameSetupGate';
 import { MobileRealtimeProvider } from '@/state/Realtime';
 import { Text } from 'react-native';
 
@@ -67,9 +68,9 @@ export default function RootLayout() {
           <ClerkProvider publishableKey={publishableKey} proxyUrl={proxyUrl} tokenCache={tokenCache}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <AuthGate><MobileRealtimeProvider><AppStoreProvider>
+              <AuthGate><UsernameSetupGate><MobileRealtimeProvider><AppStoreProvider>
                 <RootLayoutNav />
-              </AppStoreProvider></MobileRealtimeProvider></AuthGate>
+              </AppStoreProvider></MobileRealtimeProvider></UsernameSetupGate></AuthGate>
             </KeyboardProvider>
           </GestureHandlerRootView>
           </ClerkProvider>

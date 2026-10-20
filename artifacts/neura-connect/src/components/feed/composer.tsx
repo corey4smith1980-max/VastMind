@@ -18,6 +18,7 @@ export function Composer({ defaultCommunityId }: { defaultCommunityId?: string }
   const { toast } = useToast();
   const invalidate = useInvalidate();
   const [content, setContent] = useState("");
+  const [anonymous, setAnonymous] = useState(false);
   const [community, setCommunity] = useState<string>(defaultCommunityId ?? "none");
   const [poll, setPoll] = useState<string[] | null>(null);
   const communities = useListCommunities(undefined, { query: { queryKey: getListCommunitiesQueryKey(), staleTime: 60_000 } });
@@ -27,7 +28,7 @@ export function Composer({ defaultCommunityId }: { defaultCommunityId?: string }
     mutation: {
       onSuccess: () => {
         invalidate("/api/feed");
-        setContent(""); setPoll(null);
+        setContent(""); setPoll(null); setAnonymous(false);
         toast({ title: "Posted" });
       },
       onError: (e) => toast({ title: "Couldn't post", description: errMessage(e), variant: "destructive" }),
@@ -62,6 +63,10 @@ export function Composer({ defaultCommunityId }: { defaultCommunityId?: string }
           <BarChart3 className="mr-1 h-4 w-4" /> {poll ? "Remove poll" : "Poll"}
         </Button>
         <Button size="sm" variant="ghost" className="rounded-full" disabled title="Photo posts are coming soon"><ImageOff className="mr-1 h-4 w-4" /> Photos soon</Button>
+        <label className="flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
+          <input type="checkbox" checked={anonymous} onChange={(event) => setAnonymous(event.target.checked)} aria-label="Post anonymously" data-testid="toggle-anonymous-post" />
+          <span>Post anonymously</span>
+        </label>
         <Select value={community} onValueChange={setCommunity}>
           <SelectTrigger className="h-8 w-auto min-w-[150px] rounded-full text-xs" aria-label="Post to" data-testid="select-post-community"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -70,7 +75,7 @@ export function Composer({ defaultCommunityId }: { defaultCommunityId?: string }
           </SelectContent>
         </Select>
         <Button className="ml-auto rounded-full px-5" disabled={!canPost}
-          onClick={() => create.mutate({ data: { content: content.trim(), communityId: community === "none" ? null : community, pollOptions: poll ? opts : undefined } })} data-testid="button-publish-post">
+          onClick={() => create.mutate({ data: { content: content.trim(), communityId: community === "none" ? null : community, pollOptions: poll ? opts : undefined, isAnonymous: anonymous } })} data-testid="button-publish-post">
           {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Post
         </Button>
       </div>

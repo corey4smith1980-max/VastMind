@@ -28,6 +28,7 @@ export type Comment = {
 export type FeedPost = {
   id: string;
   authorId?: string;
+  isAnonymous: boolean;
   author: string;
   initials: string;
   subtitle: string;

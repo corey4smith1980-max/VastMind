@@ -49,7 +49,7 @@ function useServerStore() {
       const sticker = chat.lastMessage ? findVastMindEmoji(chat.lastMessage) : undefined;
       return { id: chat.id, name, initials: initials(name), category: chat.type === 'group' ? 'group' : 'personal', lastMessage: sticker ? `Sticker · ${sticker.label}` : chat.lastMessage ?? '', time: time(chat.lastMessageAt), unread: chat.unreadCount, online: other ? (presence[other.id] ?? other.online) : false, messages: [] };
     }),
-    posts: (feed.data ?? []).map(p => ({ id: p.id, authorId: p.author.id, author: p.author.name, initials: initials(p.author.name), subtitle: p.communityName ?? `@${p.author.username}`, time: time(p.createdAt), text: p.content, image: null, likes: p.reactionsCount, liked: p.reacted, comments: [] })),
+    posts: (feed.data ?? []).map(p => ({ id: p.id, authorId: p.isAnonymous ? undefined : p.author.id, isAnonymous: p.isAnonymous, author: p.isAnonymous ? 'Anonymous member' : p.author.name, initials: p.isAnonymous ? '?' : initials(p.author.name), subtitle: p.isAnonymous ? 'Posted anonymously' : p.communityName ?? `@${p.author.username}`, time: time(p.createdAt), text: p.content, image: null, likes: p.reactionsCount, liked: p.reacted, comments: [] })),
     channels: (channels.data ?? []).map(c => ({ id: c.id, name: c.name, initials: initials(c.name), category: c.owner.name, followers: String(c.subscriberCount), color: 'blue', followed: c.followed, description: c.description, updates: c.latestUpdate ? [{ id: c.latestUpdate.id, author: c.owner.name, text: c.latestUpdate.content, time: time(c.latestUpdate.createdAt) }] : [] })),
     businessOpen: business.data?.isOpen ?? false,
   };
@@ -61,7 +61,7 @@ function useServerStore() {
     markConversationRead: (id: string) => run(() => read.mutateAsync({ chatId: id })),
     toggleLike: (id: string) => run(() => react.mutateAsync({ postId: id, data: { reaction: 'like' } })),
     addComment: (id: string, text: string) => run(() => comment.mutateAsync({ postId: id, data: { content: text.trim() } })),
-    createPost: (text: string) => run(() => post.mutateAsync({ data: { content: text.trim() } })),
+    createPost: (text: string, isAnonymous = false) => run(() => post.mutateAsync({ data: { content: text.trim(), isAnonymous } })),
     toggleChannelFollow: (id: string) => run(() => follow.mutateAsync({ channelId: id })),
     toggleBusinessOpen: () => run(() => status.mutateAsync({ data: { isOpen: !state.businessOpen } })),
   };

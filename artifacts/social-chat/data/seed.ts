@@ -66,6 +66,7 @@ export const initialState: AppState = {
   posts: [
     {
       id: 'post-cafe',
+      isAnonymous: false,
       author: 'Maya Chen',
       initials: 'MC',
       subtitle: 'Community member',
@@ -81,6 +82,7 @@ export const initialState: AppState = {
     },
     {
       id: 'post-market',
+      isAnonymous: false,
       author: 'Sola Adeyemi',
       initials: 'SA',
       subtitle: 'Maker · Sola Ceramics',
@@ -93,6 +95,7 @@ export const initialState: AppState = {
     },
     {
       id: 'post-note',
+      isAnonymous: false,
       author: 'Kemi Okafor',
       initials: 'KO',
       subtitle: 'Community member',

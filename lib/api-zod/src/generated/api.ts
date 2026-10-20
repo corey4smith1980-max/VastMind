@@ -1625,6 +1625,8 @@ export const updateMyProfileBodyNameMax = 80;
 export const updateMyProfileBodyUsernameMin = 3;
 export const updateMyProfileBodyUsernameMax = 32;
 
+
+export const updateMyProfileBodyUsernameRegExp = new RegExp('^[A-Za-z0-9_]+$');
 export const updateMyProfileBodyBioMax = 280;
 
 export const updateMyProfileBodyStatusMax = 80;
@@ -1633,7 +1635,7 @@ export const updateMyProfileBodyStatusMax = 80;
 
 export const UpdateMyProfileBody = zod.object({
   "name": zod.string().min(1).max(updateMyProfileBodyNameMax).optional(),
-  "username": zod.string().min(updateMyProfileBodyUsernameMin).max(updateMyProfileBodyUsernameMax).optional(),
+  "username": zod.string().min(updateMyProfileBodyUsernameMin).max(updateMyProfileBodyUsernameMax).regex(updateMyProfileBodyUsernameRegExp).optional(),
   "bio": zod.string().max(updateMyProfileBodyBioMax).nullish(),
   "status": zod.string().max(updateMyProfileBodyStatusMax).nullish(),
   "avatarUrl": zod.string().nullish()
@@ -2177,6 +2179,7 @@ export const GetFeedResponseItem = zod.object({
   "name": zod.string()
 }),zod.null()]),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "isAnonymous": zod.boolean(),
   "captions": zod.array(zod.object({
   "start": zod.number().min(getFeedResponseCaptionsItemStartMin).max(getFeedResponseCaptionsItemStartMax),
   "end": zod.number().min(getFeedResponseCaptionsItemEndMin).max(getFeedResponseCaptionsItemEndMax),
@@ -2252,6 +2255,7 @@ export const GetVideosResponse = zod.object({
   "name": zod.string()
 }),zod.null()]),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "isAnonymous": zod.boolean(),
   "captions": zod.array(zod.object({
   "start": zod.number().min(getVideosResponseItemsItemCaptionsItemStartMin).max(getVideosResponseItemsItemCaptionsItemStartMax),
   "end": zod.number().min(getVideosResponseItemsItemCaptionsItemEndMin).max(getVideosResponseItemsItemCaptionsItemEndMax),
@@ -2401,6 +2405,7 @@ export const createPostBodyPollOptionsItemMax = 120;
 
 export const createPostBodyPollOptionsMax = 6;
 
+export const createPostBodyIsAnonymousDefault = false;
 export const createPostBodyCaptionsItemStartMin = 0;
 export const createPostBodyCaptionsItemStartMax = 90;
 
@@ -2420,6 +2425,7 @@ export const CreatePostBody = zod.object({
   "mediaId": zod.string().optional(),
   "audioMediaId": zod.string().optional(),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']).optional(),
+  "isAnonymous": zod.boolean().default(createPostBodyIsAnonymousDefault),
   "captions": zod.array(zod.object({
   "start": zod.number().min(createPostBodyCaptionsItemStartMin).max(createPostBodyCaptionsItemStartMax),
   "end": zod.number().min(createPostBodyCaptionsItemEndMin).max(createPostBodyCaptionsItemEndMax),
@@ -2477,6 +2483,7 @@ export const CreatePostResponse = zod.object({
   "name": zod.string()
 }),zod.null()]),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "isAnonymous": zod.boolean(),
   "captions": zod.array(zod.object({
   "start": zod.number().min(createPostResponseCaptionsItemStartMin).max(createPostResponseCaptionsItemStartMax),
   "end": zod.number().min(createPostResponseCaptionsItemEndMin).max(createPostResponseCaptionsItemEndMax),
@@ -2616,6 +2623,7 @@ export const VoteOnPollResponse = zod.object({
   "name": zod.string()
 }),zod.null()]),
   "effect": zod.enum(['none', 'warm', 'mono', 'soft']),
+  "isAnonymous": zod.boolean(),
   "captions": zod.array(zod.object({
   "start": zod.number().min(voteOnPollResponseCaptionsItemStartMin).max(voteOnPollResponseCaptionsItemStartMax),
   "end": zod.number().min(voteOnPollResponseCaptionsItemEndMin).max(voteOnPollResponseCaptionsItemEndMax),
