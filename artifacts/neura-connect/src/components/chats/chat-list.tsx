@@ -14,6 +14,7 @@ import { chatTime } from "@/lib/format";
 import { usePollInterval, useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 import { AlertsButton } from "@/components/shell/alerts-button";
+import { MutualStatusStrip } from "@/components/status/status-ring";
 
 type ChatFilter = "All" | "Unread" | "Groups";
 
@@ -39,7 +40,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
       <div className="px-4 pb-3 pt-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl font-bold">Chats</h1>
+            <h1 className="font-display text-3xl font-bold">VastMind</h1>
             <ConnectionPill className="mt-1 text-muted-foreground" />
           </div>
           <div className="flex items-center gap-2">
@@ -49,6 +50,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
             </Button>
           </div>
         </div>
+        <MutualStatusStrip meId={me.id} />
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search conversations" className="rounded-xl border-0 bg-muted pl-9" aria-label="Search conversations" data-testid="input-search-chats" />
@@ -66,7 +68,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
         {chats.isError ? <ErrorState error={chats.error} onRetry={() => chats.refetch()} /> : null}
         {chats.data && visibleChats.length === 0 ? (
           dq ? <EmptyState icon={Search} title="Nothing on that line" body={`No conversations match “${dq}”.`} />
-            : <EmptyState icon={filter === "Groups" ? Users : MessageSquarePlus} title={filter === "All" ? "No conversations yet" : `No ${filter.toLowerCase()} conversations`} body="Find a friend by name and say hello, or start a group for your crew." action={<Button className="rounded-full" onClick={onNew}>Start a conversation</Button>} />
+            : <EmptyState icon={filter === "Groups" ? Users : MessageSquarePlus} title={filter === "All" ? "No conversations yet" : `No ${filter.toLowerCase()} conversations`} body="Start a conversation with someone you know by searching their exact username." action={<Button className="rounded-full" onClick={onNew}>Start a conversation</Button>} />
         ) : null}
         {visibleChats.map((c, i) => {
           const other = otherMember(c, me.id);

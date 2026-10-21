@@ -62,3 +62,9 @@ Preserve the existing VastMind menu order unless the user asks to move or rename
 **Why:** The user asked to keep the existing menu arrangements while centering Shop and renaming Videos to Feed.
 
 **How to apply:** Keep other destinations accessible and in their existing order. If a platform's tab limit requires an overflow menu, move secondary links there without removing them.
+
+Chat discovery should not suggest people; starting a new relationship requires searching an exact username. Status browsing belongs in the chat surface and is limited to mutual contacts, while the status page is for managing the signed-in user's own posts, listed one per card.
+
+**Why:** The user explicitly requested direct username lookup, mutual-contact-only status viewing, and a personal status page with separate entries.
+
+**How to apply:** Use reciprocal follows or an existing private chat as the contact relationship, and enforce status access for both status metadata and attached media. Keep suggestions out of chat discovery.

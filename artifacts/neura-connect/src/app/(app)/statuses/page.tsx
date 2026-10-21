@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleDashed, ChevronLeft, ChevronRight, Hourglass, Loader2, Plus, X } from "lucide-react";
 import { useCreateStatus, type Status, type MediaAttachment } from "@workspace/api-client-react";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
@@ -56,6 +56,8 @@ export default function StatusesPage() {
   const [attachment, setAttachment] = useState<MediaAttachment>();
   const [backgroundStyle, setBackgroundStyle] = useState<BackgroundKey>("midnight");
   const [viewing, setViewing] = useState<Status[] | null>(null);
+  const [requestedAuthorId, setRequestedAuthorId] = useState<string | null>(null);
+  const openedAuthorId = useRef<string | null>(null);
   const [storyIndex, setStoryIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const list = useActiveStatuses();
@@ -72,14 +74,9 @@ export default function StatusesPage() {
     },
   });
 
-  const groups = useMemo(() => {
-    const grouped = new Map<string, Status[]>();
-    for (const status of list.active) {
-      grouped.set(status.author.id, [...(grouped.get(status.author.id) ?? []), status]);
-    }
-    for (const statuses of grouped.values()) statuses.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    return Array.from(grouped.values()).sort((a, b) => (a[0].author.id === me.id ? -1 : b[0].author.id === me.id ? 1 : 0));
-  }, [list.active, me.id]);
+  const ownStatuses = useMemo(() => list.active
+    .filter((status) => status.author.id === me.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()), [list.active, me.id]);
 
   const current = viewing?.[storyIndex];
 
@@ -89,10 +86,40 @@ export default function StatusesPage() {
     setViewing(statuses);
   }
 
+  useEffect(() => {
+    const authorId = new URLSearchParams(window.location.search).get("authorId");
+    if (authorId) setRequestedAuthorId(authorId);
+  }, []);
+
+  useEffect(() => {
+    if (!requestedAuthorId || !list.data || openedAuthorId.current === requestedAuthorId) return;
+    openedAuthorId.current = requestedAuthorId;
+    const contactStatuses = list.active
+      .filter((status) => status.author.id === requestedAuthorId && status.author.id !== me.id)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    if (contactStatuses.length) {
+      setViewing(contactStatuses);
+      setStoryIndex(0);
+      setElapsed(0);
+    } else {
+      toast({ title: "Status unavailable", description: "Only active statuses from mutual contacts can be viewed here." });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("authorId");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+    setRequestedAuthorId(null);
+  }, [requestedAuthorId, list.data, list.active, me.id, toast]);
+
   function closeStories() {
     setViewing(null);
     setStoryIndex(0);
     setElapsed(0);
+    setRequestedAuthorId(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("authorId")) {
+      url.searchParams.delete("authorId");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
   }
 
   function goNext() {
@@ -153,7 +180,7 @@ export default function StatusesPage() {
 
   return (
     <PageScroll>
-      <PageHeader kicker="A little window into today" title="Status" sub="Share a thought, photo or video. It stays for 24 hours." />
+      <PageHeader kicker="Your personal status space" title="Your status" sub="Create and manage your own updates. Shared with mutual contacts for 24 hours." />
 
       <section className="rise mt-6 overflow-hidden rounded-[1.7rem] border border-border/70 bg-card shadow-sm" aria-labelledby="status-compose-heading">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 px-5 py-4">
@@ -220,35 +247,33 @@ export default function StatusesPage() {
       <section className="mt-9" aria-labelledby="recent-statuses-heading">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Around you</p>
-            <h2 id="recent-statuses-heading" className="mt-1 font-display text-2xl font-semibold">Recent moments</h2>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">Only your updates</p>
+            <h2 id="recent-statuses-heading" className="mt-1 font-display text-2xl font-semibold">Your status updates</h2>
           </div>
-          {groups.length ? <span className="text-xs text-muted-foreground">{groups.reduce((n, g) => n + g.length, 0)} active updates</span> : null}
+          {ownStatuses.length ? <span className="text-xs text-muted-foreground">{ownStatuses.length} active {ownStatuses.length === 1 ? "update" : "updates"}</span> : null}
         </div>
         {list.isLoading ? <CardSkeleton count={2} /> : null}
         {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-        {list.data && groups.length === 0 ? <EmptyState icon={CircleDashed} title="A quiet moment" body="When friends share what they're up to, their updates will appear here." /> : null}
+        {list.data && ownStatuses.length === 0 ? <EmptyState icon={CircleDashed} title="Your status is clear" body="Your active updates will appear here, one card per post." /> : null}
         <ul className="grid gap-3 sm:grid-cols-2">
-          {groups.map((group, index) => {
-            const latest = group[group.length - 1];
-            const pct = lifePct(latest);
-            const isMine = latest.author.id === me.id;
+          {ownStatuses.map((status, index) => {
+            const pct = lifePct(status);
             return (
-              <li key={latest.author.id} className="rise" style={{ animationDelay: `${index * 45}ms` }}>
-                <button type="button" onClick={() => openStories(group)}
-                  aria-label={`View ${isMine ? "your" : `${latest.author.name}'s`} ${group.length} active status ${group.length === 1 ? "update" : "updates"}`}
+              <li key={status.id} className="rise" style={{ animationDelay: `${index * 45}ms` }}>
+                <button type="button" onClick={() => openStories([status])}
+                  aria-label={`View your status posted ${relTime(status.createdAt)}`}
                   className="group flex w-full items-center gap-4 rounded-[1.35rem] border border-border/70 bg-card p-4 text-left transition hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  data-testid={`button-status-${latest.author.id}`}>
+                  data-testid={`button-status-${status.id}`}>
                   <StatusRing active>
-                    <UserAvatar id={latest.author.id} name={latest.author.name} src={latest.author.avatarUrl} size="lg" />
+                    <UserAvatar id={me.id} name={me.name} src={me.avatarUrl} size="lg" />
                   </StatusRing>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
-                      <span className="truncate font-semibold">{isMine ? "You" : latest.author.name}</span>
-                      {group.length > 1 ? <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{group.length} updates</span> : null}
+                      <span className="truncate font-semibold">You · {relTime(status.createdAt)}</span>
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">24h</span>
                     </span>
-                    <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">{latest.content}</span>
-                    <span className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"><span className="rounded-full bg-[hsl(214_90%_58%/.12)] px-1.5 py-0.5 font-semibold uppercase tracking-wider text-[hsl(214_80%_45%)]">Active</span><Hourglass className="h-3 w-3" aria-hidden="true" />{hoursLeft(latest.expiresAt)}</span>
+                    <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">{status.content}</span>
+                    <span className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"><span className="rounded-full bg-[hsl(214_90%_58%/.12)] px-1.5 py-0.5 font-semibold uppercase tracking-wider text-[hsl(214_80%_45%)]">Active</span><Hourglass className="h-3 w-3" aria-hidden="true" />{hoursLeft(status.expiresAt)}</span>
                     <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true"><span className="block h-full rounded-full bg-gradient-to-r from-[hsl(188_92%_52%)] to-[hsl(262_80%_64%)]" style={{ width: `${pct * 100}%` }} /></span>
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />

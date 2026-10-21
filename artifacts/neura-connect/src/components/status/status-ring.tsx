@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CircleDashed } from "lucide-react";
 import { useListStatuses, getListStatusesQueryKey, type Status } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/user-avatar";
 
 /** Filters out statuses whose expiry has passed, even when the cache is stale. */
 export function activeStatuses(list: Status[] | undefined, now = Date.now()) {
@@ -38,6 +39,46 @@ export function StatusRing({ active, children, thickness = 2.5, className }: { a
   return <span className={cn("vm-status-ring shrink-0", className)} data-state={active ? "active" : "idle"} style={{ padding: thickness }}>
     <span className="vm-status-inner bg-card" style={{ padding: thickness }}>{children}</span>
   </span>;
+}
+
+/** Statuses returned here are server-filtered to the signed-in user and reciprocal follows. */
+export function MutualStatusStrip({ meId }: { meId: string }) {
+  const statuses = useActiveStatuses();
+  const contacts = useMemo(() => {
+    const byAuthor = new Map<string, Status[]>();
+    for (const status of statuses.active) {
+      if (status.author.id === meId) continue;
+      byAuthor.set(status.author.id, [...(byAuthor.get(status.author.id) ?? []), status]);
+    }
+    return Array.from(byAuthor.values())
+      .map((items) => items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      .sort((a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime());
+  }, [statuses.active, meId]);
+
+  if (!statuses.isLoading && contacts.length === 0) return null;
+  return (
+    <section className="mt-4" aria-label="Mutual contacts' active statuses" data-testid="mutual-status-strip">
+      <p className="mb-2 font-mono text-[9px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Mutual statuses</p>
+      {statuses.isLoading && contacts.length === 0 ? <p className="text-xs text-muted-foreground">Checking for status updates…</p> : (
+        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
+          {contacts.map((items) => {
+            const latest = items[0];
+            return (
+              <Link key={latest.author.id} href={`/statuses?authorId=${encodeURIComponent(latest.author.id)}`}
+                aria-label={`View ${latest.author.name}'s ${items.length} status ${items.length === 1 ? "update" : "updates"}`}
+                className="flex min-w-[54px] flex-col items-center gap-1.5 rounded-xl p-1 text-center hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                data-testid={`link-mutual-status-${latest.author.id}`}>
+                <StatusRing active className="h-12 w-12">
+                  <UserAvatar id={latest.author.id} name={latest.author.name} src={latest.author.avatarUrl} size="sm" />
+                </StatusRing>
+                <span className="max-w-[68px] truncate text-[10px] font-medium text-foreground">{latest.author.name.split(" ")[0]}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
 }
 
 /** Header shortcut on unified Videos: shows live status activity and links to /statuses. */

@@ -8,8 +8,6 @@ import { ReelPager } from "@/components/VideoReel";
 import { usePagedVideos } from "@/components/videoKit";
 import { CreatePostSheet } from "@/components/PostEntry";
 import { useColors } from "@/hooks/useColors";
-import { StatusRing, useActiveStatuses } from "@/components/StatusRing";
-import { AlertsButtonNative } from "@/components/common";
 
 const FEEDS = [
   { id: "for-you", label: "For You" },
@@ -22,8 +20,6 @@ export default function VideosScreen() {
   const router = useRouter();
   const routeParams = useLocalSearchParams<{ communityId?: string }>();
   const communityId = typeof routeParams.communityId === "string" ? routeParams.communityId : undefined;
-  const { active: liveStatuses } = useActiveStatuses();
-  const statusAuthors = new Set(liveStatuses.map((st) => st.author.id)).size;
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
   const [feed, setFeed] = useState<(typeof FEEDS)[number]["id"]>("for-you");
@@ -54,15 +50,8 @@ export default function VideosScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ color: "#f6efe4", fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Your feed"}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <AlertsButtonNative dark />
             <Pressable accessibilityRole="button" accessibilityLabel="Reset video viewing history" disabled={reset.isPending} onPress={confirmReset}>
               <Feather name="rotate-ccw" size={19} color="#f6efe4" />
-            </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel={statusAuthors ? `Open stories. ${statusAuthors} ${statusAuthors === 1 ? "person has" : "people have"} an active status` : "Open stories"} onPress={() => router.push("/stories")} hitSlop={6}>
-              <StatusRing size={32} active={statusAuthors > 0} stroke={2}>
-                <Feather name="aperture" size={17} color="#f6efe4" />
-              </StatusRing>
-              {statusAuthors ? <View pointerEvents="none" style={{ position: "absolute", top: -4, right: -6, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: "#3B82F6", alignItems: "center", justifyContent: "center", paddingHorizontal: 3 }}><Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>{statusAuthors}</Text></View> : null}
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Open communities and local opportunities" onPress={() => router.push("/communities")} hitSlop={6}>
               <Feather name="users" size={19} color="#f6efe4" />

@@ -1,17 +1,29 @@
 import React, { useMemo, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Avatar, AppHeader, Eyebrow, PageFrame, StorageNotice } from '@/components/common';
 import { useColors } from '@/hooks/useColors';
-import { useAppStore } from '@/state/AppStore';
+import { initials, useAppStore } from '@/state/AppStore';
+import { StatusRing, useActiveStatuses } from '@/components/StatusRing';
 
 type Filter = 'All' | 'Unread' | 'Groups';
 
 export default function ChatsScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { state } = useAppStore();
+  const { state, profile } = useAppStore();
+  const { active: activeStatuses } = useActiveStatuses();
+  const mutualStatuses = useMemo(() => {
+    const byAuthor = new Map<string, typeof activeStatuses>();
+    for (const status of activeStatuses) {
+      if (status.author.id === profile?.id) continue;
+      byAuthor.set(status.author.id, [...(byAuthor.get(status.author.id) ?? []), status]);
+    }
+    return Array.from(byAuthor.values())
+      .map((items) => items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+      .sort((a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime());
+  }, [activeStatuses, profile?.id]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('All');
   const chats = useMemo(() => state.conversations.filter((chat) => {
@@ -25,8 +37,27 @@ export default function ChatsScreen() {
     <PageFrame>
       <AppHeader label="messages" />
       <StorageNotice />
+      {mutualStatuses.length ? <View style={{ marginBottom: 16 }}>
+        <Eyebrow>MUTUAL STATUSES</Eyebrow>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 9 }}>
+          {mutualStatuses.map((items) => {
+            const author = items[0].author;
+            return <Pressable key={author.id} accessibilityRole="button"
+              accessibilityLabel={`View ${author.name}'s ${items.length} active status ${items.length === 1 ? 'update' : 'updates'}`}
+              onPress={() => router.push({ pathname: '/stories', params: { authorId: author.id } })}
+              style={{ width: 58, alignItems: 'center', gap: 5 }}>
+              <StatusRing size={52} active stroke={2.5}>
+                <View style={{ width: 42, height: 42, borderRadius: 21, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
+                  {author.avatarUrl ? <Image source={{ uri: author.avatarUrl }} style={{ width: 42, height: 42 }} /> : <Avatar initials={initials(author.name)} size={42} tone="blue" />}
+                </View>
+              </StatusRing>
+              <Text numberOfLines={1} style={{ maxWidth: 58, color: colors.foreground, fontSize: 10, fontWeight: '600' }}>{author.name.split(' ')[0]}</Text>
+            </Pressable>;
+          })}
+        </ScrollView>
+      </View> : null}
       <View style={styles.headingRow}>
-        <View><Eyebrow>YOUR INBOX</Eyebrow><Text style={[styles.heading, { color: colors.forest }]}>Chats <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text></View>
+        <View><Eyebrow>YOUR INBOX</Eyebrow><Text style={[styles.heading, { color: colors.forest }]}>VastMind <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text></View>
           <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')} style={[styles.newChat, { backgroundColor: colors.primary }]}><Feather name="plus" size={20} color={colors.primaryForeground} /></Pressable>
       </View>
           <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>

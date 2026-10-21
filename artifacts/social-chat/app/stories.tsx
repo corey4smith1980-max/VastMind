@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useCreateStatus, getListStatusesQueryKey, type MediaAttachment, type Status } from "@workspace/api-client-react";
@@ -8,6 +8,7 @@ import { PageFrame, SectionTitle } from "@/components/common";
 import { MobileMediaPicker, MobileMediaPreview } from "@/components/Media";
 import { useColors } from "@/hooks/useColors";
 import { StatusRing, useActiveStatuses } from "@/components/StatusRing";
+import { useAppStore } from "@/state/AppStore";
 
 type StatusBackgroundStyle = Status["backgroundStyle"];
 const STATUS_GRADIENTS: { id: StatusBackgroundStyle; label: string; colors: [string, string, string] }[] = [
@@ -39,10 +40,11 @@ function GradientFill({ style }: { style: StatusBackgroundStyle }) {
   );
 }
 
-type StatusGroup = { authorId: string; authorName: string; items: Status[] };
-
 export default function Stories() {
   const colors=useColors(),router=useRouter(),client=useQueryClient();
+  const params=useLocalSearchParams<{authorId?:string}>();
+  const authorId=typeof params.authorId==="string"?params.authorId:undefined;
+  const {profile}=useAppStore();
   const list=useActiveStatuses();
   const create=useCreateStatus();
   const [content,setContent]=useState("");
@@ -50,21 +52,32 @@ export default function Stories() {
   const [backgroundStyle,setBackgroundStyle]=useState<StatusBackgroundStyle>("midnight");
   const [notice,setNotice]=useState("");
   const [viewing,setViewing]=useState<{items:Status[];index:number}|null>(null);
+  const openedAuthorId=useRef<string|null>(null);
   const progress=useRef(new Animated.Value(0)).current;
-  const groups=useMemo<StatusGroup[]>(()=>{
-    const byAuthor=new Map<string,Status[]>();
-    for(const status of list.active)byAuthor.set(status.author.id,[...(byAuthor.get(status.author.id)??[]),status]);
-    return Array.from(byAuthor.entries()).map(([authorId,items])=>({
-      authorId,authorName:items[0]?.author.name??"VastMind member",
-      items:items.sort((a,b)=>new Date(a.createdAt).getTime()-new Date(b.createdAt).getTime()),
-    }));
-  },[list.active]);
+  const ownStatuses=useMemo(()=>list.active
+    .filter(status=>status.author.id===profile?.id)
+    .sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()),[list.active,profile?.id]);
   const nextStatus=useCallback(()=>{
-    setViewing((current)=>current&&current.index<current.items.length-1?{...current,index:current.index+1}:null);
-  },[]);
+    if(!viewing)return;
+    if(viewing.index<viewing.items.length-1)setViewing({items:viewing.items,index:viewing.index+1});
+    else {setViewing(null);if(authorId)router.back();}
+  },[authorId,router,viewing]);
   const previousStatus=useCallback(()=>{
     setViewing((current)=>current?{...current,index:Math.max(0,current.index-1)}:null);
   },[]);
+  const closeViewer=useCallback(()=>{
+    setViewing(null);
+    if(authorId)router.back();
+  },[authorId,router]);
+  useEffect(()=>{
+    if(!authorId||!profile?.id||openedAuthorId.current===authorId||(!list.data&&!list.isError))return;
+    openedAuthorId.current=authorId;
+    const items=list.active
+      .filter(status=>status.author.id===authorId&&status.author.id!==profile.id)
+      .sort((a,b)=>new Date(a.createdAt).getTime()-new Date(b.createdAt).getTime());
+    if(items.length)setViewing({items,index:0});
+    else {Alert.alert("Status unavailable","Only active statuses from mutual contacts can be viewed here.");router.back();}
+  },[authorId,list.active,list.data,list.isError,profile?.id,router]);
   useEffect(()=>{
     if(!viewing){progress.setValue(0);return;}
     progress.setValue(0);
@@ -82,9 +95,9 @@ export default function Stories() {
     }catch(e){Alert.alert("Couldn't post story",e instanceof Error?e.message:"Try again.");}
   }
   return <PageFrame>
-    <Pressable accessibilityLabel="Back" onPress={()=>router.back()} style={{paddingVertical:12}}><Text style={{color:colors.primary}}>Back</Text></Pressable>
-    <Text style={{color:colors.foreground,fontSize:26,fontWeight:"700"}}>Stories</Text>
-    <Text style={{color:colors.mutedForeground,marginVertical:8}}>Share a thought, photo, or video. Your status disappears after 24 hours.</Text>
+     <Pressable accessibilityLabel="Back" onPress={()=>router.back()} style={{paddingVertical:12}}><Text style={{color:colors.primary}}>Back</Text></Pressable>
+     <Text style={{color:colors.foreground,fontSize:26,fontWeight:"700"}}>Your status</Text>
+     <Text style={{color:colors.mutedForeground,marginVertical:8}}>Create and manage your own updates. Shared with mutual contacts for 24 hours.</Text>
     <View style={{borderRadius:22,overflow:"hidden",height:190,marginTop:12,backgroundColor:"#171A2B"}}>
       {media?<MobileMediaPreview media={media}/>:<GradientFill style={backgroundStyle}/>}
       {media?<TextInput accessibilityLabel="Story caption" value={content} onChangeText={setContent} maxLength={500} placeholder="Add a caption…" placeholderTextColor="rgba(255,255,255,0.7)" multiline style={{color:"#fff",backgroundColor:"rgba(8,10,24,0.64)",padding:16,borderRadius:14,minHeight:70,position:"absolute",left:14,right:14,bottom:14}}/>:
@@ -105,27 +118,26 @@ export default function Stories() {
     </View>
     {media?<Pressable accessibilityRole="button" accessibilityLabel="Remove attached media" onPress={()=>setMedia(undefined)}><Text style={{color:colors.foreground}}>{media.name} · Remove</Text></Pressable>:null}
     {notice?<Text accessibilityLiveRegion="polite" accessibilityRole="alert" onPress={()=>setNotice("")} style={{color:"#3B82F6",fontWeight:"700",marginBottom:6}}>{notice}</Text>:null}
-    <SectionTitle title="Recent updates" />
+     <SectionTitle title="Your status updates" />
     {list.isLoading?<Text style={{color:colors.mutedForeground}}>Loading stories…</Text>:null}
     {list.isError?<Pressable onPress={()=>void list.refetch()}><Text style={{color:colors.destructive}}>Couldn't load stories. Tap to retry.</Text></Pressable>:null}
-    {!list.isLoading&&list.data&&groups.length===0?<Text style={{color:colors.mutedForeground}}>No stories right now. Be the first to share.</Text>:null}
-    {groups.map(group=>{
-      const latest=group.items[group.items.length-1];
-      return <Pressable key={group.authorId} accessibilityRole="button" accessibilityLabel={`View ${group.authorName}'s ${group.items.length} active status update${group.items.length===1?"":"s"}`} onPress={()=>setViewing({items:group.items,index:0})} style={{padding:12,marginVertical:8,borderRadius:18,backgroundColor:colors.card,flexDirection:"row",alignItems:"center",gap:12}}>
+     {!list.isLoading&&list.data&&ownStatuses.length===0?<Text style={{color:colors.mutedForeground}}>Your active updates will appear here, one card per post.</Text>:null}
+     {ownStatuses.map(status=>{
+       return <Pressable key={status.id} accessibilityRole="button" accessibilityLabel={`View your status posted ${new Date(status.createdAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`} onPress={()=>setViewing({items:[status],index:0})} style={{padding:12,marginVertical:8,borderRadius:18,backgroundColor:colors.card,flexDirection:"row",alignItems:"center",gap:12}}>
         <StatusRing size={74} active stroke={3}>
           <View style={{width:62,height:62,borderRadius:31,overflow:"hidden",justifyContent:"center",alignItems:"center",backgroundColor:"#16192B"}}>
-            {latest.media?<Text style={{color:"#fff",fontWeight:"700",fontSize:10}}>MEDIA</Text>:<><GradientFill style={latest.backgroundStyle}/><Text numberOfLines={2} style={{color:"#fff",textAlign:"center",fontWeight:"700",fontSize:10,padding:5}}>{latest.content}</Text></>}
+             {status.media?<Text style={{color:"#fff",fontWeight:"700",fontSize:10}}>MEDIA</Text>:<><GradientFill style={status.backgroundStyle}/><Text numberOfLines={2} style={{color:"#fff",textAlign:"center",fontWeight:"700",fontSize:10,padding:5}}>{status.content}</Text></>}
           </View>
         </StatusRing>
         <View style={{flex:1}}>
-          <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Text numberOfLines={1} style={{color:colors.foreground,fontWeight:"700",flexShrink:1}}>{group.authorName}</Text><Text style={{color:"#3B82F6",fontSize:10,fontWeight:"800",letterSpacing:1}}>ACTIVE</Text></View>
-          <Text numberOfLines={2} style={{color:colors.mutedForeground,marginTop:4}}>{latest.content}</Text>
-          <Text style={{color:colors.mutedForeground,fontSize:11,marginTop:5}}>{group.items.length} update{group.items.length===1?"":"s"} · Expires {new Date(latest.expiresAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</Text>
+           <View style={{flexDirection:"row",alignItems:"center",gap:6}}><Text numberOfLines={1} style={{color:colors.foreground,fontWeight:"700",flexShrink:1}}>You · {new Date(status.createdAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</Text><Text style={{color:"#3B82F6",fontSize:10,fontWeight:"800",letterSpacing:1}}>ACTIVE</Text></View>
+           <Text numberOfLines={2} style={{color:colors.mutedForeground,marginTop:4}}>{status.content}</Text>
+           <Text style={{color:colors.mutedForeground,fontSize:11,marginTop:5}}>Expires {new Date(status.expiresAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</Text>
         </View>
         <Text style={{color:colors.primary,fontSize:18,fontWeight:"700"}}>›</Text>
       </Pressable>;
     })}
-    <Modal visible={!!viewing} animationType="fade" onRequestClose={()=>setViewing(null)} statusBarTranslucent>
+     <Modal visible={!!viewing} animationType="fade" onRequestClose={closeViewer} statusBarTranslucent>
       {activeStatus&&viewing?<View style={{flex:1,backgroundColor:"#101321"}}>
         <StatusBar hidden/>
         <GradientFill style={activeStatus.backgroundStyle}/>
@@ -140,7 +152,7 @@ export default function Stories() {
               <Text style={{color:"#fff",fontSize:15,fontWeight:"700"}}>{activeStatus.author.name}</Text>
               <Text style={{color:"rgba(255,255,255,0.72)",fontSize:12,marginTop:3}}>{new Date(activeStatus.createdAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close status viewer" onPress={()=>setViewing(null)} hitSlop={12} style={{padding:8}}>
+             <Pressable accessibilityRole="button" accessibilityLabel="Close status viewer" onPress={closeViewer} hitSlop={12} style={{padding:8}}>
               <Text style={{color:"#fff",fontSize:22,fontWeight:"600"}}>×</Text>
             </Pressable>
           </View>

@@ -4,7 +4,7 @@ import * as schemas from "@workspace/api-zod";
 import { isValidStickerContent } from "../lib/stickers";
 import { isValidChosenUsername, needsUsernameChoice, normalizeUsername } from "../lib/usernames";
 import { z } from "zod";
-import { query, transaction, provision, profile, summary, blocked, canDiscover, canMessage, membership, chatAllowed, conversation, message, community, postAccess, post, channelAccess, channel, updateShape, notify, uuid, assert, HttpError, onlineUsers, toggleFollow, blockMember, type Query, type Row } from "../lib/social";
+import { query, transaction, provision, profile, summary, blocked, contacts, canDiscover, canMessage, membership, chatAllowed, conversation, message, community, postAccess, post, channelAccess, channel, updateShape, notify, uuid, assert, HttpError, onlineUsers, toggleFollow, blockMember, type Query, type Row } from "../lib/social";
 import { changed, evictChat, disconnectUser } from "../lib/realtime";
 import { claimMedia, mediaShape } from "../lib/media";
 import { pushConfiguration, validPushEndpoint } from "../lib/push";
@@ -135,7 +135,14 @@ route("put","/me/privacy","UpdatePrivacySettings",async c=>{
   return c.b;
 });
 route("get","/users/search","SearchUsers",async c=>{
-  const rows=await c.q("SELECT * FROM users WHERE id<>$1 AND username<>'' AND (name ILIKE $2 OR username ILIKE $2) ORDER BY name LIMIT 60",[c.u,`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`]);
+  const search=c.s.q.trim();
+  const usernameOnly=search.startsWith("@");
+  const term=usernameOnly?search.slice(1).toLowerCase():search;
+  if(!term)return [];
+  if(usernameOnly&&!/^[a-z0-9_]{3,32}$/.test(term))return [];
+  const rows=usernameOnly
+    ? await c.q("SELECT * FROM users WHERE id<>$1 AND username<>'' AND lower(username)=$2 ORDER BY name LIMIT 1",[c.u,term])
+    : await c.q("SELECT * FROM users WHERE id<>$1 AND username<>'' AND (name ILIKE $2 OR username ILIKE $2) ORDER BY name LIMIT 60",[c.u,`%${term.replace(/[%_\\]/g,"\\$&")}%`]);
   const result=[];for(const row of rows)if(await canDiscover(c.u,row,c.q))result.push(await summary(row.id,c.u,c.q));return result;
 });
 // People discovery and directed follows.
@@ -490,8 +497,17 @@ route("post","/channels/:channelId/updates/:updateId/pin","TogglePinnedUpdate",a
   await c.q("UPDATE channel_updates SET pinned=false WHERE channel_id=$1",[c.p.channelId]);const [r]=await c.q("UPDATE channel_updates SET pinned=$1 WHERE id=$2 RETURNING *",[!old.pinned,old.id]);return updateShape(r);
 });
 route("get","/statuses","ListStatuses",async c=>{
-  const rows=await c.q("SELECT s.* FROM statuses s WHERE expires_at>now() ORDER BY created_at DESC LIMIT 100");const result=[];
-  for(const r of rows){const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,backgroundStyle:r.background_style??"midnight",createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)});}return result;
+  const rows=await c.q(`SELECT s.* FROM statuses s
+    WHERE s.expires_at>now()
+      AND (s.author_id=$1 OR
+        EXISTS(SELECT 1 FROM chat_members mine
+          JOIN chat_members other ON other.chat_id=mine.chat_id
+          JOIN chats c ON c.id=mine.chat_id
+          WHERE mine.user_id=$1 AND other.user_id=s.author_id AND c.type='private')
+        OR (EXISTS(SELECT 1 FROM follows f WHERE f.user_id=$1 AND f.target_id=s.author_id)
+          AND EXISTS(SELECT 1 FROM follows f WHERE f.user_id=s.author_id AND f.target_id=$1)))
+    ORDER BY s.created_at DESC LIMIT 100`,[c.u]);const result=[];
+  for(const r of rows){if(r.author_id!==c.u&&!await contacts(c.u,r.author_id,c.q))continue;const [u]=await c.q("SELECT * FROM users WHERE id=$1",[r.author_id]);if(await canDiscover(c.u,u,c.q))result.push({id:r.id,author:await summary(r.author_id,c.u,c.q),content:r.content,backgroundStyle:r.background_style??"midnight",createdAt:r.created_at,expiresAt:r.expires_at,media:await mediaShape(r.media_id,c.q)});}return result;
 });
 route("post","/statuses","CreateStatus",async c=>{
   const media=await claimMedia(c.b.mediaId,c.u,"status",null,c.q),backgroundStyle=c.b.backgroundStyle??"midnight";

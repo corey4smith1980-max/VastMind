@@ -3004,7 +3004,7 @@ export const getSearchUsersUrl = (params: SearchUsersParams,) => {
 }
 
 /**
- * @summary Search members by name or username
+ * @summary Search members by name or username; @ prefix selects an exact username
  */
 export const searchUsers = async (params: SearchUsersParams, options?: Parameters<typeof customFetch>[1]): Promise<UserList> => {
 
@@ -3051,7 +3051,7 @@ export type SearchUsersQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Search members by name or username
+ * @summary Search members by name or username; @ prefix selects an exact username
  */
 
 export function useSearchUsers<TData = Awaited<ReturnType<typeof searchUsers>>, TError = ErrorType<unknown>>(
@@ -7422,7 +7422,7 @@ export const getListStatusesUrl = () => {
 }
 
 /**
- * @summary List unexpired text statuses
+ * @summary List the current user's and mutual contacts' unexpired statuses
  */
 export const listStatuses = async ( options?: Parameters<typeof customFetch>[1]): Promise<StatusList> => {
 
@@ -7469,7 +7469,7 @@ export type ListStatusesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List unexpired text statuses
+ * @summary List the current user's and mutual contacts' unexpired statuses
  */
 
 export function useListStatuses<TData = Awaited<ReturnType<typeof listStatuses>>, TError = ErrorType<unknown>>(

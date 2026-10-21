@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import { randomUUID } from "node:crypto";
 import { pipeline } from "node:stream/promises";
 import { RequestUploadUrlBody, RequestUploadUrlResponse, CompleteMediaUploadParams, CompleteMediaUploadResponse, GetMediaContentParams } from "@workspace/api-zod";
-import { assert, query, provision, transaction, chatAllowed, blocked, canDiscover } from "../lib/social";
+import { assert, query, provision, transaction, chatAllowed, blocked, canDiscover, contacts } from "../lib/social";
 import { storage, mediaTypes, MEDIA_LIMIT, matchesMediaType, mediaShape } from "../lib/media";
 import { issueMediaPlaybackTicket, verifyMediaPlaybackTicket } from "../lib/media-playback";
 import { logger } from "../lib/logger";
@@ -94,7 +94,9 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
   assert(!await blocked(viewer,m.owner_id),404);
   if (m.attached && m.purpose === "chat") await chatAllowed(m.chat_id,viewer);
   else if (m.attached && m.purpose === "status") {
-    const [story] = await query("SELECT 1 FROM statuses WHERE media_id=$1 AND expires_at>now()",[m.id]); assert(story,404,"Story expired");
+    const [story] = await query("SELECT author_id FROM statuses WHERE media_id=$1 AND expires_at>now()",[m.id]); assert(story,404,"Story expired");
+    assert(story.author_id===m.owner_id,404,"Story unavailable");
+    assert(viewer===story.author_id||await contacts(viewer,story.author_id),404,"Story unavailable");
     const [owner] = await query("SELECT * FROM users WHERE id=$1",[m.owner_id]);
     assert(await canDiscover(viewer,owner),404);
   } else if (m.attached && m.purpose === "post") {

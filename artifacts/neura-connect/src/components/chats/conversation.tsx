@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Phone, Video, Search, SendHorizontal, ShieldOff, SmilePlus, Users, X, Zap,
+  ArrowLeft, Check, CheckCheck, Clock, Flag, Info, Loader2, MoreVertical, Paperclip, Phone, Video, SendHorizontal, ShieldOff, SmilePlus, Users, X, Zap,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -116,37 +116,6 @@ function OlderPage({ chatId, before, meId, others, onCursor, onReact }: { chatId
   return <MessageRun items={[...(q.data?.items ?? [])].sort(byTime)} meId={meId} others={others} onReact={onReact} />;
 }
 
-// ---------- In-conversation search (server-side q) ----------
-function SearchPanel({ chatId, onClose }: { chatId: string; onClose: () => void }) {
-  const [q, setQ] = useState("");
-  const [dq, setDq] = useState("");
-  useEffect(() => {
-    const t = window.setTimeout(() => setDq(q.trim()), 300);
-    return () => window.clearTimeout(t);
-  }, [q]);
-  const params = { q: dq, limit: 50 };
-  const res = useGetChatMessages(chatId, params, { query: { enabled: dq.length > 0, queryKey: getGetChatMessagesQueryKey(chatId, params) } });
-  return (
-    <div className="rise absolute inset-x-0 top-0 z-20 max-h-[70%] overflow-hidden border-b bg-card shadow-lg">
-      <div className="flex items-center gap-2 p-3">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search this conversation" className="border-0 bg-transparent shadow-none focus-visible:ring-0" aria-label="Search messages" data-testid="input-search-messages" />
-        <Button size="icon" variant="ghost" onClick={onClose} aria-label="Close search"><X className="h-4 w-4" /></Button>
-      </div>
-      <div className="max-h-[50vh] overflow-y-auto px-3 pb-3 scrollbar-thin">
-        {dq && res.isLoading ? <Skeleton className="h-12" /> : null}
-        {dq && res.data?.items.length === 0 ? <p className="py-4 text-center text-sm text-muted-foreground">No messages contain “{dq}”.</p> : null}
-        {res.data?.items.map((m) => (
-          <div key={m.id} className="rounded-xl p-2 hover:bg-muted">
-            <p className="flex justify-between text-xs"><span className="font-semibold">{m.senderName}</span><span className="font-mono text-muted-foreground">{relTime(m.createdAt)}</span></p>
-            <p className="text-sm">{m.content}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ---------- The conversation pane ----------
 export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack: () => void }) {
   const [attachment,setAttachment]=useState<MediaAttachment>();
@@ -159,7 +128,6 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
   const call = useCall();
 
   const [infoOpen, setInfoOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [blockT, setBlockT] = useState<{ id: string; name: string } | null>(null);
   const [reportT, setReportT] = useState<{ id: string; name: string } | null>(null);
   const [draft, setDraft] = useState("");
@@ -278,7 +246,6 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
         </button>
         <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: true, title: chatTitle(chat, me.id) })} aria-label="Start video call" data-testid="button-video-call"><Video className="h-5 w-5" /></Button>
         <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: false, title: chatTitle(chat, me.id) })} aria-label="Start voice call" data-testid="button-voice-call"><Phone className="h-5 w-5" /></Button>
-        <Button size="icon" variant="ghost" onClick={() => setSearchOpen((s) => !s)} aria-label="Search messages" data-testid="button-search-messages"><Search className="h-5 w-5" /></Button>
         <AlertsButton className="h-9 w-9" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="More options" data-testid="button-chat-menu"><MoreVertical className="h-5 w-5" /></Button></DropdownMenuTrigger>
@@ -293,8 +260,6 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-
-      {searchOpen ? <div className="relative"><SearchPanel chatId={chat.id} onClose={() => setSearchOpen(false)} /></div> : null}
 
       {/* Messages */}
       <div

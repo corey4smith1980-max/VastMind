@@ -1678,7 +1678,7 @@ export const UpdatePrivacySettingsResponse = zod.object({
 
 
 /**
- * @summary Search members by name or username
+ * @summary Search members by name or username; @ prefix selects an exact username
  */
 
 
@@ -3252,7 +3252,7 @@ export const GetMediaContentResponse = zod.unknown()
 
 
 /**
- * @summary List unexpired text statuses
+ * @summary List the current user's and mutual contacts' unexpired statuses
  */
 export const ListStatusesResponseItem = zod.object({
   "id": zod.string(),

@@ -135,7 +135,7 @@ paths:
     get:
       operationId: searchUsers
       tags: [users]
-      summary: Search members by name or username
+      summary: Search members by name or username; @ prefix selects an exact username
       parameters:
         - in: query
           name: q
@@ -1153,7 +1153,7 @@ paths:
     get:
       operationId: listStatuses
       tags: [statuses]
-      summary: List unexpired text statuses
+      summary: List the current user's and mutual contacts' unexpired statuses
       responses:
         "200":
           description: Active statuses

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import { useSearchUsers, getSearchUsersQueryKey, useGetSuggestedPeople, getGetSuggestedPeopleQueryKey, useToggleUserFollow, type UserSummary } from "@workspace/api-client-react";
+import { useSearchUsers, getSearchUsersQueryKey, useToggleUserFollow, type UserSummary } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
@@ -19,7 +19,6 @@ export function UserSearch({ onPick, selectedIds = [], excludeIds = [], autoFocu
   const [dq, setDq] = useState("");
   const invalidate = useInvalidate();
   const { toast } = useToast();
-  const suggestions = useGetSuggestedPeople({ query: { queryKey: getGetSuggestedPeopleQueryKey(), enabled: !dq } });
   const follow = useToggleUserFollow({ mutation: {
     onSuccess: () => { invalidate("/api/users", "/api/feed", "/api/chats"); },
     onError: (error) => toast({ title: "Couldn't update follow", description: errMessage(error), variant: "destructive" }),
@@ -28,21 +27,20 @@ export function UserSearch({ onPick, selectedIds = [], excludeIds = [], autoFocu
     const t = window.setTimeout(() => setDq(q.trim()), 250);
     return () => window.clearTimeout(t);
   }, [q]);
-  const params = { q: dq };
+  const params = { q: dq ? `@${dq.replace(/^@/, "")}` : "" };
   const res = useSearchUsers(params, { query: { enabled: dq.length > 0, queryKey: getSearchUsersQueryKey(params) } });
-  const active = dq ? res : suggestions;
-  const users = (active.data ?? []).filter((u) => !excludeIds.includes(u.id));
+  const users = (res.data ?? []).filter((u) => !excludeIds.includes(u.id));
   return (
     <div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or @username" className="rounded-xl pl-9" aria-label="Search members" data-testid="input-user-search" />
+        <Input autoFocus={autoFocus} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search exact username" className="rounded-xl pl-9" aria-label="Search members by exact username" data-testid="input-user-search" />
       </div>
       <div className="mt-2 max-h-64 overflow-y-auto scrollbar-thin">
-        {!dq ? <p className="px-2 py-3 text-xs text-muted-foreground">Suggested people · Shared communities first</p> : null}
-        {active.isLoading ? <div className="space-y-2 p-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10" />)}</div> : null}
-        {active.isError ? <p className="px-2 py-6 text-center text-sm text-destructive">Couldn't load people. Try again.</p> : null}
-        {active.data && users.length === 0 ? <p className="px-2 py-6 text-center text-sm text-muted-foreground">{dq ? `No one matches “${dq}”.` : "Invite your friends to join, or search by username."}</p> : null}
+        {!dq ? <p className="px-2 py-3 text-xs text-muted-foreground">Enter the exact username of someone you already know. An @ prefix is optional.</p> : null}
+        {dq && res.isLoading ? <div className="space-y-2 p-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10" />)}</div> : null}
+        {res.isError ? <p className="px-2 py-6 text-center text-sm text-destructive">Couldn't look up that username. Try again.</p> : null}
+        {dq && res.data && users.length === 0 ? <p className="px-2 py-6 text-center text-sm text-muted-foreground">No exact username match. Check the spelling and try again.</p> : null}
         {users.map((u) => {
           const on = selectedIds.includes(u.id);
           return (

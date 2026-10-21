@@ -8,15 +8,12 @@ import { getGetVideosQueryKey, useResetVideoHistory, useListCommunities, getList
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateChoiceDialog, type CreateMode } from "@/components/videos/create-choice";
-import { StatusShortcut } from "@/components/status/status-ring";
 import { ClipComposer } from "@/components/videos/clip-composer";
 import { ReelStack } from "@/components/videos/reel-stack";
 import { usePagedVideos } from "@/components/videos/video-kit";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useMe } from "@/lib/me";
-import { AlertsButton } from "@/components/shell/alerts-button";
 
 const FEEDS: { id: GetVideosFeed; label: string; why: string; empty: string }[] = [
   { id: "for-you", label: "For You", why: "Ordered using who you follow, the communities you share, and how you have watched clips here. It never uses your private chats.", empty: "Nothing to suggest yet. Follow a few people or join a community and this fills in." },
@@ -78,7 +75,6 @@ function VideosInner() {
   const [generation, setGeneration] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const me = useMe();
   const [confirmReset, setConfirmReset] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -99,8 +95,6 @@ function VideosInner() {
         {FEEDS.map((f) => <button key={f.id} role="tab" aria-selected={feed === f.id} onClick={() => setFeed(f.id)} className={cn("flex-1 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors sm:flex-none", feed === f.id ? "bg-[hsl(40_50%_96%)] text-[hsl(192_52%_12%)]" : "text-white/70 hover:text-white")} data-testid={`tab-feed-${f.id}`}>{f.label}</button>)}
       </div>
       <div className="flex items-center gap-1.5">
-        <AlertsButton className="border-white/15 bg-white/[.08] text-white hover:bg-white/15" />
-        <StatusShortcut meId={me.id} />
         <Button onClick={() => setInfoOpen((o) => !o)} variant="ghost" size="icon" aria-label="Why am I seeing these clips?" aria-expanded={infoOpen} className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-feed-info"><Info className="h-4 w-4" /></Button>
         <Button onClick={reload} variant="ghost" size="icon" aria-label="Refresh clips" className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-refresh-videos"><RefreshCw className="h-4 w-4" /></Button>
         <Button onClick={() => setCreateMode("choose")} size="sm" aria-haspopup="dialog" className="rounded-full px-4" data-testid="button-create-clip"><Plus className="mr-1.5 h-4 w-4" />Create</Button>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, View, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSearchUsers, getSearchUsersQueryKey, useCreateChat, useGetSuggestedPeople, useToggleUserFollow } from '@workspace/api-client-react';
+import { useSearchUsers, getSearchUsersQueryKey, useCreateChat, useToggleUserFollow } from '@workspace/api-client-react';
 import { AppHeader, PageFrame, StorageNotice, Avatar } from '@/components/common';
 import { initials, useAppStore } from '@/state/AppStore';
 import { useColors } from '@/hooks/useColors';
@@ -14,23 +14,25 @@ export default function NewChat() {
   const [group, setGroup] = useState(false);
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
-  const users = useSearchUsers({ q: query }, { query: { queryKey: getSearchUsersQueryKey({ q: query }), enabled: !!query.trim() } });
-  const suggestions = useGetSuggestedPeople();
+  const searchTerm = query.trim();
+  const searchParams = { q: searchTerm ? `@${searchTerm.replace(/^@/, '')}` : '' };
+  const users = useSearchUsers(searchParams, { query: { queryKey: getSearchUsersQueryKey(searchParams), enabled: !!searchTerm } });
   const follow = useToggleUserFollow();
   const create = useCreateChat();
-  const source = query.trim() ? users : suggestions;
   const input = { color: colors.foreground, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 14, marginVertical: 8 };
   return <PageFrame>
     <AppHeader /><StorageNotice />
     <Pressable onPress={() => router.back()}><Text style={{ color: colors.primary }}>Back</Text></Pressable>
-    <Text style={{ color: colors.foreground, fontSize: 25, marginVertical: 16 }}>Find your people</Text>
+    <Text style={{ color: colors.foreground, fontSize: 25, marginVertical: 16 }}>Find someone you know</Text>
+    <Text style={{ color: colors.mutedForeground, marginBottom: 8 }}>Search with their exact username. Ask them for it directly if you don’t know it.</Text>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><Text style={{ color: colors.foreground }}>Create a group</Text><Switch value={group} onValueChange={value => { setGroup(value); setSelected([]); }} /></View>
     {group && <TextInput accessibilityLabel="Group name" placeholder="Group name" placeholderTextColor={colors.mutedForeground} value={name} onChangeText={setName} style={input} />}
-    <TextInput accessibilityLabel="Search people" placeholder="Search name or username" placeholderTextColor={colors.mutedForeground} value={query} onChangeText={setQuery} style={input} />
-    {source.isPending && <Text style={{ color: colors.mutedForeground }}>Loading people…</Text>}
-    {source.error && <Pressable onPress={() => void source.refetch()}><Text style={{ color: colors.destructive }}>{source.error.message} — Retry</Text></Pressable>}
-    {source.data?.length === 0 && <Text style={{ color: colors.mutedForeground }}>No people found.</Text>}
-    {source.data?.map(person => <View key={person.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
+    <TextInput accessibilityLabel="Search by exact username" placeholder="Enter @username" placeholderTextColor={colors.mutedForeground} value={query} onChangeText={setQuery} style={input} autoCapitalize="none" />
+    {!query.trim() && <Text style={{ color: colors.mutedForeground }}>No suggestions. Enter a username to look someone up.</Text>}
+    {query.trim() && users.isFetching && <Text style={{ color: colors.mutedForeground }}>Looking up username…</Text>}
+    {users.error && <Pressable onPress={() => void users.refetch()}><Text style={{ color: colors.destructive }}>Couldn't search that username — Retry</Text></Pressable>}
+    {query.trim() && users.data?.length === 0 && !users.isFetching && <Text style={{ color: colors.mutedForeground }}>No exact username match. Check the spelling and try again.</Text>}
+    {users.data?.map(person => <View key={person.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}>
       <Avatar initials={initials(person.name)} size={40} />
       <Pressable style={{ flex: 1 }} onPress={() => setSelected(current => group ? current.includes(person.id) ? current.filter(id => id !== person.id) : [...current, person.id] : [person.id])}>
         <Text style={{ color: colors.foreground }}>{selected.includes(person.id) ? '✓ ' : ''}{person.name}</Text><Text style={{ color: colors.mutedForeground }}>@{person.username}</Text>
