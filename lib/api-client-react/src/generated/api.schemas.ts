@@ -1122,6 +1122,64 @@ export interface MailArchiveResult {
   archived: boolean;
 }
 
+export interface MobileSessionTicketInput {
+  /**
+     * @minLength 43
+     * @maxLength 43
+     * @pattern ^[A-Za-z0-9_-]{43}$
+     */
+  codeChallenge: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  redirectUri: string;
+  state: string;
+}
+
+export interface MobileSessionTicket {
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  ticket: string;
+  expiresAt: string;
+}
+
+export interface MobileSessionExchangeInput {
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  ticket: string;
+  /**
+     * @minLength 43
+     * @maxLength 128
+     * @pattern ^[A-Za-z0-9_-]+$
+     */
+  verifier: string;
+  /**
+     * @minLength 1
+     * @maxLength 500
+     */
+  redirectUri: string;
+  state: string;
+}
+
+export interface MobileSession {
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  accessToken: string;
+  userId: string;
+  expiresAt: string;
+}
+
+export interface MobileSessionRevoked {
+  revoked: boolean;
+}
+
 export interface CommerceAcknowledgement {
   success: boolean;
 }

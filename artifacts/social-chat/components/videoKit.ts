@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
-import { useAuth } from '@clerk/expo';
+import { useAppAuth } from '@/state/AuthContext';
 import { useRecordVideoEngagement, type CaptionCue, type MediaAttachment, type Post } from '@workspace/api-client-react';
 export { usePagedSocialTimeline as usePagedVideos } from '@workspace/api-client-react';
 
@@ -17,7 +17,7 @@ export const errorText = (e: unknown) => e instanceof Error ? e.message : 'Pleas
 /** Get a short-lived private read URL after auth; players can then seek with byte-range requests. */
 export type AuthedSource = { uri: string; headers?: Record<string, string> };
 export function useAuthedMedia(media: MediaAttachment | null | undefined, enabled = true) {
-  const { getToken } = useAuth();
+  const { getToken } = useAppAuth();
   const [state, setState] = useState<{ id: string; source: AuthedSource | null; error: boolean } | null>(null);
   const id = media?.id, url = media?.url;
   useEffect(() => {

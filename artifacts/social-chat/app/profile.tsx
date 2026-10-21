@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput, Switch, View } from 'react-native';
-import { useClerk } from '@clerk/expo';
 import { useRouter } from 'expo-router';
 import { Profile, useUpdateMyProfile, useUpdatePrivacySettings } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { AppHeader, PageFrame, StorageNotice } from '@/components/common';
+import { useAppAuth } from '@/state/AuthContext';
 
 export default function ProfileScreen() {
   const { profile } = useAppStore();
@@ -14,7 +14,7 @@ export default function ProfileScreen() {
 function ProfileForm({ profile }: { profile: Profile }) {
   const colors = useColors();
   const router = useRouter();
-  const { signOut } = useClerk();
+  const { signOut } = useAppAuth();
   const { run } = useAppStore();
   const update = useUpdateMyProfile();
   const privacyUpdate = useUpdatePrivacySettings();

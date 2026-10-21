@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -34,6 +34,38 @@ const identityLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const mobileTicketIdentifier = (ticket: string) =>
+  `mobile-session:${createHash("sha256").update(ticket).digest("hex")}`;
+const mobileSessionDetailsSchema = z.object({
+  userId: z.string().min(1),
+  webSessionId: z.string().min(1),
+  codeChallenge: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  redirectUri: z.string().min(1).max(500),
+  state: z.string().uuid(),
+});
+function allowedMobileRedirect(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    const isGatherCallback = url.protocol === "gather:"
+      && ((url.host === "auth" && url.pathname === "/callback")
+        || (!url.host && url.pathname === "/auth/callback"));
+    if (isGatherCallback) return true;
+    if (process.env.NODE_ENV === "production" || url.protocol !== "exp:" || url.pathname !== "/--/auth/callback") {
+      return false;
+    }
+    const configuredHosts = [process.env.REPLIT_EXPO_DEV_DOMAIN, process.env.REPLIT_DEV_DOMAIN]
+      .map((host) => host?.replace(/^https?:\/\//, "").split("/")[0].toLowerCase())
+      .filter((host): host is string => !!host);
+    return configuredHosts.includes(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+function constantTimeEqual(left: string, right: string): boolean {
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // Start a passwordless account or link a passkey to the currently signed-in
 // Clerk account. The random context expires quickly and is consumed on success.
@@ -164,6 +196,115 @@ router.post("/identity/recovery-registration-intents", identityLimiter, async (r
     recoveryPublicKey: recovered.publicKey,
   });
   res.status(201).json({ context, identifier: `${recovered.username}@vastmind.com`, expiresInSeconds: 600 });
+});
+
+// Native devices complete the same web passkey/recovery flow. This bridge
+// stores only a hashed, two-minute ticket and binds it to PKCE, state, session,
+// and an allow-listed app callback. The ticket itself is single-use.
+router.post("/identity/mobile-session-tickets", identityLimiter, async (req, res) => {
+  const parsed = z.object({
+    codeChallenge: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    redirectUri: z.string().min(1).max(500),
+    state: z.string().uuid(),
+  }).safeParse(req.body);
+  assert(parsed.success, 400, "The mobile sign-in request is invalid.");
+  assert(allowedMobileRedirect(parsed.data.redirectUri), 400, "The mobile app callback is not allowed.");
+  const webSession = await vastMindAuth.api.getSession({ headers: requestHeaders(req) });
+  assert(webSession?.user.id && webSession.session.id, 401, "Sign in with VastMind before returning to the mobile app.");
+
+  const ticket = randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + 2 * 60_000);
+  const details = {
+    userId: webSession.user.id,
+    webSessionId: webSession.session.id,
+    codeChallenge: parsed.data.codeChallenge,
+    redirectUri: parsed.data.redirectUri,
+    state: parsed.data.state,
+  };
+  await pool.query(
+    `INSERT INTO "verification" (id, identifier, value, expires_at)
+     VALUES ($1,$2,$3,$4)`,
+    [randomUUID(), mobileTicketIdentifier(ticket), JSON.stringify(details), expiresAt],
+  );
+  res.status(201).json({ ticket, expiresAt: expiresAt.toISOString() });
+});
+
+router.post("/identity/mobile-session-exchange", identityLimiter, async (req, res) => {
+  const parsed = z.object({
+    ticket: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+    verifier: z.string().min(43).max(128).regex(/^[A-Za-z0-9_-]+$/),
+    redirectUri: z.string().min(1).max(500),
+    state: z.string().uuid(),
+  }).safeParse(req.body);
+  assert(parsed.success, 400, "The mobile sign-in request is invalid.");
+  assert(allowedMobileRedirect(parsed.data.redirectUri), 400, "The mobile app callback is not allowed.");
+
+  const client = await pool.connect();
+  const accessToken = randomBytes(32).toString("base64url");
+  const mobileSessionId = randomUUID();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60_000);
+  try {
+    await client.query("BEGIN");
+    const { rows: [ticketRow] } = await client.query<{ value: string }>(
+      `SELECT value FROM "verification"
+       WHERE identifier=$1 AND expires_at > now()
+       FOR UPDATE`,
+      [mobileTicketIdentifier(parsed.data.ticket)],
+    );
+    assert(ticketRow, 401, "The mobile sign-in ticket expired or was already used.");
+
+    let details: z.infer<typeof mobileSessionDetailsSchema> | null = null;
+    try {
+      const decoded = JSON.parse(ticketRow.value);
+      const checked = mobileSessionDetailsSchema.safeParse(decoded);
+      if (checked.success) details = checked.data;
+    } catch {
+      details = null;
+    }
+    assert(details, 401, "The mobile sign-in ticket is invalid.");
+    const submittedChallenge = createHash("sha256").update(parsed.data.verifier).digest("base64url");
+    assert(
+      details.redirectUri === parsed.data.redirectUri
+        && details.state === parsed.data.state
+        && constantTimeEqual(details.codeChallenge, submittedChallenge),
+      401,
+      "The mobile sign-in ticket could not be verified.",
+    );
+    const { rows: [webSession] } = await client.query<{ user_id: string }>(
+      `SELECT user_id FROM "session"
+       WHERE id=$1 AND user_id=$2 AND expires_at > now()
+       FOR SHARE`,
+      [details.webSessionId, details.userId],
+    );
+    assert(webSession, 401, "The web sign-in session expired. Please sign in again.");
+
+    await client.query(
+      `DELETE FROM "verification" WHERE identifier=$1`,
+      [mobileTicketIdentifier(parsed.data.ticket)],
+    );
+    await client.query(
+      `INSERT INTO "session"
+        (id, expires_at, token, created_at, updated_at, ip_address, user_agent, user_id)
+       VALUES ($1,$2,$3,now(),now(),NULL,'VastMind mobile app',$4)`,
+      [mobileSessionId, expiresAt, accessToken, details.userId],
+    );
+    await client.query("COMMIT");
+    res.status(200).json({ accessToken, userId: details.userId, expiresAt: expiresAt.toISOString() });
+  } catch (error) {
+    try { await client.query("ROLLBACK"); } catch { /* The transaction may already be committed. */ }
+    throw error;
+  } finally {
+    client.release();
+  }
+});
+
+// Possession of the random native token proves the caller owns this session;
+// deleting it invalidates future API and realtime connections immediately.
+router.post("/identity/mobile-session-revoke", async (req, res) => {
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  assert(token && token.length <= 256, 401, "A VastMind mobile session is required.");
+  await query(`DELETE FROM "session" WHERE token=$1 AND user_agent='VastMind mobile app'`, [token]);
+  res.status(200).json({ revoked: true });
 });
 
 export default router;

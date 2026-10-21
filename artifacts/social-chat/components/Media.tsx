@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, View } from "react-native";
-import { useAuth } from "@clerk/expo";
+import { useAppAuth } from "@/state/AuthContext";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { File as NativeFile } from "expo-file-system";
@@ -114,7 +114,7 @@ function VideoAttachment({uri,headers,fullScreen=false}:{uri:string;headers:Reco
   return <VideoView player={player} nativeControls style={fullScreen?{width:"100%",height:"100%"}:{width:230,height:180}} contentFit="contain" />;
 }
 export function MobileMediaPreview({media,fullScreen=false}:{media:MediaAttachment;fullScreen?:boolean}) {
-  const {getToken}=useAuth();
+  const {getToken}=useAppAuth();
   const [token,setToken]=useState<string|null>(null);
   const [webUri,setWebUri]=useState<string|null>(null);
   const [error,setError]=useState(false);

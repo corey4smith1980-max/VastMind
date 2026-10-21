@@ -40,7 +40,7 @@ export function MigrationNotice() {
   return (
     <p className="rounded-lg bg-muted/60 p-3 text-xs leading-relaxed text-muted-foreground">
       Your <span className="font-medium text-foreground">@vastmind.com</span> ID is an in-app identifier only. It is not a mailbox and does not prove ownership of any email domain.
-      Passkey sign-in does not yet end-to-end encrypt all existing social data, and native app login still uses the legacy system during migration.
+      Passkeys and recovery phrases are also the sign-in path for the native app; existing social content is not yet all end-to-end encrypted.
       {" "}Use a full browser tab on HTTPS; embedded previews may block passkeys.
     </p>
   );
@@ -51,7 +51,17 @@ function Busy({ busy, children }: { busy: boolean; children: React.ReactNode }) 
 }
 
 /* ---------- Passkey sign-in ---------- */
-export function PasskeySignIn({ onRecover }: { onRecover: () => void }) {
+export function PasskeySignIn({
+  onRecover,
+  onSuccess,
+  onSignup,
+  onLegacy,
+}: {
+  onRecover: () => void;
+  onSuccess?: () => void | Promise<void>;
+  onSignup?: () => void;
+  onLegacy?: () => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function signIn() {
@@ -59,7 +69,8 @@ export function PasskeySignIn({ onRecover }: { onRecover: () => void }) {
     try {
       const res = await vastMindAuthClient.signIn.passkey({});
       if (res?.error) { setError(res.error.message ?? "Passkey sign-in was not completed."); return; }
-      goChats();
+      if (onSuccess) await onSuccess();
+      else goChats();
     } catch (e) { setError(errText(e)); } finally { setBusy(false); }
   }
   return (
@@ -72,18 +83,20 @@ export function PasskeySignIn({ onRecover }: { onRecover: () => void }) {
         <button type="button" onClick={onRecover} className="flex items-center justify-between rounded-lg border px-4 py-3 text-left hover:bg-muted/50" data-testid="button-open-recovery">
           <span><span className="font-medium">New device?</span> <span className="text-muted-foreground">Recover with your phrase</span></span><KeyRound className="h-4 w-4 text-muted-foreground" />
         </button>
-        <Link href="/sign-in/legacy" className="flex items-center justify-between rounded-lg border px-4 py-3 hover:bg-muted/50" data-testid="link-legacy-sign-in">
+        {onLegacy ? <button type="button" onClick={onLegacy} className="flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left hover:bg-muted/50" data-testid="button-legacy-sign-in">
           <span><span className="font-medium">Older account?</span> <span className="text-muted-foreground">Sign in to migrate</span></span><ArrowRight className="h-4 w-4 text-muted-foreground" />
-        </Link>
+        </button> : <Link href="/sign-in/legacy" className="flex items-center justify-between rounded-lg border px-4 py-3 hover:bg-muted/50" data-testid="link-legacy-sign-in">
+          <span><span className="font-medium">Older account?</span> <span className="text-muted-foreground">Sign in to migrate</span></span><ArrowRight className="h-4 w-4 text-muted-foreground" />
+        </Link>}
       </div>
-      <p className="text-center text-sm text-muted-foreground">New here? <Link href="/sign-up" className="font-medium text-primary hover:underline" data-testid="link-sign-up">Create a VastMind ID</Link></p>
+      <p className="text-center text-sm text-muted-foreground">New here? {onSignup ? <button type="button" onClick={onSignup} className="font-medium text-primary hover:underline" data-testid="button-sign-up">Create a VastMind ID</button> : <Link href="/sign-up" className="font-medium text-primary hover:underline" data-testid="link-sign-up">Create a VastMind ID</Link>}</p>
       <MigrationNotice />
     </AccessCard>
   );
 }
 
 /* ---------- Recovery ---------- */
-export function RecoveryFlow({ onBack }: { onBack: () => void }) {
+export function RecoveryFlow({ onBack, onSuccess }: { onBack: () => void; onSuccess?: () => void | Promise<void> }) {
   const [username, setUsername] = useState("");
   const [phrase, setPhrase] = useState("");
   const [busy, setBusy] = useState(false);
@@ -102,7 +115,8 @@ export function RecoveryFlow({ onBack }: { onBack: () => void }) {
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
       if (res?.error) { setError(res.error.message ?? "The new passkey was not saved."); return; }
       setPhrase("");
-      goChats();
+      if (onSuccess) await onSuccess();
+      else goChats();
     } catch (err) { setError(errText(err)); } finally { setBusy(false); }
   }
 
@@ -134,7 +148,15 @@ function pickWords(n: number) {
   return [...idx].sort((a, b) => a - b);
 }
 
-export function SignupFlow({ migrate }: { migrate: boolean }) {
+export function SignupFlow({
+  migrate,
+  onSuccess,
+  onSignIn,
+}: {
+  migrate: boolean;
+  onSuccess?: () => void | Promise<void>;
+  onSignIn?: () => void;
+}) {
   const { provider, isLoaded } = useAuth();
   const isClerk = provider === "clerk";
   const profile = useGetMyProfile({ query: { enabled: isClerk, queryKey: getGetMyProfileQueryKey() } });
@@ -175,7 +197,8 @@ export function SignupFlow({ migrate }: { migrate: boolean }) {
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
       if (res?.error) { setError(res.error.message ?? "The passkey was not saved."); return; }
       setPhrase("");
-      goChats();
+      if (onSuccess) await onSuccess();
+      else goChats();
     } catch (e) { setError(errText(e)); } finally { setBusy(false); }
   }
 
@@ -207,7 +230,7 @@ export function SignupFlow({ migrate }: { migrate: boolean }) {
         </div>
         <Button type="submit" className="w-full" disabled={!detailsValid} data-testid="button-continue-details">Continue</Button>
       </form>
-      {!isClerk && <p className="text-center text-sm text-muted-foreground">Already have one? <Link href="/sign-in" className="font-medium text-primary hover:underline">Sign in</Link></p>}
+      {!isClerk && <p className="text-center text-sm text-muted-foreground">Already have one? {onSignIn ? <button type="button" onClick={onSignIn} className="font-medium text-primary hover:underline">Sign in</button> : <Link href="/sign-in" className="font-medium text-primary hover:underline">Sign in</Link>}</p>}
       <MigrationNotice />
     </AccessCard>
   );

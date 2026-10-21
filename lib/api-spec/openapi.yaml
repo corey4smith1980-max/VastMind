@@ -28,6 +28,8 @@ tags:
     description: Business inbox tools
   - name: notifications
     description: In-app notifications
+  - name: identity
+    description: Passwordless VastMind account access and native sessions
 paths:
   /commerce/shops:
     $ref: "./commerce.yaml#/paths/~1commerce~1shops"
@@ -84,6 +86,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /identity/mobile-session-tickets:
+    post:
+      operationId: createMobileSessionTicket
+      tags: [identity]
+      summary: Create a short-lived, device-bound native sign-in ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileSessionTicketInput"
+      responses:
+        "201":
+          description: Single-use mobile sign-in ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileSessionTicket"
+        "401":
+          description: A signed-in VastMind web session is required
+  /identity/mobile-session-exchange:
+    post:
+      operationId: exchangeMobileSession
+      tags: [identity]
+      summary: Exchange a device-bound ticket for a native session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MobileSessionExchangeInput"
+      responses:
+        "200":
+          description: Native bearer session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileSession"
+        "401":
+          description: The ticket is invalid, expired, or already used
+  /identity/mobile-session-revoke:
+    post:
+      operationId: revokeMobileSession
+      tags: [identity]
+      summary: Revoke the current native session
+      responses:
+        "200":
+          description: Native session revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MobileSessionRevoked"
   /me:
     get:
       operationId: getMyProfile
@@ -2382,4 +2436,42 @@ components:
       required: [archived]
       properties:
         archived: { type: boolean }
+    MobileSessionTicketInput:
+      type: object
+      additionalProperties: false
+      required: [codeChallenge, redirectUri, state]
+      properties:
+        codeChallenge: { type: string, minLength: 43, maxLength: 43, pattern: "^[A-Za-z0-9_-]{43}$" }
+        redirectUri: { type: string, minLength: 1, maxLength: 500 }
+        state: { type: string, format: uuid }
+    MobileSessionTicket:
+      type: object
+      additionalProperties: false
+      required: [ticket, expiresAt]
+      properties:
+        ticket: { type: string, minLength: 43, maxLength: 43 }
+        expiresAt: { type: string, format: date-time }
+    MobileSessionExchangeInput:
+      type: object
+      additionalProperties: false
+      required: [ticket, verifier, redirectUri, state]
+      properties:
+        ticket: { type: string, minLength: 43, maxLength: 43 }
+        verifier: { type: string, minLength: 43, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" }
+        redirectUri: { type: string, minLength: 1, maxLength: 500 }
+        state: { type: string, format: uuid }
+    MobileSession:
+      type: object
+      additionalProperties: false
+      required: [accessToken, userId, expiresAt]
+      properties:
+        accessToken: { type: string, minLength: 43, maxLength: 43 }
+        userId: { type: string }
+        expiresAt: { type: string, format: date-time }
+    MobileSessionRevoked:
+      type: object
+      additionalProperties: false
+      required: [revoked]
+      properties:
+        revoked: { type: boolean }
 

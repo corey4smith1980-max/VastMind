@@ -1597,6 +1597,77 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Create a short-lived, device-bound native sign-in ticket
+ */
+export const createMobileSessionTicketBodyCodeChallengeMin = 43;
+export const createMobileSessionTicketBodyCodeChallengeMax = 43;
+
+
+export const createMobileSessionTicketBodyCodeChallengeRegExp = new RegExp('^[A-Za-z0-9_-]{43}$');
+export const createMobileSessionTicketBodyRedirectUriMax = 500;
+
+
+
+export const CreateMobileSessionTicketBody = zod.object({
+  "codeChallenge": zod.string().min(createMobileSessionTicketBodyCodeChallengeMin).max(createMobileSessionTicketBodyCodeChallengeMax).regex(createMobileSessionTicketBodyCodeChallengeRegExp),
+  "redirectUri": zod.string().min(1).max(createMobileSessionTicketBodyRedirectUriMax),
+  "state": zod.string().uuid()
+})
+
+export const createMobileSessionTicketResponseTicketMin = 43;
+export const createMobileSessionTicketResponseTicketMax = 43;
+
+
+
+export const CreateMobileSessionTicketResponse = zod.object({
+  "ticket": zod.string().min(createMobileSessionTicketResponseTicketMin).max(createMobileSessionTicketResponseTicketMax),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Exchange a device-bound ticket for a native session
+ */
+export const exchangeMobileSessionBodyTicketMin = 43;
+export const exchangeMobileSessionBodyTicketMax = 43;
+
+export const exchangeMobileSessionBodyVerifierMin = 43;
+export const exchangeMobileSessionBodyVerifierMax = 128;
+
+
+export const exchangeMobileSessionBodyVerifierRegExp = new RegExp('^[A-Za-z0-9_-]+$');
+export const exchangeMobileSessionBodyRedirectUriMax = 500;
+
+
+
+export const ExchangeMobileSessionBody = zod.object({
+  "ticket": zod.string().min(exchangeMobileSessionBodyTicketMin).max(exchangeMobileSessionBodyTicketMax),
+  "verifier": zod.string().min(exchangeMobileSessionBodyVerifierMin).max(exchangeMobileSessionBodyVerifierMax).regex(exchangeMobileSessionBodyVerifierRegExp),
+  "redirectUri": zod.string().min(1).max(exchangeMobileSessionBodyRedirectUriMax),
+  "state": zod.string().uuid()
+})
+
+export const exchangeMobileSessionResponseAccessTokenMin = 43;
+export const exchangeMobileSessionResponseAccessTokenMax = 43;
+
+
+
+export const ExchangeMobileSessionResponse = zod.object({
+  "accessToken": zod.string().min(exchangeMobileSessionResponseAccessTokenMin).max(exchangeMobileSessionResponseAccessTokenMax),
+  "userId": zod.string(),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Revoke the current native session
+ */
+export const RevokeMobileSessionResponse = zod.object({
+  "revoked": zod.boolean()
+})
+
+
+/**
  * @summary Get the signed-in member's profile
  */
 export const GetMyProfileResponse = zod.object({

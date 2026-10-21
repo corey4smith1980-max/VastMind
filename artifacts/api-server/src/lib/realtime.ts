@@ -7,7 +7,7 @@ import { getClerkProxyHost } from "../middlewares/clerkProxyMiddleware";
 import { query, chatAllowed, blocked, canDiscover, onlineUsers, provision } from "./social";
 import { logger } from "./logger";
 import { attachCalls } from "./calls";
-import { vastMindAuth } from "./vastmind-auth";
+import { mobileSessionFromToken, vastMindAuth } from "./vastmind-auth";
 
 let io:Server|undefined;
 export function changed(users:string[],entity:string,chatId?:string) {
@@ -20,6 +20,10 @@ async function authenticate(req:IncomingMessage, bearer?:string) {
   const headers=new Headers();
   for(const [k,v] of Object.entries(req.headers))if(v)headers.set(k,Array.isArray(v)?v.join(","):v);
   if(bearer)headers.set("authorization",`Bearer ${bearer}`);
+  if(bearer) {
+    const mobileSession=await mobileSessionFromToken(bearer);
+    if(mobileSession)return {userId:mobileSession.userId,sessionId:mobileSession.sessionId,provider:"mobile" as const};
+  }
   const passkeySession=await vastMindAuth.api.getSession({headers});
   if(passkeySession?.user.id && passkeySession.session.id) {
     return {userId:passkeySession.user.id,sessionId:passkeySession.session.id,provider:"vastmind" as const};
@@ -61,8 +65,8 @@ export function attachRealtime(server:HttpServer) {
   });
   io.use(async(socket,next)=>{
     try{
-      // Native/Expo Web sends a short-lived Clerk session token through Socket.IO
-      // auth. It receives the same signature/session checks as browser cookies.
+      // Native apps send a short-lived opaque VastMind token through Socket.IO
+      // auth. Legacy Clerk sessions remain supported during account migration.
       const rawToken=socket.handshake.auth?.token;
       const bearer=rawToken==null ? undefined : z.string().min(1).max(8192).parse(rawToken);
       const auth=await authenticate(socket.request,bearer);
@@ -83,6 +87,11 @@ export function attachRealtime(server:HttpServer) {
         if(socket.data.provider==="clerk") {
           const session=await clerkClient.sessions.getSession(socket.data.sessionId);
           if(session.status!=="active")socket.disconnect(true);
+        } else if(socket.data.provider==="mobile") {
+          const rawToken=socket.handshake.auth?.token;
+          const bearer=typeof rawToken==="string" ? rawToken : "";
+          const session=await mobileSessionFromToken(bearer);
+          if(!session || session.sessionId!==socket.data.sessionId)socket.disconnect(true);
         } else {
           const headers=new Headers();
           for(const [key,value] of Object.entries(socket.request.headers))if(value)headers.set(key,Array.isArray(value)?value.join(","):value);

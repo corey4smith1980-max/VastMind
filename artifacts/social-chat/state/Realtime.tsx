@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useAuth } from '@clerk/expo';
+import { useAppAuth } from '@/state/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 
@@ -16,7 +16,7 @@ const LiveContext = createContext<LiveState | null>(null);
 
 /** Tokens are refreshed for each connection; HTTP polling remains a fallback. */
 export function MobileRealtimeProvider({ children }: { children: React.ReactNode }) {
-  const { getToken, userId } = useAuth();
+  const { getToken, userId } = useAppAuth();
   const client = useQueryClient();
   const socketRef = useRef<Socket | null>(null);
   const rooms = useRef(new Set<string>());

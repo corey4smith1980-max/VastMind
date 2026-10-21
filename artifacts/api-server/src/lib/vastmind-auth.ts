@@ -156,8 +156,23 @@ export function requestHeaders(req: Request): Headers {
   return headers;
 }
 
+/** Resolve a native-only bearer token stored as a revocable Better Auth session. */
+export async function mobileSessionFromToken(token: string): Promise<{ userId: string; sessionId: string } | null> {
+  if (!token || token.length > 256) return null;
+  const { rows: [session] } = await pool.query<{ user_id: string; id: string }>(
+    `SELECT id, user_id FROM "session" WHERE token=$1 AND expires_at > now()`,
+    [token],
+  );
+  return session ? { userId: session.user_id, sessionId: session.id } : null;
+}
+
 /** Resolve either a legacy Clerk account or a new VastMind passkey session. */
 export async function authenticatedUserId(req: Request): Promise<string | null> {
+  const bearerToken = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (bearerToken) {
+    const mobileSession = await mobileSessionFromToken(bearerToken);
+    if (mobileSession) return mobileSession.userId;
+  }
   const session = await vastMindAuth.api.getSession({ headers: requestHeaders(req) });
   if (session?.user.id) return session.user.id;
   return getAuth(req).userId ?? null;

@@ -33,11 +33,11 @@ VastMind identity is for account creation, login and profile identification only
 
 **How to apply:** Do not add email delivery or require external mail hosting for these identifiers. Preserve existing account IDs and stored data during migration; do not delete legacy content as part of retiring inbox UI.
 
-Users should sign in with passkeys and a user-held recovery phrase. VastMind-hosted encrypted data sync comes first; self-host support comes next. The organization should not have full control of users' private data.
+Users should sign in with passkeys and a user-held recovery phrase. Web and native apps must use the same sign-up and login method. VastMind-hosted encrypted data sync comes first; self-host support comes next. The organization should not have full control of users' private data.
 
-**Why:** These are the user's explicit login, recovery, hosting and gradual-migration choices.
+**Why:** The user explicitly chose passkeys and a recovery phrase, asked for web/mobile login parity, selected hosted service before self-hosting, and wants existing accounts migrated gradually.
 
-**How to apply:** Keep account-recovery keys cryptographically separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
+**How to apply:** Keep passkey sign-up, sign-in, and recovery aligned across clients while preserving legacy accounts during migration. Keep account-recovery keys separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
 
 Ordinary emoji should be free and static. VastMind-specific premium emoji should be animated and intended for paid access; billing is deferred until a payment provider is activated.
 

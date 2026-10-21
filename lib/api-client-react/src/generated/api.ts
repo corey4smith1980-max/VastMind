@@ -116,6 +116,11 @@ import type {
   MessageList,
   MessageReactionInput,
   MessageReactionResult,
+  MobileSession,
+  MobileSessionExchangeInput,
+  MobileSessionRevoked,
+  MobileSessionTicket,
+  MobileSessionTicketInput,
   NotificationList,
   PollVoteInput,
   Post,
@@ -2734,6 +2739,256 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getCreateMobileSessionTicketUrl = () => {
+
+
+
+
+  return `/api/identity/mobile-session-tickets`
+}
+
+/**
+ * @summary Create a short-lived, device-bound native sign-in ticket
+ */
+export const createMobileSessionTicket = async (mobileSessionTicketInput: MobileSessionTicketInput, options?: Parameters<typeof customFetch>[1]): Promise<MobileSessionTicket> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MobileSessionTicket>(getCreateMobileSessionTicketUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileSessionTicketInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMobileSessionTicketMutationKey = () => ['createMobileSessionTicket'] as const;
+
+export const getCreateMobileSessionTicketMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMobileSessionTicket>>, TError,CreateMobileSessionTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMobileSessionTicket>>, TError,CreateMobileSessionTicketMutationVariables, TContext> => {
+
+const mutationKey = getCreateMobileSessionTicketMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMobileSessionTicket>>, CreateMobileSessionTicketMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMobileSessionTicket(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMobileSessionTicketMutationResult = NonNullable<Awaited<ReturnType<typeof createMobileSessionTicket>>>
+    export type CreateMobileSessionTicketMutationBody = BodyType<MobileSessionTicketInput>
+    export type CreateMobileSessionTicketMutationError = ErrorType<void>
+    export type CreateMobileSessionTicketMutationVariables = {data: BodyType<MobileSessionTicketInput>}
+
+    /**
+ * @summary Create a short-lived, device-bound native sign-in ticket
+ */
+export const useCreateMobileSessionTicket = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMobileSessionTicket>>, TError,CreateMobileSessionTicketMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMobileSessionTicket>>,
+        TError,
+        CreateMobileSessionTicketMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateMobileSessionTicketMutationOptions(options));
+    }
+
+export const getExchangeMobileSessionUrl = () => {
+
+
+
+
+  return `/api/identity/mobile-session-exchange`
+}
+
+/**
+ * @summary Exchange a device-bound ticket for a native session
+ */
+export const exchangeMobileSession = async (mobileSessionExchangeInput: MobileSessionExchangeInput, options?: Parameters<typeof customFetch>[1]): Promise<MobileSession> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<MobileSession>(getExchangeMobileSessionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(mobileSessionExchangeInput)
+  }
+);}
+
+
+
+
+
+export const getExchangeMobileSessionMutationKey = () => ['exchangeMobileSession'] as const;
+
+export const getExchangeMobileSessionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileSession>>, TError,ExchangeMobileSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileSession>>, TError,ExchangeMobileSessionMutationVariables, TContext> => {
+
+const mutationKey = getExchangeMobileSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exchangeMobileSession>>, ExchangeMobileSessionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  exchangeMobileSession(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExchangeMobileSessionMutationResult = NonNullable<Awaited<ReturnType<typeof exchangeMobileSession>>>
+    export type ExchangeMobileSessionMutationBody = BodyType<MobileSessionExchangeInput>
+    export type ExchangeMobileSessionMutationError = ErrorType<void>
+    export type ExchangeMobileSessionMutationVariables = {data: BodyType<MobileSessionExchangeInput>}
+
+    /**
+ * @summary Exchange a device-bound ticket for a native session
+ */
+export const useExchangeMobileSession = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeMobileSession>>, TError,ExchangeMobileSessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof exchangeMobileSession>>,
+        TError,
+        ExchangeMobileSessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getExchangeMobileSessionMutationOptions(options));
+    }
+
+export const getRevokeMobileSessionUrl = () => {
+
+
+
+
+  return `/api/identity/mobile-session-revoke`
+}
+
+/**
+ * @summary Revoke the current native session
+ */
+export const revokeMobileSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<MobileSessionRevoked> => {
+
+  return customFetch<MobileSessionRevoked>(getRevokeMobileSessionUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeMobileSessionMutationKey = () => ['revokeMobileSession'] as const;
+
+export const getRevokeMobileSessionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeMobileSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeMobileSession>>, TError,void, TContext> => {
+
+const mutationKey = getRevokeMobileSessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeMobileSession>>, void> = () => {
+
+
+          return  revokeMobileSession(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeMobileSessionMutationResult = NonNullable<Awaited<ReturnType<typeof revokeMobileSession>>>
+
+    export type RevokeMobileSessionMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Revoke the current native session
+ */
+export const useRevokeMobileSession = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeMobileSession>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeMobileSession>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRevokeMobileSessionMutationOptions(options));
+    }
 
 export const getGetMyProfileUrl = () => {
 
