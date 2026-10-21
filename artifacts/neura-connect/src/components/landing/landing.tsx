@@ -46,7 +46,10 @@ export function Landing() {
       {/* ---------- Nav ---------- */}
       <header className="sticky top-0 z-30 border-b border-transparent bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
-          <Link href="/" className="flex items-center gap-2.5"><BrandMark /><Wordmark className="hidden sm:inline" /></Link>
+          <Link href="/" aria-label="VastMind home" className="flex shrink-0 items-center gap-2.5">
+            <BrandMark className="h-12 w-12 sm:h-14 sm:w-14" />
+            <Wordmark className="hidden h-8 w-[190px] sm:inline sm:h-9 sm:w-[190px]" />
+          </Link>
           <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
             <a href="#lines" className="hover:text-foreground">What's inside</a>
             <a href="#business" className="hover:text-foreground">For shops</a>
