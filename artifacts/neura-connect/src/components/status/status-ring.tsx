@@ -41,8 +41,8 @@ export function StatusRing({ active, children, thickness = 2.5, className }: { a
   </span>;
 }
 
-/** Statuses returned here are server-filtered to the signed-in user and reciprocal follows. */
-export function MutualStatusStrip({ meId }: { meId: string }) {
+/** Statuses returned here are server-filtered to the signed-in user and mutual contacts. */
+export function MutualStatusStrip({ meId, compact = false }: { meId: string; compact?: boolean }) {
   const statuses = useActiveStatuses();
   const contacts = useMemo(() => {
     const byAuthor = new Map<string, Status[]>();
@@ -56,6 +56,25 @@ export function MutualStatusStrip({ meId }: { meId: string }) {
   }, [statuses.active, meId]);
 
   if (!statuses.isLoading && contacts.length === 0) return null;
+  if (compact) return (
+    <div className="flex max-w-[88px] shrink-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Mutual contacts' active statuses" data-testid="mutual-status-strip">
+      {statuses.isLoading && contacts.length === 0 ? <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-muted" aria-label="Checking for statuses" /> : null}
+      {contacts.map((items) => {
+        const latest = items[0];
+        return (
+          <Link key={latest.author.id} href={`/statuses?authorId=${encodeURIComponent(latest.author.id)}`}
+            aria-label={`View ${latest.author.name}'s ${items.length} status ${items.length === 1 ? "update" : "updates"}`}
+            title={`${latest.author.name}'s status`}
+            className="h-9 w-9 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-testid={`link-mutual-status-${latest.author.id}`}>
+            <StatusRing active className="h-9 w-9">
+              <UserAvatar id={latest.author.id} name={latest.author.name} src={latest.author.avatarUrl} size="sm" />
+            </StatusRing>
+          </Link>
+        );
+      })}
+    </div>
+  );
   return (
     <section className="mt-4" aria-label="Mutual contacts' active statuses" data-testid="mutual-status-strip">
       <p className="mb-2 font-mono text-[9px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Mutual statuses</p>

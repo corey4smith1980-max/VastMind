@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, AppHeader, Eyebrow, PageFrame, StorageNotice } from '@/components/common';
 import { useColors } from '@/hooks/useColors';
 import { initials, useAppStore } from '@/state/AppStore';
@@ -12,6 +13,7 @@ type Filter = 'All' | 'Unread' | 'Groups';
 export default function ChatsScreen() {
   const colors = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { state, profile } = useAppStore();
   const { active: activeStatuses } = useActiveStatuses();
   const mutualStatuses = useMemo(() => {
@@ -34,32 +36,33 @@ export default function ChatsScreen() {
   const unreadCount = state.conversations.reduce((sum, chat) => sum + chat.unread, 0);
 
   return (
-    <PageFrame>
-      <AppHeader label="messages" />
-      <StorageNotice />
-      {mutualStatuses.length ? <View style={{ marginBottom: 16 }}>
-        <Eyebrow>MUTUAL STATUSES</Eyebrow>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingVertical: 9 }}>
-          {mutualStatuses.map((items) => {
-            const author = items[0].author;
-            return <Pressable key={author.id} accessibilityRole="button"
-              accessibilityLabel={`View ${author.name}'s ${items.length} active status ${items.length === 1 ? 'update' : 'updates'}`}
-              onPress={() => router.push({ pathname: '/stories', params: { authorId: author.id } })}
-              style={{ width: 58, alignItems: 'center', gap: 5 }}>
-              <StatusRing size={52} active stroke={2.5}>
-                <View style={{ width: 42, height: 42, borderRadius: 21, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
-                  {author.avatarUrl ? <Image source={{ uri: author.avatarUrl }} style={{ width: 42, height: 42 }} /> : <Avatar initials={initials(author.name)} size={42} tone="blue" />}
-                </View>
-              </StatusRing>
-              <Text numberOfLines={1} style={{ maxWidth: 58, color: colors.foreground, fontSize: 10, fontWeight: '600' }}>{author.name.split(' ')[0]}</Text>
-            </Pressable>;
-          })}
-        </ScrollView>
-      </View> : null}
-      <View style={styles.headingRow}>
-        <View><Eyebrow>YOUR INBOX</Eyebrow><Text style={[styles.heading, { color: colors.forest }]}>VastMind <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text></View>
-          <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')} style={[styles.newChat, { backgroundColor: colors.primary }]}><Feather name="plus" size={20} color={colors.primaryForeground} /></Pressable>
-      </View>
+    <View style={{ flex: 1 }}>
+      <PageFrame>
+        <AppHeader label="messages" />
+        <StorageNotice />
+        <View style={styles.headingRow}>
+          <View style={styles.headingBrand}>
+            {mutualStatuses.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.compactStatusStrip} contentContainerStyle={styles.compactStatusContent}>
+              {mutualStatuses.map((items) => {
+                const author = items[0].author;
+                return <Pressable key={author.id} accessibilityRole="button"
+                  accessibilityLabel={`View ${author.name}'s ${items.length} active status ${items.length === 1 ? 'update' : 'updates'}`}
+                  onPress={() => router.push({ pathname: '/stories', params: { authorId: author.id } })}
+                  style={styles.compactStatusButton}>
+                  <StatusRing size={38} active stroke={2.5}>
+                    <View style={{ width: 30, height: 30, borderRadius: 15, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
+                      {author.avatarUrl ? <Image source={{ uri: author.avatarUrl }} style={{ width: 30, height: 30 }} /> : <Avatar initials={initials(author.name)} size={30} tone="blue" />}
+                    </View>
+                  </StatusRing>
+                </Pressable>;
+              })}
+            </ScrollView> : null}
+            <View style={styles.headingTitle}>
+              <Eyebrow>YOUR INBOX</Eyebrow>
+              <Text style={[styles.heading, { color: colors.forest }]}>VastMind <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text>
+            </View>
+          </View>
+        </View>
           <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Feather name="search" size={17} color={colors.mutedForeground} />
         <TextInput accessibilityLabel="Search chats" placeholder="Search people and messages" placeholderTextColor={colors.mutedForeground} value={query} onChangeText={setQuery} style={[styles.searchInput, { color: colors.foreground }]} />
@@ -85,15 +88,25 @@ export default function ChatsScreen() {
         ))}
       </View>
       <View style={[styles.encryptionNote, { backgroundColor: colors.secondary }]}><Feather name="refresh-cw" size={13} color={colors.forest} /><Text style={[styles.encryptionText, { color: colors.mutedForeground }]}>Inbox refreshes every 10 seconds.</Text></View>
-    </PageFrame>
+      </PageFrame>
+      <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')}
+        style={[styles.floatingNewChat, { backgroundColor: colors.primary, bottom: Math.max(94, insets.bottom + 78) }]}>
+        <Feather name="plus" size={22} color={colors.primaryForeground} />
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 },
+  headingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  headingBrand: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  compactStatusStrip: { maxWidth: 86, flexGrow: 0, flexShrink: 0 },
+  compactStatusContent: { alignItems: 'center', gap: 2, paddingVertical: 2 },
+  compactStatusButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headingTitle: { flexShrink: 0 },
   heading: { fontSize: 30, fontWeight: '700', letterSpacing: -1, marginTop: 6 },
   headingCount: { fontSize: 20 },
-  newChat: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  floatingNewChat: { position: 'absolute', right: 20, width: 54, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center', elevation: 8, shadowColor: '#06122C', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.24, shadowRadius: 10 },
   searchBox: { height: 46, borderWidth: 1, borderRadius: 23, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   searchInput: { flex: 1, fontSize: 13 },
   filterRow: { flexDirection: 'row', gap: 8, marginTop: 14, marginBottom: 16 },

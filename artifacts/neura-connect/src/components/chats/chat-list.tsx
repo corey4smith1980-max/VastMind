@@ -36,21 +36,20 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
     filter === "All" || (filter === "Unread" ? chat.unreadCount > 0 : chat.type === "group"));
 
   return (
-    <div className="flex h-full flex-col bg-card">
+    <div className="relative flex h-full flex-col bg-card">
       <div className="px-4 pb-3 pt-5">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold">VastMind</h1>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <MutualStatusStrip meId={me.id} compact />
+              <h1 className="font-display text-3xl font-bold">VastMind</h1>
+            </div>
             <ConnectionPill className="mt-1 text-muted-foreground" />
           </div>
           <div className="flex items-center gap-2">
             <AlertsButton />
-            <Button size="icon" className="h-11 w-11 rounded-full" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
-              <MessageSquarePlus className="h-5 w-5" />
-            </Button>
           </div>
         </div>
-        <MutualStatusStrip meId={me.id} />
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search conversations" className="rounded-xl border-0 bg-muted pl-9" aria-label="Search conversations" data-testid="input-search-chats" />
@@ -63,7 +62,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
           ))}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-2 pb-4" role="list">
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-2 pb-24" role="list">
         {chats.isLoading ? <RowSkeleton /> : null}
         {chats.isError ? <ErrorState error={chats.error} onRetry={() => chats.refetch()} /> : null}
         {chats.data && visibleChats.length === 0 ? (
@@ -101,6 +100,9 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
           );
         })}
       </div>
+      <Button size="icon" className="absolute bottom-24 right-5 z-20 h-12 w-12 rounded-full shadow-lg md:bottom-5" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
+        <MessageSquarePlus className="h-5 w-5" />
+      </Button>
     </div>
   );
 }

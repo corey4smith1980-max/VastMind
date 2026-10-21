@@ -68,3 +68,9 @@ Chat discovery should not suggest people; starting a new relationship requires s
 **Why:** The user explicitly requested direct username lookup, mutual-contact-only status viewing, and a personal status page with separate entries.
 
 **How to apply:** Use reciprocal follows or an existing private chat as the contact relationship, and enforce status access for both status metadata and attached media. Keep suggestions out of chat discovery.
+
+In chat, place mutual-status rings inline before the VastMind inbox title. Keep the new-conversation action at the lower-right edge, just above the navigation menu, while alerts stay in the header.
+
+**Why:** The user requested the status indicator before the chat title and the new-chat control lowered toward the menu.
+
+**How to apply:** Keep status circles tappable and limited to mutual contacts. Do not move the alerts control away from its top-right header position.
