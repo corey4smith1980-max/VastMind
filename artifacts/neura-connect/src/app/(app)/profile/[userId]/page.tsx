@@ -48,7 +48,7 @@ export default function CreatorProfilePage() {
       <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-muted"><Icon className="h-6 w-6 text-muted-foreground" /></span>
       <h1 className="mt-5 font-display text-2xl">{status === 403 ? "This profile is private" : status === 404 ? "No one here by that name" : "Couldn't open this profile"}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{status === 403 ? "They share their clips only with people they've chosen." : status === 404 ? "The link may be old, or they may have left VastMind." : errMessage(creator.error)}</p>
-      <div className="mt-5 flex justify-center gap-2">{status !== 403 && status !== 404 ? <Button onClick={() => void creator.refetch()} className="rounded-full">Try again</Button> : null}<Button asChild variant="outline" className="rounded-full"><Link href="/videos">Back to clips</Link></Button></div>
+      <div className="mt-5 flex justify-center gap-2">{status !== 403 && status !== 404 ? <Button onClick={() => void creator.refetch()} className="rounded-full">Try again</Button> : null}<Button asChild variant="outline" className="rounded-full"><Link href="/videos">Back to Feed</Link></Button></div>
     </section></main>;
   }
   const { user, bio, followersCount, followingCount, clipsCount } = creator.data;
@@ -56,7 +56,7 @@ export default function CreatorProfilePage() {
 
   return <main className="h-full overflow-y-auto bg-background" data-testid="page-creator-profile">
     <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-5 sm:px-8">
-      <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Clips</Link>
+      <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Feed</Link>
       <header className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end">
         <UserAvatar id={user.id} name={user.name} src={user.avatarUrl} size="xl" online={user.online} />
         <div className="min-w-0 flex-1">

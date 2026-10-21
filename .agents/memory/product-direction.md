@@ -56,3 +56,9 @@ Feed and posted videos belong together on the Videos page across web and mobile.
 **Why:** The user explicitly prefers the original video design and wants one TikTok-like page for watching and enjoying both posts and clips.
 
 **How to apply:** Keep posts and clips in one vertical timeline, preserve existing social features and content, and redirect old Feed links instead of reintroducing a second feed destination.
+
+Preserve the existing VastMind menu order unless the user asks to move or rename a destination. Shop belongs in the center of the primary mobile menu, and the combined video-and-post destination is labeled “Feed.”
+
+**Why:** The user asked to keep the existing menu arrangements while centering Shop and renaming Videos to Feed.
+
+**How to apply:** Keep other destinations accessible and in their existing order. If a platform's tab limit requires an overflow menu, move secondary links there without removing them.

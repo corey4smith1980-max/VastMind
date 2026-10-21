@@ -13,11 +13,10 @@ function NativeTabLayout() {
     <NativeTabs>
       <NativeTabs.Trigger name="index" hidden><NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} /><NativeTabs.Trigger.Label>Feed</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="chats"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="mail"><NativeTabs.Trigger.Icon sf={{ default: 'lock.shield', selected: 'lock.shield.fill' }} /><NativeTabs.Trigger.Label>VastMind ID</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="business"><NativeTabs.Trigger.Icon sf={{ default: 'storefront', selected: 'storefront.fill' }} /><NativeTabs.Trigger.Label>Business</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="channels"><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="videos"><NativeTabs.Trigger.Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} /><NativeTabs.Trigger.Label>Feed</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="shop"><NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} /><NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="videos"><NativeTabs.Trigger.Icon sf={{ default: 'play.rectangle', selected: 'play.rectangle.fill' }} /><NativeTabs.Trigger.Label>Videos</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="channels"><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="more"><NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} /><NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -30,7 +29,7 @@ function ClassicTabLayout() {
   const tabOptions = (title: string, icon: React.ComponentProps<typeof Feather>['name']) => ({
     title,
     tabBarIcon: ({ color }: { color: ColorValue }) => isIOS
-      ? <SymbolView name={icon === 'home' ? 'house' : icon === 'message-circle' ? 'bubble.left.and.bubble.right' : icon === 'shield' ? 'lock.shield' : icon === 'mail' ? 'envelope' : icon === 'briefcase' ? 'storefront' : icon === 'shopping-bag' ? 'bag' : 'dot.radiowaves.left.and.right'} tintColor={color} size={21} />
+      ? <SymbolView name={icon === 'home' ? 'house' : icon === 'message-circle' ? 'bubble.left.and.bubble.right' : icon === 'shield' ? 'lock.shield' : icon === 'mail' ? 'envelope' : icon === 'briefcase' ? 'storefront' : icon === 'shopping-bag' ? 'bag' : icon === 'grid' ? 'rectangle.stack' : icon === 'more-horizontal' ? 'ellipsis' : 'dot.radiowaves.left.and.right'} tintColor={color} size={21} />
       : <Feather name={icon} size={20} color={color} />,
   });
   return (
@@ -39,18 +38,19 @@ function ClassicTabLayout() {
       tabBarActiveTintColor: colors.forest,
       tabBarInactiveTintColor: colors.mutedForeground,
       tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
-      tabBarStyle: { position: 'absolute', backgroundColor: isIOS ? 'transparent' : colors.card, borderTopWidth: isWeb ? 1 : StyleSheet.hairlineWidth, borderTopColor: colors.border, elevation: 0, ...(isWeb ? { height: 84 } : {}) },
+      tabBarStyle: { position: 'absolute', left: 12, right: 12, bottom: 10, borderRadius: 26, backgroundColor: isIOS ? 'transparent' : colors.card, borderTopWidth: 0, borderWidth: 1, borderColor: colors.border, elevation: 8, height: 68, ...(isWeb ? { height: 76 } : {}) },
       tabBarBackground: () => isIOS
         ? <BlurView intensity={100} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-        : isWeb ? <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} /> : null,
+        : <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card, borderRadius: 26 }]} />,
     }}>
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="chats" options={tabOptions('Chats', 'message-circle')} />
-      <Tabs.Screen name="mail" options={tabOptions('VastMind ID', 'shield')} />
-      <Tabs.Screen name="business" options={tabOptions('Business', 'briefcase')} />
-      <Tabs.Screen name="channels" options={tabOptions('Channels', 'radio')} />
+      <Tabs.Screen name="videos" options={tabOptions('Feed', 'grid')} />
       <Tabs.Screen name="shop" options={tabOptions('Shop', 'shopping-bag')} />
-      <Tabs.Screen name="videos" options={tabOptions('Videos', 'play-circle')} />
+      <Tabs.Screen name="channels" options={tabOptions('Channels', 'radio')} />
+      <Tabs.Screen name="more" options={tabOptions('More', 'more-horizontal')} />
+      <Tabs.Screen name="mail" options={{ href: null }} />
+      <Tabs.Screen name="business" options={{ href: null }} />
     </Tabs>
   );
 }

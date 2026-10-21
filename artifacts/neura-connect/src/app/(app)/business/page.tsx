@@ -20,6 +20,7 @@ import { InboxTools } from "@/components/commerce/seller/inbox-tools";
 import { Thumb, selectClass } from "@/components/commerce/bits";
 import { mediaSrc } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
+import { AlertsButton } from "@/components/shell/alerts-button";
 
 type Tab = "overview" | "catalog" | "orders" | "coupons" | "campaigns" | "customers" | "team" | "settings" | "inbox" | "new";
 const TABS: { key: Tab; label: string; icon: typeof BarChart3; roles: CommerceShopRole[] }[] = [
@@ -75,6 +76,7 @@ function SellerCenter() {
           {shop && !creating ? <p className="text-xs text-white/60">{shop.isPublished ? "Live" : "Unpublished"} · {shop.currency} · {shop.followerCount} followers</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <AlertsButton className="border-white/15 bg-white/10 text-white hover:bg-white/15" />
           {mine.length > 1 ? <select aria-label="Switch shop" className={cn(selectClass, "h-9 w-auto rounded-full border-white/20 bg-white/10 text-white")} value={shop?.id} onChange={(e) => go({ shop: e.target.value })} data-testid="select-shop">{mine.map((s) => <option key={s.id} value={s.id} className="text-foreground">{s.name}</option>)}</select> : null}
           {shop && !creating ? <Button asChild size="sm" variant="outline" className="rounded-full border-white/25 bg-transparent text-white hover:bg-white/10"><Link href={`/shop?shop=${encodeURIComponent(shop.id)}`}><ExternalLink className="mr-1 h-3.5 w-3.5" />View storefront</Link></Button> : null}
           {shop && !creating ? <Button size="sm" variant="ghost" className="rounded-full text-white/70 hover:bg-white/10 hover:text-white" onClick={() => go({ tab: "new" })} data-testid="button-new-shop"><Plus className="mr-1 h-3.5 w-3.5" />New shop</Button> : null}

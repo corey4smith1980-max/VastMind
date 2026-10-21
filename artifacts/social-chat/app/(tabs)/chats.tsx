@@ -27,28 +27,28 @@ export default function ChatsScreen() {
       <StorageNotice />
       <View style={styles.headingRow}>
         <View><Eyebrow>YOUR INBOX</Eyebrow><Text style={[styles.heading, { color: colors.forest }]}>Chats <Text style={[styles.headingCount, { color: colors.coral }]}>{unreadCount || '·'}</Text></Text></View>
-        <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')} style={[styles.newChat, { backgroundColor: colors.lime }]}><Feather name="plus" size={20} color={colors.forest} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="New conversation" onPress={() => router.push('/new-chat')} style={[styles.newChat, { backgroundColor: colors.primary }]}><Feather name="plus" size={20} color={colors.primaryForeground} /></Pressable>
       </View>
-      <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Feather name="search" size={17} color={colors.mutedForeground} />
         <TextInput accessibilityLabel="Search chats" placeholder="Search people and messages" placeholderTextColor={colors.mutedForeground} value={query} onChangeText={setQuery} style={[styles.searchInput, { color: colors.foreground }]} />
-        <Feather name="sliders" size={16} color={colors.mutedForeground} />
+          <Feather name="sliders" size={16} color={colors.mutedForeground} />
       </View>
       <View style={styles.filterRow}>
         {(['All', 'Unread', 'Groups'] as Filter[]).map((item) => {
           const selected = filter === item;
-          return <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filter, { backgroundColor: selected ? colors.forest : colors.secondary }]}><Text style={[styles.filterText, { color: selected ? colors.primaryForeground : colors.mutedForeground }]}>{item}</Text></Pressable>;
+          return <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected }} onPress={() => setFilter(item)} style={[styles.filter, { backgroundColor: selected ? colors.primary : colors.secondary }]}><Text style={[styles.filterText, { color: selected ? colors.primaryForeground : colors.mutedForeground }]}>{item}</Text></Pressable>;
         })}
       </View>
       <View style={styles.chatList}>
         {chats.length === 0 ? (
           <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="message-square" size={22} color={colors.mutedForeground} /><Text style={[styles.emptyTitle, { color: colors.forest }]}>No conversations found</Text><Text style={[styles.emptyBody, { color: colors.mutedForeground }]}>Try another search or switch filters.</Text></View>
         ) : chats.map((chat) => (
-          <Pressable accessibilityRole="button" key={chat.id} onPress={() => router.push(`/chat/${chat.id}`)} style={styles.chatRow}>
+          <Pressable accessibilityRole="button" key={chat.id} onPress={() => router.push(`/chat/${chat.id}`)} style={[styles.chatRow, { borderBottomColor: colors.border }]}>
             <Avatar initials={chat.initials} size={52} tone={chat.category === 'customer' ? 'lime' : chat.category === 'group' ? 'gold' : chat.id === 'maya-chen' ? 'coral' : 'blue'} online={chat.online} />
             <View style={[styles.chatContent, { borderBottomColor: colors.border }]}>
-              <View style={styles.chatTop}><View style={styles.nameRow}><Text style={[styles.chatName, { color: colors.forest }]}>{chat.name}</Text>{chat.verified ? <Feather name="check-circle" size={14} color={colors.blue} /> : null}</View><Text style={[styles.chatTime, { color: chat.unread ? colors.forest : colors.mutedForeground }]}>{chat.time}</Text></View>
-              <View style={styles.chatBottom}><Text numberOfLines={1} style={[styles.lastMessage, { color: colors.mutedForeground }]}>{chat.lastMessage}</Text>{chat.unread > 0 ? <View style={[styles.unreadBadge, { backgroundColor: colors.lime }]}><Text style={[styles.unreadText, { color: colors.forest }]}>{chat.unread}</Text></View> : null}</View>
+              <View style={styles.chatTop}><View style={styles.nameRow}><Text style={[styles.chatName, { color: colors.foreground }]}>{chat.name}</Text>{chat.verified ? <Feather name="check-circle" size={14} color={colors.blue} /> : null}</View><Text style={[styles.chatTime, { color: chat.unread ? colors.primary : colors.mutedForeground }]}>{chat.time}</Text></View>
+              <View style={styles.chatBottom}><Text numberOfLines={1} style={[styles.lastMessage, { color: colors.mutedForeground }]}>{chat.lastMessage}</Text>{chat.unread > 0 ? <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}><Text style={[styles.unreadText, { color: colors.primaryForeground }]}>{chat.unread}</Text></View> : null}</View>
             </View>
           </Pressable>
         ))}
@@ -62,22 +62,22 @@ const styles = StyleSheet.create({
   headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 },
   heading: { fontSize: 30, fontWeight: '700', letterSpacing: -1, marginTop: 6 },
   headingCount: { fontSize: 20 },
-  newChat: { width: 44, height: 44, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  searchBox: { height: 48, borderWidth: 1, borderRadius: 15, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  newChat: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  searchBox: { height: 46, borderWidth: 1, borderRadius: 23, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   searchInput: { flex: 1, fontSize: 13 },
   filterRow: { flexDirection: 'row', gap: 8, marginTop: 14, marginBottom: 16 },
-  filter: { borderRadius: 12, paddingVertical: 8, paddingHorizontal: 15 },
+  filter: { borderRadius: 18, paddingVertical: 8, paddingHorizontal: 16 },
   filterText: { fontSize: 12, fontWeight: '700' },
   archiveRow: { minHeight: 54, borderRadius: 15, borderWidth: 1, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   archiveIcon: { width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   archiveText: { flex: 1, fontSize: 13, fontWeight: '600' },
   archiveCount: { fontSize: 12 },
   chatList: { marginTop: 4 },
-  chatRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76 },
-  chatContent: { flex: 1, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 14 },
+  chatRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 76, borderBottomWidth: StyleSheet.hairlineWidth },
+  chatContent: { flex: 1, paddingVertical: 14 },
   chatTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  chatName: { fontSize: 14, fontWeight: '700' },
+  chatName: { fontSize: 15, fontWeight: '700' },
   chatTime: { fontSize: 11, fontWeight: '600' },
   chatBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, gap: 10 },
   lastMessage: { fontSize: 12, flex: 1 },

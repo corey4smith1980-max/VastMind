@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 import { useRouter } from 'expo-router';
+import { getListNotificationsQueryKey, useListNotifications } from '@workspace/api-client-react';
 
 export function VastMindMark({ size = 30 }: { size?: number }) {
   return (
@@ -53,17 +54,42 @@ export function PageFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AppHeader({ label, action, onAction }: { label?: string; action?: React.ComponentProps<typeof Feather>['name']; onAction?: () => void }) {
+export function AlertsButtonNative({ dark = false }: { dark?: boolean }) {
+  const colors = useColors();
+  const router = useRouter();
+  const notifications = useListNotifications({ query: { queryKey: getListNotificationsQueryKey(), refetchInterval: 30_000 } });
+  const unread = (notifications.data ?? []).filter((note) => !note.read).length;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={unread ? `Alerts, ${unread} unread` : 'Alerts'}
+      onPress={() => router.push('/notifications')}
+      style={[styles.headerIcon, { backgroundColor: dark ? 'rgba(255,255,255,.1)' : colors.card, borderColor: dark ? 'rgba(255,255,255,.2)' : colors.border }]}
+    >
+      <Feather name="bell" size={18} color={dark ? colors.primaryForeground : colors.foreground} />
+      {unread > 0 ? <View style={[styles.alertBadge, { backgroundColor: colors.primary }]}><Text style={[styles.alertBadgeText, { color: colors.primaryForeground }]}>{unread > 99 ? '99+' : unread}</Text></View> : null}
+    </Pressable>
+  );
+}
+
+export function AppHeader({ label, action, onAction, showAlerts = true }: { label?: string; action?: React.ComponentProps<typeof Feather>['name']; onAction?: () => void; showAlerts?: boolean }) {
   const colors = useColors();
   const router = useRouter();
   return (
     <View style={styles.header}>
       <AppBrand />
-      {action && onAction ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={label ?? action} onPress={onAction} style={styles.iconPress}>
-          <Feather name={action} size={21} color={colors.forest} />
-        </Pressable>
-      ) : <Pressable accessibilityLabel="Profile settings" onPress={() => router.push('/profile')}><Feather name="user" size={20} color={colors.foreground} /></Pressable>}
+      <View style={styles.headerActions}>
+        {showAlerts ? <AlertsButtonNative /> : null}
+        {action && onAction ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={label ?? action} onPress={onAction} style={[styles.headerIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name={action} size={19} color={colors.foreground} />
+          </Pressable>
+        ) : (
+          <Pressable accessibilityRole="button" accessibilityLabel="Profile settings" onPress={() => router.push('/profile')} style={[styles.headerIcon, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="user" size={18} color={colors.foreground} />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -109,12 +135,15 @@ export function StorageNotice() {
 
 const styles = StyleSheet.create({
   frame: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerIcon: { position: 'relative', width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  alertBadge: { position: 'absolute', top: -4, right: -4, minWidth: 17, height: 17, paddingHorizontal: 3, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  alertBadgeText: { fontSize: 9, fontWeight: '800' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   brandMark: { height: 30, width: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   brandName: { fontSize: 19, fontWeight: '800', letterSpacing: -1 },
   headerLabel: { fontSize: 13, marginLeft: 4 },
-  iconPress: { padding: 7 },
   avatar: { alignItems: 'center', justifyContent: 'center' },
   onlineDot: { position: 'absolute', width: 12, height: 12, right: -1, bottom: 0, borderRadius: 7, borderWidth: 2, backgroundColor: '#6ABF79' },
   eyebrow: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: '700' },

@@ -9,6 +9,7 @@ import { usePagedVideos } from "@/components/videoKit";
 import { CreatePostSheet } from "@/components/PostEntry";
 import { useColors } from "@/hooks/useColors";
 import { StatusRing, useActiveStatuses } from "@/components/StatusRing";
+import { AlertsButtonNative } from "@/components/common";
 
 const FEEDS = [
   { id: "for-you", label: "For You" },
@@ -31,7 +32,7 @@ export default function VideosScreen() {
   useEffect(() => { const t = setTimeout(() => setDq(q.trim()), 300); return () => clearTimeout(t); }, [q]);
   const [posting, setPosting] = useState(false);
   const clips = usePagedVideos({ feed, includePosts: true, q: dq, communityId });
-  const create = () => Alert.alert("Share something", "Pick what to add to Videos.", [
+  const create = () => Alert.alert("Share something", "Pick what to add to Feed.", [
     { text: "Post, photo or poll", onPress: () => setPosting(true) },
     { text: "Clip", onPress: () => router.push("/video-studio") },
     { text: "Cancel", style: "cancel" },
@@ -51,8 +52,9 @@ export default function VideosScreen() {
     <View style={{ flex: 1, backgroundColor: "#10262b", paddingTop: insets.top }}>
       <View style={{ minHeight: 98, paddingHorizontal: 15, paddingTop: 5, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ color: "#f6efe4", fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Clips for real life"}</Text>
+          <Text style={{ color: "#f6efe4", fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Your feed"}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <AlertsButtonNative dark />
             <Pressable accessibilityRole="button" accessibilityLabel="Reset video viewing history" disabled={reset.isPending} onPress={confirmReset}>
               <Feather name="rotate-ccw" size={19} color="#f6efe4" />
             </Pressable>
@@ -94,7 +96,7 @@ export default function VideosScreen() {
       {clips.isLoading && clips.items.length === 0
         ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /><Text style={{ marginTop: 12, color: "#f6efe4" }}>Finding clips for your circle…</Text></View>
         : clips.isError && clips.items.length === 0
-          ? <Pressable accessibilityRole="button" onPress={clips.retry} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Feather name="refresh-cw" size={28} color="#f6efe4" /><Text style={{ marginTop: 12, color: "#f6efe4", textAlign: "center" }}>Couldn't load videos. Tap to try again.</Text></Pressable>
+          ? <Pressable accessibilityRole="button" onPress={clips.retry} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Feather name="refresh-cw" size={28} color="#f6efe4" /><Text style={{ marginTop: 12, color: "#f6efe4", textAlign: "center" }}>Couldn't load your feed. Tap to try again.</Text></Pressable>
           : clips.items.length
             ? <ReelPager items={clips.items} focused={focused} onEndReached={clips.loadNext} bottomInset={insets.bottom + 58}
                 onRefresh={clips.refresh} refreshing={clips.isFetching && !clips.loadingMore}

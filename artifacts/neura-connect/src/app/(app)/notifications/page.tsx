@@ -37,7 +37,7 @@ export default function NotificationsPage() {
 
   return (
     <PageScroll>
-      <PageHeader kicker="Switchboard log" title="Alerts" sub={unread.length ? `${unread.length} new since you last looked.` : "You're all caught up."}
+      <PageHeader kicker="Switchboard log" title="Alerts" showAlerts={false} sub={unread.length ? `${unread.length} new since you last looked.` : "You're all caught up."}
         actions={unread.length ? <Button variant="outline" className="rounded-full" onClick={markAll} disabled={mark.isPending} data-testid="button-mark-all-read"><CheckCheck className="mr-1 h-4 w-4" /> Mark all read</Button> : null} />
       <div className="mt-6 overflow-hidden rounded-[1.6rem] border bg-card">
         {list.isLoading ? <RowSkeleton count={5} /> : null}

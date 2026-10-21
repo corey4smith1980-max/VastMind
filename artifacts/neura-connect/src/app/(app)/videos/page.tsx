@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/lib/me";
+import { AlertsButton } from "@/components/shell/alerts-button";
 
 const FEEDS: { id: GetVideosFeed; label: string; why: string; empty: string }[] = [
   { id: "for-you", label: "For You", why: "Ordered using who you follow, the communities you share, and how you have watched clips here. It never uses your private chats.", empty: "Nothing to suggest yet. Follow a few people or join a community and this fills in." },
@@ -92,12 +93,13 @@ function VideosInner() {
     <header className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[hsl(192_49%_12%)] px-4 py-2.5 text-white sm:px-7">
       <div className="flex min-w-0 items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[hsl(12_82%_52%)] text-white"><Clapperboard className="h-[18px] w-[18px]" /></span>
-        <p className="hidden font-display text-lg leading-tight md:block">Everyday, in motion</p>
+        <p className="hidden font-display text-lg leading-tight md:block">Feed · everyday, in motion</p>
       </div>
       <div role="tablist" aria-label="Choose a clip feed" className="order-3 flex w-full rounded-full bg-white/[.07] p-1 sm:order-none sm:w-auto">
         {FEEDS.map((f) => <button key={f.id} role="tab" aria-selected={feed === f.id} onClick={() => setFeed(f.id)} className={cn("flex-1 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors sm:flex-none", feed === f.id ? "bg-[hsl(40_50%_96%)] text-[hsl(192_52%_12%)]" : "text-white/70 hover:text-white")} data-testid={`tab-feed-${f.id}`}>{f.label}</button>)}
       </div>
       <div className="flex items-center gap-1.5">
+        <AlertsButton className="border-white/15 bg-white/[.08] text-white hover:bg-white/15" />
         <StatusShortcut meId={me.id} />
         <Button onClick={() => setInfoOpen((o) => !o)} variant="ghost" size="icon" aria-label="Why am I seeing these clips?" aria-expanded={infoOpen} className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-feed-info"><Info className="h-4 w-4" /></Button>
         <Button onClick={reload} variant="ghost" size="icon" aria-label="Refresh clips" className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-refresh-videos"><RefreshCw className="h-4 w-4" /></Button>

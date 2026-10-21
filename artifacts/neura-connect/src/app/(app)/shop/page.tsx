@@ -25,6 +25,7 @@ import { useInvalidate, usePollInterval } from "@/lib/realtime";
 import { errMessage } from "@/lib/format";
 import { mediaSrc, money, toMinor, useCart, validCurrency, ORDER_STATUS_LABEL } from "@/lib/commerce";
 import { cn } from "@/lib/utils";
+import { AlertsButton } from "@/components/shell/alerts-button";
 
 type View = "discover" | "shops" | "saved" | "orders" | "cart";
 const VIEWS: [View, string][] = [["discover", "Discover"], ["shops", "Shops"], ["saved", "Saved"], ["orders", "My orders"], ["cart", "Cart"]];
@@ -226,7 +227,10 @@ function ShopInner() {
       <div aria-hidden className="pointer-events-none absolute -bottom-32 right-0 h-64 w-[36rem] rounded-full opacity-25 blur-3xl" style={{ background: "var(--brand-gradient)" }} />
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div><p className="font-mono text-[10px] uppercase tracking-[.26em] text-[hsl(var(--brand-cyan))]">VastMind Market</p><h1 className="mt-2 font-display text-4xl font-semibold leading-[.95] sm:text-6xl">Shop the <span className="brand-gradient-text">people</span> you follow.</h1><p className="mt-3 max-w-lg text-sm text-white/65">Shops and creators from your network. Order here, pay the seller directly.</p></div>
-        <Button onClick={() => go({ view: "cart" })} className="relative h-11 rounded-full bg-white text-[hsl(var(--ink))] hover:bg-white/90" data-testid="button-open-cart"><ShoppingBag className="mr-2 h-4 w-4" />Cart{count ? <span key={count} className="rise ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{count}</span> : null}</Button>
+        <div className="flex items-center gap-2">
+          <AlertsButton className="border-white/15 bg-white/[.08] text-white hover:bg-white/15" />
+          <Button onClick={() => go({ view: "cart" })} className="relative h-11 rounded-full bg-white text-[hsl(var(--ink))] hover:bg-white/90" data-testid="button-open-cart"><ShoppingBag className="mr-2 h-4 w-4" />Cart{count ? <span key={count} className="rise ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{count}</span> : null}</Button>
+        </div>
       </div>
       <nav className="relative mt-6 flex gap-1 overflow-x-auto" aria-label="Market sections">
         {VIEWS.map(([k, label]) => { const on = !productId && !shopId && view === k; return <button key={k} onClick={() => go({ view: k === "discover" ? undefined : k })} aria-current={on ? "page" : undefined} className={cn("relative shrink-0 rounded-full px-4 py-2 text-sm transition-colors", on ? "bg-white/12 text-white" : "text-white/60 hover:text-white")} data-testid={`tab-${k}`}>{label}{on ? <span className="absolute inset-x-4 -bottom-0.5 h-0.5 rounded-full" style={{ background: "var(--brand-gradient)" }} /> : null}</button>; })}

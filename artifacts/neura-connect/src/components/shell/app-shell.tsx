@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/vastmind-auth";
 import {
-  Bell, Briefcase, CircleDashed, Clapperboard, MessagesSquare, Menu, Radio, Settings, ShoppingBag, UsersRound, Fingerprint,
+  Bell, Briefcase, CircleDashed, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, UsersRound, Fingerprint,
 } from "lucide-react";
 import { useGetMyProfile, useListNotifications, useListChats, getGetMyProfileQueryKey, getListNotificationsQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { BrandMark } from "@/components/brand";
@@ -23,15 +23,18 @@ import { UsernameSetup } from "@/components/shell/username-setup";
 const NAV = [
   { href: "/chats", label: "Chats", icon: MessagesSquare, primary: true },
   { href: "/account-security", label: "VastMind ID", icon: Fingerprint },
-  { href: "/videos", label: "Videos", icon: Clapperboard, primary: true },
+  { href: "/videos", label: "Feed", icon: Newspaper, primary: true },
   { href: "/statuses", label: "Status", icon: CircleDashed, primary: true },
   { href: "/communities", label: "Communities", icon: UsersRound, primary: true },
   { href: "/channels", label: "Channels", icon: Radio },
   { href: "/business", label: "Business", icon: Briefcase },
-  { href: "/shop", label: "Shop", icon: ShoppingBag },
+  { href: "/shop", label: "Shop", icon: ShoppingBag, primary: true },
   { href: "/notifications", label: "Alerts", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
+// Keep the mobile dock to four destinations plus More, with Shop in the center.
+const MOBILE_PRIMARY_HREFS = ["/chats", "/videos", "/shop", "/statuses", "/communities"] as const;
+const MOBILE_PRIMARY_SET = new Set<string>(MOBILE_PRIMARY_HREFS);
 
 function Badge({ n }: { n: number }) {
   if (!n) return null;
@@ -115,28 +118,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* ---------- Page ---------- */}
-        <main className={cn("relative flex min-w-0 flex-1 flex-col overflow-hidden", !inChat && "pb-[68px] md:pb-0")}>{children}</main>
+        <main className={cn("relative flex min-w-0 flex-1 flex-col overflow-hidden", !inChat && "pb-[92px] md:pb-0")}>{children}</main>
 
         {/* ---------- Mobile bottom bar ---------- */}
-        <nav aria-label="Main" className={cn("fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden", inChat && "hidden")}>
-          <div className="mx-auto flex max-w-md items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)]">
-            {NAV.filter((n) => n.primary).map((n) => (
-              <Link key={n.href} href={n.href} aria-current={active(n.href) ? "page" : undefined}
-                className={cn("relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium", active(n.href) ? "text-primary" : "text-muted-foreground")}>
-                <span className="relative"><n.icon className="h-5 w-5" /><Badge n={badgeFor(n.href)} /></span>
-                {n.label}
-              </Link>
-            ))}
+        <nav aria-label="Main" className={cn("fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom)] md:hidden", inChat && "hidden")}>
+          <div className="mx-auto flex max-w-md items-stretch gap-1 rounded-[1.65rem] border bg-card/95 p-1.5 shadow-[0_12px_40px_-18px_hsl(var(--ink)/.55)] backdrop-blur">
+            {MOBILE_PRIMARY_HREFS.map((href) => {
+              const n = NAV.find((item) => item.href === href);
+              if (!n) return null;
+              const selected = active(n.href);
+              return (
+                <Link key={n.href} href={n.href} aria-current={selected ? "page" : undefined}
+                  className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] font-semibold", selected ? "text-primary" : "text-muted-foreground")}>
+                  <span className={cn("relative grid h-8 w-9 place-items-center rounded-full", n.href === "/shop" && (selected ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"))}>
+                    <n.icon className="h-[18px] w-[18px]" /><Badge n={badgeFor(n.href)} />
+                  </span>
+                  <span className="truncate">{n.label}</span>
+                </Link>
+              );
+            })}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
               <SheetTrigger asChild>
-                <button className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium text-muted-foreground" data-testid="button-nav-more">
-                  <span className="relative"><Menu className="h-5 w-5" /><Badge n={unreadNotes} /></span>More
+                <button className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] font-semibold", moreOpen ? "bg-muted text-foreground" : "text-muted-foreground")} data-testid="button-nav-more">
+                  <span className="relative grid h-8 w-9 place-items-center"><Menu className="h-[18px] w-[18px]" /><Badge n={unreadNotes} /></span><span>More</span>
                 </button>
               </SheetTrigger>
               <SheetContent side="bottom" className="rounded-t-3xl">
                 <SheetHeader><SheetTitle className="font-display">Everything else</SheetTitle></SheetHeader>
                 <div className="grid grid-cols-2 gap-2 p-4">
-                  {NAV.filter((n) => !n.primary).map((n) => (
+                  {NAV.filter((n) => !MOBILE_PRIMARY_SET.has(n.href)).map((n) => (
                     <Link key={n.href} href={n.href} className={cn("relative flex items-center gap-3 rounded-2xl border p-4 text-sm font-medium", active(n.href) && "border-primary text-primary")}>
                       <n.icon className="h-5 w-5" />{n.label}
                       {badgeFor(n.href) ? <span className="ml-auto rounded-full bg-primary px-2 font-mono text-[10px] text-primary-foreground">{badgeFor(n.href)}</span> : null}

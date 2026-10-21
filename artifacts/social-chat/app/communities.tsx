@@ -16,6 +16,7 @@ import {
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { useAppStore } from "@/state/AppStore";
+import { AlertsButtonNative } from "@/components/common";
 
 const CATEGORIES: { id: CommunityGigCategory; label: string }[] = [
   { id: "home-repairs", label: "Home & repairs" },
@@ -305,6 +306,7 @@ export default function CommunitiesScreen() {
             <Text style={{ color: colors.foreground, fontSize: 22, fontWeight: "800" }}>Communities</Text>
             <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 2 }}>Find nearby help. Share what you know.</Text>
           </View>
+          <AlertsButtonNative />
           <Pressable accessibilityRole="button" accessibilityLabel="Create a skill offer or help request" onPress={openCreate}
             style={{ minHeight: 40, borderRadius: 14, paddingHorizontal: 12, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", gap: 6 }}>
             <Feather name="plus" size={16} color={colors.primaryForeground} />

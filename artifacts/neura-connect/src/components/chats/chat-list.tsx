@@ -13,6 +13,9 @@ import { useMe } from "@/lib/me";
 import { chatTime } from "@/lib/format";
 import { usePollInterval, useRealtime } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
+import { AlertsButton } from "@/components/shell/alerts-button";
+
+type ChatFilter = "All" | "Unread" | "Groups";
 
 // ---------- Left panel: searchable conversation list ----------
 export function ChatList({ activeId, onSelect, onNew }: { activeId: string | null; onSelect: (id: string) => void; onNew: () => void }) {
@@ -20,6 +23,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
   const { typing } = useRealtime();
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
+  const [filter, setFilter] = useState<ChatFilter>("All");
   useEffect(() => {
     const t = window.setTimeout(() => setDq(q.trim()), 250);
     return () => window.clearTimeout(t);
@@ -27,6 +31,8 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
   const params = dq ? { q: dq } : undefined;
   const poll = usePollInterval(20_000);
   const chats = useListChats(params, { query: { queryKey: getListChatsQueryKey(params), refetchInterval: poll } });
+  const visibleChats = (chats.data ?? []).filter((chat) =>
+    filter === "All" || (filter === "Unread" ? chat.unreadCount > 0 : chat.type === "group"));
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -36,23 +42,33 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
             <h1 className="font-display text-3xl font-bold">Chats</h1>
             <ConnectionPill className="mt-1 text-muted-foreground" />
           </div>
-          <Button size="icon" className="h-11 w-11 rounded-2xl" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
-            <MessageSquarePlus className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <AlertsButton />
+            <Button size="icon" className="h-11 w-11 rounded-full" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
+              <MessageSquarePlus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         <div className="relative mt-4">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search conversations" className="rounded-xl border-0 bg-muted pl-9" aria-label="Search conversations" data-testid="input-search-chats" />
         </div>
+        <div role="tablist" aria-label="Filter conversations" className="mt-3 flex gap-2">
+          {(["All", "Unread", "Groups"] as ChatFilter[]).map((item) => (
+            <button key={item} type="button" role="tab" aria-selected={filter === item} onClick={() => setFilter(item)}
+              className={cn("rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors", filter === item ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground")}
+              data-testid={`tab-chat-filter-${item.toLowerCase()}`}>{item}</button>
+          ))}
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2 pb-4" role="list">
         {chats.isLoading ? <RowSkeleton /> : null}
         {chats.isError ? <ErrorState error={chats.error} onRetry={() => chats.refetch()} /> : null}
-        {chats.data && chats.data.length === 0 ? (
+        {chats.data && visibleChats.length === 0 ? (
           dq ? <EmptyState icon={Search} title="Nothing on that line" body={`No conversations match “${dq}”.`} />
-            : <EmptyState icon={MessageSquarePlus} title="No conversations yet" body="Find a friend by name and say hello, or start a group for your crew." action={<Button className="rounded-full" onClick={onNew}>Start a conversation</Button>} />
+            : <EmptyState icon={filter === "Groups" ? Users : MessageSquarePlus} title={filter === "All" ? "No conversations yet" : `No ${filter.toLowerCase()} conversations`} body="Find a friend by name and say hello, or start a group for your crew." action={<Button className="rounded-full" onClick={onNew}>Start a conversation</Button>} />
         ) : null}
-        {chats.data?.map((c, i) => {
+        {visibleChats.map((c, i) => {
           const other = otherMember(c, me.id);
           const isGroup = c.type === "group";
           const t = (typing[c.id] ?? []).filter((x) => x.userId !== me.id);
@@ -60,7 +76,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
           const lastSticker = VASTMIND_STICKERS.find((item) => item.token === c.lastMessage);
           return (
             <button key={c.id} role="listitem" onClick={() => onSelect(c.id)} data-testid={`row-chat-${c.id}`}
-              className={cn("rise group flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors duration-150", active ? "bg-primary/10" : "hover:bg-muted")}
+              className={cn("rise group flex w-full items-center gap-3 rounded-xl border-b border-border/55 px-2.5 py-3 text-left transition-colors duration-150", active ? "bg-primary/10" : "hover:bg-muted/70")}
               style={{ animationDelay: `${Math.min(i, 10) * 25}ms` }}>
               {isGroup ? (
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground"><Users className="h-5 w-5" /></span>

@@ -28,6 +28,7 @@ import { useInvalidate, useIsOnline, usePollInterval, useRealtime } from "@/lib/
 import { cn } from "@/lib/utils";
 import { useCall } from "@/components/calling/call-provider";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
+import { AlertsButton } from "@/components/shell/alerts-button";
 import { VASTMIND_STICKERS, vastMindEmojiMotion } from "@/components/chats/emoji-data";
 import { basePath } from "@/lib/base";
 
@@ -278,6 +279,7 @@ export function ConversationPane({ chat, onBack }: { chat: Conversation; onBack:
         <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: true, title: chatTitle(chat, me.id) })} aria-label="Start video call" data-testid="button-video-call"><Video className="h-5 w-5" /></Button>
         <Button size="icon" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "chat", id: chat.id, video: false, title: chatTitle(chat, me.id) })} aria-label="Start voice call" data-testid="button-voice-call"><Phone className="h-5 w-5" /></Button>
         <Button size="icon" variant="ghost" onClick={() => setSearchOpen((s) => !s)} aria-label="Search messages" data-testid="button-search-messages"><Search className="h-5 w-5" /></Button>
+        <AlertsButton className="h-9 w-9" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="More options" data-testid="button-chat-menu"><MoreVertical className="h-5 w-5" /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
