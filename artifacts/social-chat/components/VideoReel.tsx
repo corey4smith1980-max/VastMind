@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Share, StyleSheet, Text, TextInput, View, type ViewToken } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Share, StyleSheet, Text, TextInput, View, type ViewToken } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEvent } from 'expo';
@@ -15,6 +15,7 @@ import { PostEntry } from '@/components/PostEntry';
 import { activeCue, isClip, errorText, useAuthedMedia, useCaptionsPref, useWatchSession, webProfileLink } from '@/components/videoKit';
 
 const INK = 'hsl(192,52%,9%)';
+const compactCount = (n: number) => new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
 function Soundtrack({ post, play, muted }: { post: Post; play: boolean; muted: boolean }) {
   const { source } = useAuthedMedia(post.audioMedia, true);
@@ -56,7 +57,7 @@ function CommentsSheet({ post, onClose, onAdded }: { post: Post; onClose: () => 
 function ActionButton({ icon, label, count, onPress, tint, disabled }: { icon: React.ComponentProps<typeof Feather>['name']; label: string; count?: number; onPress: () => void; tint?: string; disabled?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={disabled} style={{ alignItems: 'center', gap: 3 }}>
     <View style={s.action}><Feather name={icon} size={22} color={tint ?? '#f6efe4'} /></View>
-    {count !== undefined ? <Text style={s.count}>{count}</Text> : null}
+    {count !== undefined ? <Text style={s.count}>{compactCount(count)}</Text> : null}
   </Pressable>;
 }
 
@@ -73,10 +74,17 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
   const [ccOn, toggleCc] = useCaptionsPref();
   const [comments, setComments] = useState(false);
   const [stats, setStats] = useState({ reacted: post.reacted, reactions: post.reactionsCount, comments: post.commentsCount });
+  const [heartBurst, setHeartBurst] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const [following, setFollowing] = useState(post.author.following);
   const [note, setNote] = useState('');
   const session = useWatchSession(post.id, active);
   const lastTime = useRef(0);
+  const lastSurfaceTap = useRef(0);
+  const surfaceTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartScale = useRef(new Animated.Value(0)).current;
+  const heartOpacity = useRef(new Animated.Value(0)).current;
   const time = timeEvent?.currentTime ?? 0;
 
   useEffect(() => { if (!active) setPaused(false); }, [active]);
@@ -86,6 +94,19 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
   }, [active, paused, player, source]);
   useEffect(() => { player.muted = muted; }, [player, muted]);
   useEffect(() => { session.setPlaying(isPlaying && active); }, [isPlaying, active, session]);
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduceMotion(value); }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      mounted = false;
+      subscription.remove();
+      if (surfaceTapTimer.current) clearTimeout(surfaceTapTimer.current);
+      if (heartTimer.current) clearTimeout(heartTimer.current);
+      heartScale.stopAnimation();
+      heartOpacity.stopAnimation();
+    };
+  }, [heartOpacity, heartScale]);
   useEffect(() => {
     if (time + 0.5 < lastTime.current && lastTime.current > (player.duration || 0) - 1.5) session.markCompleted();
     lastTime.current = time;
@@ -99,15 +120,60 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
   const cue = ccOn ? activeCue(post.captions, time) : null;
   const openCreator = () => router.push({ pathname: '/creator/[id]', params: { id: post.author.id } });
   const share = () => void Share.share({ message: `${post.author.name} shares clips on VastMind: ${webProfileLink(post.author.username)}` }).catch(() => {});
+  const showHeartBurst = () => {
+    setHeartBurst(true);
+    if (heartTimer.current) clearTimeout(heartTimer.current);
+    if (reduceMotion) {
+      heartScale.setValue(1);
+      heartOpacity.setValue(1);
+      heartTimer.current = setTimeout(() => { setHeartBurst(false); heartOpacity.setValue(0); }, 650);
+      return;
+    }
+    heartScale.setValue(0.55);
+    heartOpacity.setValue(0);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.spring(heartScale, { toValue: 1, useNativeDriver: true, friction: 4 }),
+        Animated.timing(heartOpacity, { toValue: 1, duration: 110, useNativeDriver: true }),
+      ]),
+      Animated.delay(180),
+      Animated.parallel([
+        Animated.timing(heartScale, { toValue: 0.88, duration: 190, useNativeDriver: true }),
+        Animated.timing(heartOpacity, { toValue: 0, duration: 190, useNativeDriver: true }),
+      ]),
+    ]).start(({ finished }) => { if (finished) setHeartBurst(false); });
+  };
+  const likeFromGesture = () => {
+    showHeartBurst();
+    // Double-tap always means "like"; it never removes an existing like.
+    if (!stats.reacted && !react.isPending) react.mutate({ postId: post.id, data: { reaction: 'like' } });
+  };
+  const handleSurfaceTap = () => {
+    const now = Date.now();
+    if (lastSurfaceTap.current && now - lastSurfaceTap.current <= 300) {
+      if (surfaceTapTimer.current) clearTimeout(surfaceTapTimer.current);
+      surfaceTapTimer.current = null;
+      lastSurfaceTap.current = 0;
+      likeFromGesture();
+      return;
+    }
+    lastSurfaceTap.current = now;
+    surfaceTapTimer.current = setTimeout(() => {
+      surfaceTapTimer.current = null;
+      lastSurfaceTap.current = 0;
+      setPaused(p => !p);
+    }, 310);
+  };
 
   return <View style={{ height, backgroundColor: INK }}>
     {source ? <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} accessibilityLabel={`Video by ${post.author.name}`} />
       : <View style={[StyleSheet.absoluteFill, s.center]}>{error ? <Text style={s.dim}>This clip isn't available. Pull to refresh.</Text> : <ActivityIndicator color="#f6efe4" accessibilityLabel="Loading clip" />}</View>}
     {post.audioMedia && near ? <Soundtrack post={post} play={active && isPlaying} muted={muted} /> : null}
-    <Pressable accessibilityRole="button" accessibilityLabel={paused ? 'Play clip' : 'Pause clip'} onPress={() => setPaused(p => !p)} style={StyleSheet.absoluteFill}>
+     <Pressable accessibilityRole="button" accessibilityLabel={`${paused ? 'Play clip' : 'Pause clip'}. Double-tap to like.`} onPress={handleSurfaceTap} style={StyleSheet.absoluteFill}>
       {paused && active ? <View style={[StyleSheet.absoluteFill, s.center]}><View style={s.bigPlay}><Feather name="play" size={28} color="#f6efe4" /></View></View> : null}
     </Pressable>
     {cue ? <View pointerEvents="none" style={s.cueWrap}><Text style={s.cue}>{cue}</Text></View> : null}
+     {heartBurst ? <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.likeBurst, { opacity: heartOpacity, transform: [{ scale: heartScale }] }]}><Feather name="heart" size={88} color="hsl(347,96%,61%)" /></Animated.View> : null}
     <View style={[s.meta, { paddingBottom: bottomInset + 18 }]} pointerEvents="box-none">
       <View style={s.row}>
         <Pressable accessibilityRole="link" accessibilityLabel={`Open ${post.author.name}'s profile`} onPress={openCreator} style={{ flexShrink: 1 }}>
@@ -129,7 +195,7 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
     <View style={[s.rail, { bottom: bottomInset + 20 }]}>
       <ActionButton icon={muted ? 'volume-x' : 'volume-2'} label={muted ? 'Turn sound on' : 'Mute sound'} onPress={() => setMuted(m => !m)} />
       {post.captions?.length ? <ActionButton icon="type" label={ccOn ? 'Hide captions' : 'Show captions'} tint={ccOn ? 'hsl(42,90%,65%)' : undefined} onPress={toggleCc} /> : null}
-      <ActionButton icon="heart" label={stats.reacted ? 'Unlike clip' : 'Like clip'} count={stats.reactions} tint={stats.reacted ? 'hsl(14,88%,62%)' : undefined} disabled={react.isPending} onPress={() => react.mutate({ postId: post.id, data: { reaction: 'like' } })} />
+      <ActionButton icon="heart" label={`${stats.reacted ? 'Unlike clip' : 'Like clip'}, ${stats.reactions} likes`} count={stats.reactions} tint={stats.reacted ? 'hsl(347,96%,61%)' : undefined} disabled={react.isPending} onPress={() => { if (!stats.reacted) showHeartBurst(); react.mutate({ postId: post.id, data: { reaction: 'like' } }); }} />
       <ActionButton icon="message-circle" label={`View ${stats.comments} comments`} count={stats.comments} onPress={() => setComments(true)} />
       <ActionButton icon="share" label="Share creator link" onPress={share} />
     </View>
@@ -175,6 +241,7 @@ const s = StyleSheet.create({
   caption: { color: '#f6efe4', fontSize: 15, lineHeight: 21, marginTop: 10, textShadowColor: 'rgba(0,0,0,0.7)', textShadowRadius: 6 },
   tag: { color: 'rgba(246,239,228,0.85)', fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', borderWidth: 1, borderColor: 'rgba(246,239,228,0.3)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, overflow: 'hidden', maxWidth: 220 },
   rail: { position: 'absolute', right: 12, alignItems: 'center', gap: 14 },
+  likeBurst: { alignItems: 'center', justifyContent: 'center', zIndex: 4 },
   action: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' },
   count: { color: '#f6efe4', fontSize: 12, fontWeight: '700' },
 });

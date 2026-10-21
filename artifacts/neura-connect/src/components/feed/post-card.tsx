@@ -106,21 +106,23 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       {!post.isAnonymous ? <ShoppableProducts post={post} className="mt-3" /> : null}
 
       {post.pollOptions.length ? (
-        <div className="mt-4 space-y-2" role="group" aria-label="Poll">
+        <div className="mt-4 space-y-2.5" role="group" aria-label={`Poll results · ${totalVotes} votes`}>
           {post.pollOptions.map((o) => {
-            const pct = totalVotes ? Math.round((o.votes / totalVotes) * 1000) / 10 : 0;
+            const pct = totalVotes ? Math.round((o.votes / totalVotes) * 100) : 0;
             return (
-              <button key={o.id} disabled={vote.isPending} onClick={() => vote.mutate({ postId: post.id, data: { optionId: o.id } })} data-testid={`button-vote-${o.id}`}
-                className={cn("relative w-full overflow-hidden rounded-xl border px-4 py-2.5 text-left text-sm transition-colors hover:border-primary", o.votedByMe && "border-primary")}>
-                <span className="absolute inset-y-0 left-0 bg-accent/40 transition-[width] duration-500" style={{ width: voted ? `${pct}%` : "0%" }} aria-hidden />
-                <span className="relative flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2 font-medium">{o.votedByMe ? <Check className="h-4 w-4 text-primary" /> : null}{o.label}</span>
-                  {voted ? <span className="font-mono text-xs">{pct}%</span> : null}
+              <button key={o.id} disabled={vote.isPending} onClick={() => vote.mutate({ postId: post.id, data: { optionId: o.id } })} data-testid={`button-vote-${o.id}`} aria-pressed={o.votedByMe} aria-label={`${o.label}: ${o.votes} votes, ${pct}%`}
+                className={cn("w-full rounded-xl border px-3.5 py-3 text-left transition-colors hover:border-primary disabled:cursor-wait", o.votedByMe ? "border-primary bg-primary/[.04]" : "border-border bg-background/40")}>
+                <span className="flex items-center justify-between gap-3 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 font-medium">{o.votedByMe ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}<span className="truncate">{o.label}</span></span>
+                  <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">{o.votes} · {pct}%</span>
+                </span>
+                <span className="mt-2 block h-2 overflow-hidden rounded-full bg-muted/80" aria-hidden="true">
+                  <span className={cn("block h-full rounded-full bg-gradient-to-r from-primary via-[hsl(214_90%_58%)] to-[hsl(272_82%_66%)] transition-[width] duration-700 ease-out", o.votes > 0 && "min-w-[3px]")} style={{ width: `${pct}%` }} />
                 </span>
               </button>
             );
           })}
-          <p className="font-mono text-[11px] text-muted-foreground">{totalVotes} vote{totalVotes === 1 ? "" : "s"}{voted ? " · tap another option to change" : " · tap to vote"}</p>
+          <p className="flex items-center justify-between gap-2 pt-0.5 text-[11px] text-muted-foreground"><span>{voted ? "Your vote is in · tap a different option to change it" : "Tap an option to vote"}</span><span className="font-mono tabular-nums">{totalVotes} vote{totalVotes === 1 ? "" : "s"}</span></p>
         </div>
       ) : null}
 

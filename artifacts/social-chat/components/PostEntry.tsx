@@ -55,14 +55,21 @@ export function PostEntry({ post, height, near, bottomInset }: { post: Post; hei
         </View>
         {p.content ? <Text style={{ color: colors.foreground, fontSize: 16, lineHeight: 23, marginTop: 14 }}>{p.content}</Text> : null}
         {isImage ? <View style={[s.photo, { backgroundColor: colors.muted }]}>{source ? <Image source={source} style={StyleSheet.absoluteFill} resizeMode="contain" accessibilityLabel={`Photo from ${author}`} /> : <ActivityIndicator color={colors.primary} />}</View> : null}
-        {p.pollOptions.length ? <View style={{ marginTop: 14, gap: 8 }} accessibilityRole="radiogroup">
+        {p.pollOptions.length ? <View style={{ marginTop: 14, gap: 10 }} accessibilityRole="radiogroup" accessibilityLabel={`${total} total votes`}>
           {p.pollOptions.map(o => { const pct = total ? Math.round((o.votes / total) * 1000) / 10 : 0; return (
-            <Pressable key={o.id} accessibilityRole="radio" accessibilityState={{ checked: o.votedByMe }} disabled={vote.isPending} onPress={() => castVote(o.id)} style={[s.option, { borderColor: o.votedByMe ? colors.primary : colors.border, borderWidth: o.votedByMe ? 2 : 1 }]}>
-              {voted ? <View style={[StyleSheet.absoluteFill, { width: `${pct}%`, backgroundColor: colors.accent, opacity: 0.45 }]} /> : null}
-              <Text style={{ color: colors.foreground, fontWeight: '600', flex: 1 }}>{o.label}</Text>
-              {voted ? <Text style={{ color: colors.mutedForeground, fontSize: 12 }}>{pct}%</Text> : null}
+            <Pressable key={o.id} accessibilityRole="radio" accessibilityLabel={`${o.label}: ${o.votes} votes, ${Math.round(pct)}%`} accessibilityState={{ checked: o.votedByMe }} disabled={vote.isPending} onPress={() => castVote(o.id)} style={[s.option, { minHeight: 68, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', gap: 9, borderColor: o.votedByMe ? colors.primary : colors.border, borderWidth: o.votedByMe ? 2 : 1, overflow: 'hidden' }]}>
+              <View style={[s.row, { justifyContent: 'space-between', gap: 10 }]}>
+                <Text style={{ color: colors.foreground, fontWeight: '600', flex: 1 }} numberOfLines={2}>{o.label}</Text>
+                <Text style={{ color: colors.mutedForeground, fontSize: 12, fontVariant: ['tabular-nums'] }}>{o.votes} · {Math.round(pct)}%</Text>
+              </View>
+              <View style={{ width: '100%', height: 7, borderRadius: 5, backgroundColor: colors.muted, overflow: 'hidden' }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <View style={{ height: '100%', width: `${pct}%`, borderRadius: 5, backgroundColor: colors.primary }} />
+              </View>
             </Pressable>); })}
-          <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{total} vote{total === 1 ? '' : 's'} · {voted ? 'tap another to change' : 'tap to vote'}</Text>
+          <View style={[s.row, { justifyContent: 'space-between', gap: 8 }]}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 11, flex: 1 }}>{voted ? 'Your vote is in · tap another option to change it' : 'Tap an option to vote'}</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 11, fontVariant: ['tabular-nums'] }}>{total} vote{total === 1 ? '' : 's'}</Text>
+          </View>
         </View> : null}
         {!p.isAnonymous ? <ContentProducts postId={p.id} isAuthor={profile?.id === p.author.id} tone="light" enabled={near} /> : null}
         {note ? <Text style={{ color: colors.destructive, marginTop: 8 }} onPress={() => setNote('')}>{note}</Text> : null}

@@ -15,6 +15,7 @@ import { ShoppableProducts } from "@/components/commerce/shoppable";
 import { activeCue, useCaptionsPref, useVideoPlayback, useWatchSession } from "./video-kit";
 
 const effectClass = { none: "", warm: "sepia-[.2] saturate-[1.15]", mono: "grayscale", soft: "brightness-[1.06] saturate-[.82]" };
+const compactCount = (n: number) => new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
 function CommentsPanel({ post, count, onAdded, onClose }: { post: Post; count: number; onAdded: () => void; onClose: () => void }) {
   const [text, setText] = useState("");
@@ -62,6 +63,10 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [following, setFollowing] = useState(post.author.following);
   const [stats, setStats] = useState({ reacted: post.reacted, reactions: post.reactionsCount, comments: post.commentsCount });
+  const [heartBurst, setHeartBurst] = useState(false);
+  const tapAt = useRef(0);
+  const surfaceTapTimer = useRef<number | undefined>(undefined);
+  const heartTimer = useRef<number | undefined>(undefined);
   const [ccOn, toggleCc] = useCaptionsPref();
   const session = useWatchSession(post.id, active);
   const playback = useVideoPlayback(post.media, active);
@@ -78,6 +83,22 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
       onError: (e) => { setFollowing(post.author.following); toast({ title: "Follow didn't save", description: errMessage(e), variant: "destructive" }); },
     },
   });
+
+  useEffect(() => () => {
+    if (surfaceTapTimer.current !== undefined) window.clearTimeout(surfaceTapTimer.current);
+    if (heartTimer.current !== undefined) window.clearTimeout(heartTimer.current);
+  }, []);
+
+  const animateLike = () => {
+    setHeartBurst(true);
+    if (heartTimer.current !== undefined) window.clearTimeout(heartTimer.current);
+    heartTimer.current = window.setTimeout(() => setHeartBurst(false), 700);
+  };
+  const likeFromGesture = () => {
+    animateLike();
+    // A double-tap likes but never unlikes. The visible heart button remains a toggle.
+    if (!stats.reacted && !react.isPending) react.mutate({ postId: post.id, data: { reaction: "like" } });
+  };
 
   useEffect(() => {
     const element = videoRef.current;
@@ -98,6 +119,22 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
     if (!element) return;
     if (element.paused) void element.play().catch(() => setPlaying(false));
     else element.pause();
+  };
+  const handleSurfaceTap = () => {
+    const now = Date.now();
+    if (tapAt.current && now - tapAt.current <= 300) {
+      if (surfaceTapTimer.current !== undefined) window.clearTimeout(surfaceTapTimer.current);
+      surfaceTapTimer.current = undefined;
+      tapAt.current = 0;
+      likeFromGesture();
+      return;
+    }
+    tapAt.current = now;
+    surfaceTapTimer.current = window.setTimeout(() => {
+      surfaceTapTimer.current = undefined;
+      tapAt.current = 0;
+      togglePlay();
+    }, 310);
   };
   const toggleSound = () => {
     const next = !muted;
@@ -129,8 +166,9 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
      {playback.error ? <div role="alert" className="absolute inset-0 z-10 grid place-items-center bg-[hsl(192_52%_9%/.8)] p-6 text-center text-white"><button onClick={playback.retry} className="rounded-full bg-white/15 px-4 py-3 text-sm font-semibold">Video unavailable. Tap to retry.</button></div> : null}
      {post.audioMedia && soundtrack.url ? <audio ref={audioRef} src={soundtrack.url} muted={muted} loop preload={active ? "auto" : "none"} /> : null}
     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[hsl(192_55%_5%/.94)] via-transparent to-[hsl(192_55%_5%/.13)]" />
-    <button className="absolute inset-0 z-[1] cursor-pointer" onClick={togglePlay} aria-label={playing ? "Pause video" : "Play video"} data-testid={`button-play-${post.id}`} />
+     <button className="absolute inset-0 z-[1] cursor-pointer" onClick={handleSurfaceTap} aria-label={`${playing ? "Pause video" : "Play video"}. Double-tap to like.`} data-testid={`button-play-${post.id}`} />
     {!playing && active ? <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 z-[2] grid h-14 w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur"><Play className="ml-1 h-6 w-6 fill-current" /></span> : null}
+     {heartBurst ? <span aria-hidden="true" className="vm-like-burst pointer-events-none absolute inset-0 z-[3] grid place-items-center text-[hsl(347_96%_61%)]"><Heart className="h-20 w-20 fill-current drop-shadow-[0_3px_18px_rgba(255,49,88,.7)]" /></span> : null}
     {cue ? <p className="pointer-events-none absolute inset-x-6 top-[58%] z-[3] mx-auto w-fit max-w-[min(86%,560px)] rounded-lg bg-black/70 px-3 py-1.5 text-center text-[15px] font-semibold leading-snug text-white" aria-live="off" data-testid={`text-cue-${post.id}`}>{cue}</p> : null}
     <div className="absolute bottom-0 left-0 right-16 z-[3] p-5 pb-7 text-white sm:left-5 sm:max-w-[min(78%,540px)] sm:p-7">
       <div className="flex items-center gap-2.5">
@@ -152,7 +190,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
       <button onClick={togglePlay} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur" aria-label={playing ? "Pause clip" : "Play clip"}>{playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}</button>
       <button onClick={toggleSound} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur" aria-label={muted ? "Turn sound on" : "Mute sound"} data-testid={`button-sound-${post.id}`}>{muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
       {hasCaptions ? <button onClick={toggleCc} aria-pressed={ccOn} className={cn("grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur", ccOn && "text-[hsl(42_90%_65%)]")} aria-label={ccOn ? "Hide captions" : "Show captions"} data-testid={`button-cc-${post.id}`}>{ccOn ? <Captions className="h-5 w-5" /> : <CaptionsOff className="h-5 w-5" />}</button> : null}
-      <button onClick={() => react.mutate({ postId: post.id, data: { reaction: "like" } })} disabled={react.isPending} className="flex flex-col items-center gap-1" aria-label={stats.reacted ? "Unlike clip" : "Like clip"} aria-pressed={stats.reacted} data-testid={`button-like-${post.id}`}><span className={cn("grid h-12 w-12 place-items-center rounded-full bg-black/35 backdrop-blur", stats.reacted && "text-primary")}><Heart className={cn("h-6 w-6", stats.reacted && "fill-current")} /></span><span className="text-xs font-semibold">{stats.reactions}</span></button>
+       <button onClick={() => { if (!stats.reacted) animateLike(); react.mutate({ postId: post.id, data: { reaction: "like" } }); }} disabled={react.isPending} className="flex flex-col items-center gap-1" aria-label={`${stats.reacted ? "Unlike clip" : "Like clip"}, ${stats.reactions} likes`} aria-pressed={stats.reacted} data-testid={`button-like-${post.id}`}><span className={cn("grid h-12 w-12 place-items-center rounded-full bg-black/35 backdrop-blur transition-transform", stats.reacted && "scale-105 text-[hsl(347_96%_61%)]")}><Heart className={cn("h-6 w-6", stats.reacted && "fill-current")} /></span><span className="text-xs font-semibold">{compactCount(stats.reactions)}</span></button>
       <button onClick={() => setCommentsOpen(true)} className="flex flex-col items-center gap-1" aria-label={`View ${stats.comments} comments`} data-testid={`button-open-comments-${post.id}`}><span className="grid h-12 w-12 place-items-center rounded-full bg-black/35 backdrop-blur"><MessageCircle className="h-6 w-6" /></span><span className="text-xs font-semibold">{stats.comments}</span></button>
       <button onClick={() => void share()} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur" aria-label="Share creator link" data-testid={`button-share-${post.id}`}><Share2 className="h-5 w-5" /></button>
       <span className="font-mono text-[10px] text-white/65">{index + 1}</span>
