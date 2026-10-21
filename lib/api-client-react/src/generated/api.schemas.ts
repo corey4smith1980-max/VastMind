@@ -475,6 +475,148 @@ export interface CommunityInput {
   isPrivate: boolean;
 }
 
+export type CommunityGigKind = typeof CommunityGigKind[keyof typeof CommunityGigKind];
+
+
+export const CommunityGigKind = {
+  offer: 'offer',
+  request: 'request',
+} as const;
+
+export type CommunityGigCategory = typeof CommunityGigCategory[keyof typeof CommunityGigCategory];
+
+
+export const CommunityGigCategory = {
+  'home-repairs': 'home-repairs',
+  learning: 'learning',
+  creative: 'creative',
+  technology: 'technology',
+  'personal-care': 'personal-care',
+  'food-events': 'food-events',
+  transport: 'transport',
+  errands: 'errands',
+  childcare: 'childcare',
+  other: 'other',
+} as const;
+
+export type CommunityGigState = typeof CommunityGigState[keyof typeof CommunityGigState];
+
+
+export const CommunityGigState = {
+  open: 'open',
+  matched: 'matched',
+  completed: 'completed',
+  closed: 'closed',
+} as const;
+
+/**
+ * @nullable
+ */
+export type CommunityGigMyResponseState = typeof CommunityGigMyResponseState[keyof typeof CommunityGigMyResponseState] | null;
+
+
+export const CommunityGigMyResponseState = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface CommunityGig {
+  id: string;
+  communityId: string;
+  communityName: string;
+  author: UserSummary;
+  kind: CommunityGigKind;
+  title: string;
+  description: string;
+  category: CommunityGigCategory;
+  rateNote: string;
+  state: CommunityGigState;
+  responseCount: number;
+  /** @nullable */
+  myResponseId: string | null;
+  /** @nullable */
+  myResponseState: CommunityGigMyResponseState;
+  createdAt: string;
+}
+
+export type CommunityGigList = CommunityGig[];
+
+export type CommunityGigCreateKind = typeof CommunityGigCreateKind[keyof typeof CommunityGigCreateKind];
+
+
+export const CommunityGigCreateKind = {
+  offer: 'offer',
+  request: 'request',
+} as const;
+
+export type CommunityGigCreateCategory = typeof CommunityGigCreateCategory[keyof typeof CommunityGigCreateCategory];
+
+
+export const CommunityGigCreateCategory = {
+  'home-repairs': 'home-repairs',
+  learning: 'learning',
+  creative: 'creative',
+  technology: 'technology',
+  'personal-care': 'personal-care',
+  'food-events': 'food-events',
+  transport: 'transport',
+  errands: 'errands',
+  childcare: 'childcare',
+  other: 'other',
+} as const;
+
+export interface CommunityGigCreate {
+  /** @minLength 1 */
+  communityId: string;
+  kind: CommunityGigCreateKind;
+  /**
+     * @minLength 3
+     * @maxLength 100
+     */
+  title: string;
+  /**
+     * @minLength 3
+     * @maxLength 2000
+     */
+  description: string;
+  category: CommunityGigCreateCategory;
+  /** @maxLength 120 */
+  rateNote?: string;
+}
+
+export type CommunityGigResponseState = typeof CommunityGigResponseState[keyof typeof CommunityGigResponseState];
+
+
+export const CommunityGigResponseState = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface CommunityGigResponse {
+  id: string;
+  gigId: string;
+  author: UserSummary;
+  message: string;
+  state: CommunityGigResponseState;
+  createdAt: string;
+}
+
+export type CommunityGigResponseList = CommunityGigResponse[];
+
+export interface CommunityGigResponseCreate {
+  /**
+     * @minLength 2
+     * @maxLength 1200
+     */
+  message: string;
+}
+
+export interface CommunityGigResponseDecision {
+  accept: boolean;
+}
+
 export type JoinResultMembership = typeof JoinResultMembership[keyof typeof JoinResultMembership];
 
 
@@ -1853,6 +1995,49 @@ export type ListCommunitiesParams = {
 q?: string;
 category?: string;
 };
+
+export type ListCommunityGigsParams = {
+/**
+ * @maxLength 120
+ */
+q?: string;
+communityId?: string;
+kind?: ListCommunityGigsKind;
+category?: ListCommunityGigsCategory;
+scope?: ListCommunityGigsScope;
+};
+
+export type ListCommunityGigsKind = typeof ListCommunityGigsKind[keyof typeof ListCommunityGigsKind];
+
+
+export const ListCommunityGigsKind = {
+  offer: 'offer',
+  request: 'request',
+} as const;
+
+export type ListCommunityGigsCategory = typeof ListCommunityGigsCategory[keyof typeof ListCommunityGigsCategory];
+
+
+export const ListCommunityGigsCategory = {
+  'home-repairs': 'home-repairs',
+  learning: 'learning',
+  creative: 'creative',
+  technology: 'technology',
+  'personal-care': 'personal-care',
+  'food-events': 'food-events',
+  transport: 'transport',
+  errands: 'errands',
+  childcare: 'childcare',
+  other: 'other',
+} as const;
+
+export type ListCommunityGigsScope = typeof ListCommunityGigsScope[keyof typeof ListCommunityGigsScope];
+
+
+export const ListCommunityGigsScope = {
+  community: 'community',
+  mine: 'mine',
+} as const;
 
 export type ListChannelsParams = {
 q?: string;

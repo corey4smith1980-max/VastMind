@@ -2742,6 +2742,261 @@ export const DecideCommunityRequestResponse = zod.object({
 
 
 /**
+ * @summary Browse skill offers and help requests in communities
+ */
+export const listCommunityGigsQueryQMax = 120;
+
+export const listCommunityGigsQueryScopeDefault = `community`;
+
+export const ListCommunityGigsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listCommunityGigsQueryQMax).optional(),
+  "communityId": zod.coerce.string().optional(),
+  "kind": zod.enum(['offer', 'request']).optional(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']).optional(),
+  "scope": zod.enum(['community', 'mine']).default(listCommunityGigsQueryScopeDefault)
+})
+
+export const ListCommunityGigsResponseItem = zod.object({
+  "id": zod.string(),
+  "communityId": zod.string(),
+  "communityName": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "kind": zod.enum(['offer', 'request']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "rateNote": zod.string(),
+  "state": zod.enum(['open', 'matched', 'completed', 'closed']),
+  "responseCount": zod.number().int(),
+  "myResponseId": zod.string().nullable(),
+  "myResponseState": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal(null)]).nullable(),
+  "createdAt": zod.coerce.date()
+})
+export const ListCommunityGigsResponse = zod.array(ListCommunityGigsResponseItem)
+
+
+/**
+ * @summary Offer a skill or request help in a community
+ */
+
+export const createCommunityGigBodyTitleMin = 3;
+export const createCommunityGigBodyTitleMax = 100;
+
+export const createCommunityGigBodyDescriptionMin = 3;
+export const createCommunityGigBodyDescriptionMax = 2000;
+
+export const createCommunityGigBodyRateNoteDefault = ``;
+export const createCommunityGigBodyRateNoteMax = 120;
+
+
+
+export const CreateCommunityGigBody = zod.object({
+  "communityId": zod.string().min(1),
+  "kind": zod.enum(['offer', 'request']),
+  "title": zod.string().min(createCommunityGigBodyTitleMin).max(createCommunityGigBodyTitleMax),
+  "description": zod.string().min(createCommunityGigBodyDescriptionMin).max(createCommunityGigBodyDescriptionMax),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "rateNote": zod.string().max(createCommunityGigBodyRateNoteMax).default(createCommunityGigBodyRateNoteDefault)
+})
+
+export const CreateCommunityGigResponse = zod.object({
+  "id": zod.string(),
+  "communityId": zod.string(),
+  "communityName": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "kind": zod.enum(['offer', 'request']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "rateNote": zod.string(),
+  "state": zod.enum(['open', 'matched', 'completed', 'closed']),
+  "responseCount": zod.number().int(),
+  "myResponseId": zod.string().nullable(),
+  "myResponseState": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal(null)]).nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List responses for your own community gig
+ */
+export const ListCommunityGigResponsesParams = zod.object({
+  "gigId": zod.coerce.string()
+})
+
+export const ListCommunityGigResponsesResponseItem = zod.object({
+  "id": zod.string(),
+  "gigId": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "message": zod.string(),
+  "state": zod.enum(['pending', 'accepted', 'declined']),
+  "createdAt": zod.coerce.date()
+})
+export const ListCommunityGigResponsesResponse = zod.array(ListCommunityGigResponsesResponseItem)
+
+
+/**
+ * @summary Respond privately to a community gig
+ */
+export const CreateCommunityGigResponseParams = zod.object({
+  "gigId": zod.coerce.string()
+})
+
+export const createCommunityGigResponseBodyMessageMin = 2;
+export const createCommunityGigResponseBodyMessageMax = 1200;
+
+
+
+export const CreateCommunityGigResponseBody = zod.object({
+  "message": zod.string().min(createCommunityGigResponseBodyMessageMin).max(createCommunityGigResponseBodyMessageMax)
+})
+
+export const CreateCommunityGigResponseResponse = zod.object({
+  "id": zod.string(),
+  "gigId": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "message": zod.string(),
+  "state": zod.enum(['pending', 'accepted', 'declined']),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Accept or decline a gig response
+ */
+export const DecideCommunityGigResponseParams = zod.object({
+  "gigId": zod.coerce.string(),
+  "responseId": zod.coerce.string()
+})
+
+export const DecideCommunityGigResponseBody = zod.object({
+  "accept": zod.boolean()
+})
+
+export const DecideCommunityGigResponseResponse = zod.object({
+  "id": zod.string(),
+  "gigId": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "message": zod.string(),
+  "state": zod.enum(['pending', 'accepted', 'declined']),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Mark an accepted community gig as complete
+ */
+export const CompleteCommunityGigParams = zod.object({
+  "gigId": zod.coerce.string()
+})
+
+export const CompleteCommunityGigResponse = zod.object({
+  "id": zod.string(),
+  "communityId": zod.string(),
+  "communityName": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "kind": zod.enum(['offer', 'request']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "rateNote": zod.string(),
+  "state": zod.enum(['open', 'matched', 'completed', 'closed']),
+  "responseCount": zod.number().int(),
+  "myResponseId": zod.string().nullable(),
+  "myResponseState": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal(null)]).nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Close your community gig to new responses
+ */
+export const CloseCommunityGigParams = zod.object({
+  "gigId": zod.coerce.string()
+})
+
+export const CloseCommunityGigResponse = zod.object({
+  "id": zod.string(),
+  "communityId": zod.string(),
+  "communityName": zod.string(),
+  "author": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullable(),
+  "online": zod.boolean(),
+  "mutualCommunities": zod.number().int(),
+  "following": zod.boolean(),
+  "lastSeenAt": zod.coerce.date().nullish()
+}),
+  "kind": zod.enum(['offer', 'request']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "rateNote": zod.string(),
+  "state": zod.enum(['open', 'matched', 'completed', 'closed']),
+  "responseCount": zod.number().int(),
+  "myResponseId": zod.string().nullable(),
+  "myResponseState": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal(null)]).nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Browse channels
  */
 export const ListChannelsQueryParams = zod.object({

@@ -45,6 +45,12 @@ Ordinary emoji should be free and static. VastMind-specific premium emoji should
 
 **How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.
 
+Communities should combine Nextdoor-style local conversation with opportunities for members to request help and offer their skills for extra income.
+
+**Why:** The user described community conversation, people who need help, and members who want to earn from their skills as one Communities product direction.
+
+**How to apply:** Preserve group discussions and membership while adding community-scoped service listings and private introductions. Do not treat a rate note as checkout or a payout.
+
 Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
 
 **Why:** The user explicitly prefers the original video design and wants one TikTok-like page for watching and enjoying both posts and clips.

@@ -807,6 +807,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/JoinResult"
+  /community-gigs:
+    get:
+      operationId: ListCommunityGigs
+      tags: [community-gigs]
+      summary: Browse skill offers and help requests in communities
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, maxLength: 120 }
+        - in: query
+          name: communityId
+          schema: { type: string }
+        - in: query
+          name: kind
+          schema: { type: string, enum: [offer, request] }
+        - in: query
+          name: category
+          schema: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+        - in: query
+          name: scope
+          schema: { type: string, enum: [community, mine], default: community }
+      responses:
+        "200":
+          description: Gigs visible to the signed-in member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGigList"
+    post:
+      operationId: CreateCommunityGig
+      tags: [community-gigs]
+      summary: Offer a skill or request help in a community
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityGigCreate"
+      responses:
+        "201":
+          description: Community gig published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGig"
+  /community-gigs/{gigId}/responses:
+    get:
+      operationId: ListCommunityGigResponses
+      tags: [community-gigs]
+      summary: List responses for your own community gig
+      parameters:
+        - $ref: "#/components/parameters/GigId"
+      responses:
+        "200":
+          description: Private responses visible only to the gig author
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGigResponseList"
+    post:
+      operationId: CreateCommunityGigResponse
+      tags: [community-gigs]
+      summary: Respond privately to a community gig
+      parameters:
+        - $ref: "#/components/parameters/GigId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityGigResponseCreate"
+      responses:
+        "201":
+          description: Private response sent to the gig author
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGigResponse"
+  /community-gigs/{gigId}/responses/{responseId}:
+    post:
+      operationId: DecideCommunityGigResponse
+      tags: [community-gigs]
+      summary: Accept or decline a gig response
+      parameters:
+        - $ref: "#/components/parameters/GigId"
+        - in: path
+          name: responseId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityGigResponseDecision"
+      responses:
+        "200":
+          description: Response decision saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGigResponse"
+  /community-gigs/{gigId}/complete:
+    post:
+      operationId: CompleteCommunityGig
+      tags: [community-gigs]
+      summary: Mark an accepted community gig as complete
+      parameters:
+        - $ref: "#/components/parameters/GigId"
+      responses:
+        "200":
+          description: Community gig marked complete by a participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGig"
+  /community-gigs/{gigId}/close:
+    post:
+      operationId: CloseCommunityGig
+      tags: [community-gigs]
+      summary: Close your community gig to new responses
+      parameters:
+        - $ref: "#/components/parameters/GigId"
+      responses:
+        "200":
+          description: Community gig closed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunityGig"
   /channels:
     get:
       operationId: listChannels
@@ -1440,6 +1570,12 @@ components:
       required: true
       schema:
         type: string
+    GigId:
+      in: path
+      name: gigId
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -1784,6 +1920,64 @@ components:
         description: { type: string, minLength: 2, maxLength: 500 }
         category: { type: string, minLength: 2, maxLength: 40 }
         isPrivate: { type: boolean }
+    CommunityGig:
+      type: object
+      required: [id, communityId, communityName, author, kind, title, description, category, rateNote, state, responseCount, myResponseId, myResponseState, createdAt]
+      properties:
+        id: { type: string }
+        communityId: { type: string }
+        communityName: { type: string }
+        author:
+          $ref: "#/components/schemas/UserSummary"
+        kind: { type: string, enum: [offer, request] }
+        title: { type: string }
+        description: { type: string }
+        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+        rateNote: { type: string }
+        state: { type: string, enum: [open, matched, completed, closed] }
+        responseCount: { type: integer }
+        myResponseId: { type: ["string", "null"] }
+        myResponseState: { type: ["string", "null"], enum: [pending, accepted, declined, null] }
+        createdAt: { type: string, format: date-time }
+    CommunityGigList:
+      type: array
+      items:
+        $ref: "#/components/schemas/CommunityGig"
+    CommunityGigCreate:
+      type: object
+      required: [communityId, kind, title, description, category]
+      properties:
+        communityId: { type: string, minLength: 1 }
+        kind: { type: string, enum: [offer, request] }
+        title: { type: string, minLength: 3, maxLength: 100 }
+        description: { type: string, minLength: 3, maxLength: 2000 }
+        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+        rateNote: { type: string, maxLength: 120, default: "" }
+    CommunityGigResponse:
+      type: object
+      required: [id, gigId, author, message, state, createdAt]
+      properties:
+        id: { type: string }
+        gigId: { type: string }
+        author:
+          $ref: "#/components/schemas/UserSummary"
+        message: { type: string }
+        state: { type: string, enum: [pending, accepted, declined] }
+        createdAt: { type: string, format: date-time }
+    CommunityGigResponseList:
+      type: array
+      items:
+        $ref: "#/components/schemas/CommunityGigResponse"
+    CommunityGigResponseCreate:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, minLength: 2, maxLength: 1200 }
+    CommunityGigResponseDecision:
+      type: object
+      required: [accept]
+      properties:
+        accept: { type: boolean }
     JoinResult:
       type: object
       required: [membership, memberCount]

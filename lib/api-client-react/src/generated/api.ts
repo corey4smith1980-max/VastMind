@@ -68,6 +68,13 @@ import type {
   CommerceTeamInput,
   CommerceTeamMember,
   Community,
+  CommunityGig,
+  CommunityGigCreate,
+  CommunityGigList,
+  CommunityGigResponse,
+  CommunityGigResponseCreate,
+  CommunityGigResponseDecision,
+  CommunityGigResponseList,
   CommunityInput,
   CommunityList,
   Conversation,
@@ -83,6 +90,7 @@ import type {
   ListChannelsParams,
   ListChatsParams,
   ListCommunitiesParams,
+  ListCommunityGigsParams,
   ListMailMessagesParams,
   ListMailThreadsParams,
   ListShopOrdersParams,
@@ -5858,6 +5866,583 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getDecideCommunityRequestMutationOptions(options));
+    }
+
+export const getListCommunityGigsUrl = (params?: ListCommunityGigsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/community-gigs?${stringifiedParams}` : `/api/community-gigs`
+}
+
+/**
+ * @summary Browse skill offers and help requests in communities
+ */
+export const listCommunityGigs = async (params?: ListCommunityGigsParams, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGigList> => {
+
+  return customFetch<CommunityGigList>(getListCommunityGigsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCommunityGigsQueryKey = (params?: ListCommunityGigsParams,) => {
+    return [
+    `/api/community-gigs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCommunityGigsQueryOptions = <TData = Awaited<ReturnType<typeof listCommunityGigs>>, TError = ErrorType<unknown>>(params?: ListCommunityGigsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCommunityGigsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCommunityGigs>>> = ({ signal }) => listCommunityGigs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCommunityGigsQueryResult = NonNullable<Awaited<ReturnType<typeof listCommunityGigs>>>
+export type ListCommunityGigsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse skill offers and help requests in communities
+ */
+
+export function useListCommunityGigs<TData = Awaited<ReturnType<typeof listCommunityGigs>>, TError = ErrorType<unknown>>(
+ params?: ListCommunityGigsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCommunityGigsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCommunityGigUrl = () => {
+
+
+
+
+  return `/api/community-gigs`
+}
+
+/**
+ * @summary Offer a skill or request help in a community
+ */
+export const createCommunityGig = async (communityGigCreate: CommunityGigCreate, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGig> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommunityGig>(getCreateCommunityGigUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(communityGigCreate)
+  }
+);}
+
+
+
+
+
+export const getCreateCommunityGigMutationKey = () => ['createCommunityGig'] as const;
+
+export const getCreateCommunityGigMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityGig>>, TError,CreateCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCommunityGig>>, TError,CreateCommunityGigMutationVariables, TContext> => {
+
+const mutationKey = getCreateCommunityGigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCommunityGig>>, CreateCommunityGigMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCommunityGig(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCommunityGigMutationResult = NonNullable<Awaited<ReturnType<typeof createCommunityGig>>>
+    export type CreateCommunityGigMutationBody = BodyType<CommunityGigCreate>
+    export type CreateCommunityGigMutationError = ErrorType<unknown>
+    export type CreateCommunityGigMutationVariables = {data: BodyType<CommunityGigCreate>}
+
+    /**
+ * @summary Offer a skill or request help in a community
+ */
+export const useCreateCommunityGig = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityGig>>, TError,CreateCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCommunityGig>>,
+        TError,
+        CreateCommunityGigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCommunityGigMutationOptions(options));
+    }
+
+export const getListCommunityGigResponsesUrl = (gigId: string,) => {
+
+
+
+
+  return `/api/community-gigs/${gigId}/responses`
+}
+
+/**
+ * @summary List responses for your own community gig
+ */
+export const listCommunityGigResponses = async (gigId: string, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGigResponseList> => {
+
+  return customFetch<CommunityGigResponseList>(getListCommunityGigResponsesUrl(gigId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCommunityGigResponsesQueryKey = (gigId: string,) => {
+    return [
+    `/api/community-gigs/${gigId}/responses`
+    ] as const;
+    }
+
+
+export const getListCommunityGigResponsesQueryOptions = <TData = Awaited<ReturnType<typeof listCommunityGigResponses>>, TError = ErrorType<unknown>>(gigId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigResponses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCommunityGigResponsesQueryKey(gigId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCommunityGigResponses>>> = ({ signal }) => listCommunityGigResponses(gigId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: gigId !== null && gigId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigResponses>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCommunityGigResponsesQueryResult = NonNullable<Awaited<ReturnType<typeof listCommunityGigResponses>>>
+export type ListCommunityGigResponsesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List responses for your own community gig
+ */
+
+export function useListCommunityGigResponses<TData = Awaited<ReturnType<typeof listCommunityGigResponses>>, TError = ErrorType<unknown>>(
+ gigId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCommunityGigResponses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCommunityGigResponsesQueryOptions(gigId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateCommunityGigResponseUrl = (gigId: string,) => {
+
+
+
+
+  return `/api/community-gigs/${gigId}/responses`
+}
+
+/**
+ * @summary Respond privately to a community gig
+ */
+export const createCommunityGigResponse = async (gigId: string,
+    communityGigResponseCreate: CommunityGigResponseCreate, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGigResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommunityGigResponse>(getCreateCommunityGigResponseUrl(gigId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(communityGigResponseCreate)
+  }
+);}
+
+
+
+
+
+export const getCreateCommunityGigResponseMutationKey = () => ['createCommunityGigResponse'] as const;
+
+export const getCreateCommunityGigResponseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityGigResponse>>, TError,CreateCommunityGigResponseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCommunityGigResponse>>, TError,CreateCommunityGigResponseMutationVariables, TContext> => {
+
+const mutationKey = getCreateCommunityGigResponseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCommunityGigResponse>>, CreateCommunityGigResponseMutationVariables> = (props) => {
+          const {gigId,data} = props ?? {};
+
+          return  createCommunityGigResponse(gigId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCommunityGigResponseMutationResult = NonNullable<Awaited<ReturnType<typeof createCommunityGigResponse>>>
+    export type CreateCommunityGigResponseMutationBody = BodyType<CommunityGigResponseCreate>
+    export type CreateCommunityGigResponseMutationError = ErrorType<unknown>
+    export type CreateCommunityGigResponseMutationVariables = {gigId: string;data: BodyType<CommunityGigResponseCreate>}
+
+    /**
+ * @summary Respond privately to a community gig
+ */
+export const useCreateCommunityGigResponse = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityGigResponse>>, TError,CreateCommunityGigResponseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCommunityGigResponse>>,
+        TError,
+        CreateCommunityGigResponseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateCommunityGigResponseMutationOptions(options));
+    }
+
+export const getDecideCommunityGigResponseUrl = (gigId: string,
+    responseId: string,) => {
+
+
+
+
+  return `/api/community-gigs/${gigId}/responses/${responseId}`
+}
+
+/**
+ * @summary Accept or decline a gig response
+ */
+export const decideCommunityGigResponse = async (gigId: string,
+    responseId: string,
+    communityGigResponseDecision: CommunityGigResponseDecision, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGigResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<CommunityGigResponse>(getDecideCommunityGigResponseUrl(gigId,responseId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(communityGigResponseDecision)
+  }
+);}
+
+
+
+
+
+export const getDecideCommunityGigResponseMutationKey = () => ['decideCommunityGigResponse'] as const;
+
+export const getDecideCommunityGigResponseMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideCommunityGigResponse>>, TError,DecideCommunityGigResponseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof decideCommunityGigResponse>>, TError,DecideCommunityGigResponseMutationVariables, TContext> => {
+
+const mutationKey = getDecideCommunityGigResponseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof decideCommunityGigResponse>>, DecideCommunityGigResponseMutationVariables> = (props) => {
+          const {gigId,responseId,data} = props ?? {};
+
+          return  decideCommunityGigResponse(gigId,responseId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DecideCommunityGigResponseMutationResult = NonNullable<Awaited<ReturnType<typeof decideCommunityGigResponse>>>
+    export type DecideCommunityGigResponseMutationBody = BodyType<CommunityGigResponseDecision>
+    export type DecideCommunityGigResponseMutationError = ErrorType<unknown>
+    export type DecideCommunityGigResponseMutationVariables = {gigId: string;responseId: string;data: BodyType<CommunityGigResponseDecision>}
+
+    /**
+ * @summary Accept or decline a gig response
+ */
+export const useDecideCommunityGigResponse = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideCommunityGigResponse>>, TError,DecideCommunityGigResponseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof decideCommunityGigResponse>>,
+        TError,
+        DecideCommunityGigResponseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDecideCommunityGigResponseMutationOptions(options));
+    }
+
+export const getCompleteCommunityGigUrl = (gigId: string,) => {
+
+
+
+
+  return `/api/community-gigs/${gigId}/complete`
+}
+
+/**
+ * @summary Mark an accepted community gig as complete
+ */
+export const completeCommunityGig = async (gigId: string, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGig> => {
+
+  return customFetch<CommunityGig>(getCompleteCommunityGigUrl(gigId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCompleteCommunityGigMutationKey = () => ['completeCommunityGig'] as const;
+
+export const getCompleteCommunityGigMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCommunityGig>>, TError,CompleteCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeCommunityGig>>, TError,CompleteCommunityGigMutationVariables, TContext> => {
+
+const mutationKey = getCompleteCommunityGigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeCommunityGig>>, CompleteCommunityGigMutationVariables> = (props) => {
+          const {gigId} = props ?? {};
+
+          return  completeCommunityGig(gigId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteCommunityGigMutationResult = NonNullable<Awaited<ReturnType<typeof completeCommunityGig>>>
+
+    export type CompleteCommunityGigMutationError = ErrorType<unknown>
+    export type CompleteCommunityGigMutationVariables = {gigId: string}
+
+    /**
+ * @summary Mark an accepted community gig as complete
+ */
+export const useCompleteCommunityGig = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeCommunityGig>>, TError,CompleteCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeCommunityGig>>,
+        TError,
+        CompleteCommunityGigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteCommunityGigMutationOptions(options));
+    }
+
+export const getCloseCommunityGigUrl = (gigId: string,) => {
+
+
+
+
+  return `/api/community-gigs/${gigId}/close`
+}
+
+/**
+ * @summary Close your community gig to new responses
+ */
+export const closeCommunityGig = async (gigId: string, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGig> => {
+
+  return customFetch<CommunityGig>(getCloseCommunityGigUrl(gigId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCloseCommunityGigMutationKey = () => ['closeCommunityGig'] as const;
+
+export const getCloseCommunityGigMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeCommunityGig>>, TError,CloseCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof closeCommunityGig>>, TError,CloseCommunityGigMutationVariables, TContext> => {
+
+const mutationKey = getCloseCommunityGigMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closeCommunityGig>>, CloseCommunityGigMutationVariables> = (props) => {
+          const {gigId} = props ?? {};
+
+          return  closeCommunityGig(gigId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloseCommunityGigMutationResult = NonNullable<Awaited<ReturnType<typeof closeCommunityGig>>>
+
+    export type CloseCommunityGigMutationError = ErrorType<unknown>
+    export type CloseCommunityGigMutationVariables = {gigId: string}
+
+    /**
+ * @summary Close your community gig to new responses
+ */
+export const useCloseCommunityGig = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closeCommunityGig>>, TError,CloseCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof closeCommunityGig>>,
+        TError,
+        CloseCommunityGigMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCloseCommunityGigMutationOptions(options));
     }
 
 export const getListChannelsUrl = (params?: ListChannelsParams,) => {

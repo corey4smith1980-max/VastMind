@@ -41,6 +41,7 @@ function RootLayoutNav() {
       <Stack.Screen name="channel/[id]" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
       <Stack.Screen name="creator/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="video-studio" options={{ headerShown: false }} />
+      <Stack.Screen name="communities" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
     </Stack>
   );
 }
