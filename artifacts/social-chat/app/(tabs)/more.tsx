@@ -10,7 +10,7 @@ const ITEMS = [
   { label: "Business tools", detail: "Manage your shop and customer inbox", icon: "briefcase", href: "/(tabs)/business" },
   { label: "Channels", detail: "Updates from the people you follow", icon: "radio", href: "/(tabs)/channels" },
   { label: "Status & stories", detail: "Photos and moments that expire", icon: "aperture", href: "/stories" },
-  { label: "VastMind ID", detail: "Passkeys and account security", icon: "lock", href: "/(tabs)/mail" },
+  { label: "VastMind ID", detail: "Passkeys and account security", icon: "lock", href: "/account-security" },
   { label: "Your profile", detail: "Name, bio and privacy", icon: "user", href: "/profile" },
   { label: "Alerts", detail: "Messages, reactions and community updates", icon: "bell", href: "/notifications" },
 ] as const;

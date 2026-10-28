@@ -21,7 +21,7 @@ import { setBaseUrl } from '@workspace/api-client-react';
 import { AuthGate } from '@/components/AuthGate';
 import { UsernameSetupGate } from '@/components/UsernameSetupGate';
 import { MobileRealtimeProvider } from '@/state/Realtime';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 const domain = process.env.EXPO_PUBLIC_DOMAIN;
 if (domain) setBaseUrl(`https://${domain}`);
@@ -40,6 +40,7 @@ function RootLayoutNav() {
       <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="channel/[id]" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
       <Stack.Screen name="creator/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="account-security" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
       <Stack.Screen name="video-studio" options={{ headerShown: false }} />
       <Stack.Screen name="communities" options={{ headerShown: false, presentation: 'card', animation: 'slide_from_right' }} />
     </Stack>
@@ -55,12 +56,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (fontsLoaded || fontError || Platform.OS === 'web') {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!fontsLoaded && !fontError && Platform.OS !== 'web') return null;
   if (!publishableKey || !domain) return <Text>Missing authentication or API configuration. Set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY and EXPO_PUBLIC_DOMAIN, then rebuild.</Text>;
 
   return (

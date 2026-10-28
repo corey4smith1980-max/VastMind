@@ -43,7 +43,7 @@ function httpStatus(error: unknown): number | undefined {
 /** Shared auth state: new mobile sign-ins use the same passkeys and recovery
  * phrase as web, while existing Clerk sessions remain usable during migration. */
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn, getToken, userId: clerkUserId } = useAuth();
+  const { isSignedIn, getToken, userId: clerkUserId } = useAuth();
   const { session } = useSession();
   const { signOut: clerkSignOut } = useClerk();
   const colors = useColors();
@@ -175,8 +175,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [exchange]);
 
-  if (!isLoaded || !storedSessionLoaded || readyUser !== activeUserId) {
-    return <ActivityIndicator accessibilityLabel="Loading secure session" color={colors.primary} />;
+  if (!storedSessionLoaded || readyUser !== activeUserId) {
+    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: colors.background }}>
+      <ActivityIndicator accessibilityLabel="Loading secure session" color={colors.primary} />
+      <Text accessibilityLabel="Checking your secure VastMind sign-in" style={{ color: colors.mutedForeground, textAlign: 'center' }}>Checking your secure VastMind sign-in…</Text>
+    </View>;
   }
   if (!mobileSession && session?.currentTask) {
     return <View style={{ flex: 1, padding: 32, justifyContent: 'center', backgroundColor: colors.background }}>

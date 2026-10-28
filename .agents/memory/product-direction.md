@@ -37,7 +37,7 @@ Users should sign in with passkeys and a user-held recovery phrase. Web and nati
 
 **Why:** The user explicitly chose passkeys and a recovery phrase, asked for web/mobile login parity, selected hosted service before self-hosting, and wants existing accounts migrated gradually.
 
-**How to apply:** Keep passkey sign-up, sign-in, and recovery aligned across clients while preserving legacy accounts during migration. Keep account-recovery keys separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
+**How to apply:** Keep passkey sign-up, sign-in, and recovery aligned across clients while preserving legacy accounts during migration. On native, show VastMind authentication without waiting for Clerk initialization; restore a legacy Clerk session once it becomes available. Keep account-recovery keys separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
 
 Ordinary emoji should be free and static. VastMind-specific premium emoji should be animated and intended for paid access; billing is deferred until a payment provider is activated.
 

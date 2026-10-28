@@ -45,55 +45,55 @@ export default function VideosScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#10262b", paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ minHeight: 98, paddingHorizontal: 15, paddingTop: 5, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ color: "#f6efe4", fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Your feed"}</Text>
+          <Text style={{ color: colors.foreground, fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Your feed"}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Reset video viewing history" disabled={reset.isPending} onPress={confirmReset}>
-              <Feather name="rotate-ccw" size={19} color="#f6efe4" />
+              <Feather name="rotate-ccw" size={19} color={colors.foreground} />
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Open communities and local opportunities" onPress={() => router.push("/communities")} hitSlop={6}>
-              <Feather name="users" size={19} color="#f6efe4" />
+              <Feather name="users" size={19} color={colors.foreground} />
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Create a post, photo, poll, or clip" onPress={create}>
-              <Feather name="plus-circle" size={24} color="#f5c04a" />
+              <Feather name="plus-circle" size={24} color={colors.primary} />
             </Pressable>
           </View>
         </View>
         <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
           {FEEDS.map(option => (
             <Pressable key={option.id} accessibilityRole="tab" accessibilityState={{ selected: feed === option.id }}
-              onPress={() => setFeed(option.id)} style={{ borderRadius: 18, paddingHorizontal: 13, paddingVertical: 7, backgroundColor: feed === option.id ? "#f6efe4" : "rgba(255,255,255,.12)" }}>
-              <Text style={{ fontSize: 12, fontWeight: "700", color: feed === option.id ? "#10262b" : "#f6efe4" }}>{option.label}</Text>
+              onPress={() => setFeed(option.id)} style={{ borderRadius: 18, paddingHorizontal: 13, paddingVertical: 7, backgroundColor: feed === option.id ? colors.primary : colors.card, borderWidth: 1, borderColor: feed === option.id ? colors.primary : colors.border }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: feed === option.id ? colors.primaryForeground : colors.foreground }}>{option.label}</Text>
             </Pressable>
           ))}
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, backgroundColor: "rgba(255,255,255,.1)", borderRadius: 18, paddingHorizontal: 12 }}>
-          <Feather name="search" size={14} color="rgba(246,239,228,.6)" />
-          <TextInput accessibilityLabel="Search posts and clips" value={q} onChangeText={setQ} placeholder="Search posts and clips" placeholderTextColor="rgba(246,239,228,.5)" returnKeyType="search" style={{ flex: 1, minHeight: 36, color: "#f6efe4", fontSize: 13 }} />
-          {q ? <Pressable accessibilityLabel="Clear search" onPress={() => setQ("")}><Feather name="x" size={14} color="#f6efe4" /></Pressable> : null}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 18, paddingHorizontal: 12 }}>
+          <Feather name="search" size={14} color={colors.mutedForeground} />
+          <TextInput accessibilityLabel="Search posts and clips" value={q} onChangeText={setQ} placeholder="Search posts and clips" placeholderTextColor={colors.mutedForeground} returnKeyType="search" style={{ flex: 1, minHeight: 36, color: colors.foreground, fontSize: 13 }} />
+          {q ? <Pressable accessibilityLabel="Clear search" onPress={() => setQ("")}><Feather name="x" size={14} color={colors.foreground} /></Pressable> : null}
         </View>
         {communityId ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Show all posts and clips" onPress={() => router.replace("/(tabs)/videos")}
-            style={{ alignSelf: "flex-start", marginTop: 8, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: "rgba(255,255,255,.12)", flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <Feather name="users" size={12} color="#f6efe4" />
-            <Text style={{ color: "#f6efe4", fontSize: 10, fontWeight: "700" }}>Community posts · Show all</Text>
+            style={{ alignSelf: "flex-start", marginTop: 8, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: colors.secondary, flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Feather name="users" size={12} color={colors.primary} />
+            <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: "700" }}>Community posts · Show all</Text>
           </Pressable>
         ) : null}
       </View>
       {clips.isLoading && clips.items.length === 0
-        ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /><Text style={{ marginTop: 12, color: "#f6efe4" }}>Finding clips for your circle…</Text></View>
+        ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /><Text style={{ marginTop: 12, color: colors.foreground }}>Finding clips for your circle…</Text></View>
         : clips.isError && clips.items.length === 0
-          ? <Pressable accessibilityRole="button" onPress={clips.retry} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Feather name="refresh-cw" size={28} color="#f6efe4" /><Text style={{ marginTop: 12, color: "#f6efe4", textAlign: "center" }}>Couldn't load your feed. Tap to try again.</Text></Pressable>
+          ? <Pressable accessibilityRole="button" onPress={clips.retry} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}><Feather name="refresh-cw" size={28} color={colors.primary} /><Text style={{ marginTop: 12, color: colors.foreground, textAlign: "center" }}>Couldn't load your feed. Tap to try again.</Text></Pressable>
           : clips.items.length
             ? <ReelPager items={clips.items} focused={focused} onEndReached={clips.loadNext} bottomInset={insets.bottom + 58}
                 onRefresh={clips.refresh} refreshing={clips.isFetching && !clips.loadingMore}
-                footer={clips.loadingMore ? <ActivityIndicator color="#f6efe4" style={{ padding: 16 }} accessibilityLabel="Loading more clips" /> : null} />
+                footer={clips.loadingMore ? <ActivityIndicator color={colors.primary} style={{ padding: 16 }} accessibilityLabel="Loading more clips" /> : null} />
             : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}>
-                <Feather name="film" size={34} color="#f5c04a" />
-                <Text style={{ color: "#f6efe4", fontSize: 20, fontWeight: "700", marginTop: 16 }}>{dq ? "Nothing matches" : "Your circle, in motion"}</Text>
-                <Text style={{ color: "rgba(246,239,228,.75)", textAlign: "center", marginTop: 8 }}>{dq ? `No posts or clips mention "${dq}".` : "Post a thought, ask a poll, or record a clip."}</Text>
+                <Feather name="film" size={34} color={colors.accent} />
+                <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: "700", marginTop: 16 }}>{dq ? "Nothing matches" : "Your circle, in motion"}</Text>
+                <Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 8 }}>{dq ? `No posts or clips mention "${dq}".` : "Post a thought, ask a poll, or record a clip."}</Text>
                 <Pressable accessibilityRole="button" onPress={create} style={{ marginTop: 18, backgroundColor: colors.primary, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 24 }}>
                   <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Share something</Text>
                 </Pressable>
