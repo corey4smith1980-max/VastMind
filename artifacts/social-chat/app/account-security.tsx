@@ -1,9 +1,22 @@
 import React from "react";
-import { Alert, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { AppHeader, PageFrame, StorageNotice } from "@/components/common";
 import { useColors } from "@/hooks/useColors";
 import { useAppStore } from "@/state/AppStore";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  getListIdentitySessionsQueryKey,
+  useListIdentitySessions,
+  useRevokeIdentitySession,
+} from "@workspace/api-client-react";
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Date unavailable"
+    : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
 
 const webSecurityUrl = () => {
   const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -15,6 +28,18 @@ const webSecurityUrl = () => {
 export default function AccountSecurityScreen() {
   const colors = useColors();
   const { profile } = useAppStore();
+  const queryClient = useQueryClient();
+  const sessionKey = getListIdentitySessionsQueryKey();
+  const sessions = useListIdentitySessions({ query: { queryKey: sessionKey, refetchOnWindowFocus: true } });
+  const revoke = useRevokeIdentitySession({
+    mutation: {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: sessionKey });
+        Alert.alert("Session ended", "That device must sign in again to access this account.");
+      },
+      onError: () => Alert.alert("Couldn't end this session", "Refresh the list and try again."),
+    },
+  });
 
   const manageSecurity = async () => {
     const url = webSecurityUrl();
@@ -27,6 +52,17 @@ export default function AccountSecurityScreen() {
     } catch {
       Alert.alert("Couldn't open security settings", "Try again when your device has an internet connection.");
     }
+  };
+
+  const confirmRevoke = (sessionId: string, kind: "web" | "mobile") => {
+    Alert.alert(
+      "End this session?",
+      `${kind === "mobile" ? "That VastMind app" : "That browser"} will be signed out and must sign in again.`,
+      [
+        { text: "Keep session", style: "cancel" },
+        { text: "End session", style: "destructive", onPress: () => revoke.mutate({ sessionId }) },
+      ],
+    );
   };
 
   return (
@@ -75,6 +111,77 @@ export default function AccountSecurityScreen() {
         <Feather name="external-link" size={17} color={colors.primaryForeground} />
         <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Manage sign-in on web</Text>
       </Pressable>
+
+      <View style={{ marginTop: 26 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Text accessibilityRole="header" style={{ color: colors.foreground, fontSize: 21, fontWeight: "800" }}>Signed-in devices</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Refresh signed-in devices"
+            accessibilityState={{ disabled: sessions.isFetching }}
+            disabled={sessions.isFetching}
+            onPress={() => void sessions.refetch()}
+            style={{ minWidth: 42, minHeight: 42, alignItems: "center", justifyContent: "center" }}
+          >
+            {sessions.isFetching
+              ? <ActivityIndicator size="small" color={colors.primary} />
+              : <Feather name="refresh-cw" size={18} color={colors.primary} />}
+          </Pressable>
+        </View>
+        <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 19, marginTop: 6 }}>
+          Review active VastMind and legacy sign-ins. This list shows only app or browser type and dates—not IP addresses, precise location, browser details, or device fingerprints.
+        </Text>
+
+        {sessions.isLoading ? (
+          <View accessibilityRole="progressbar" style={{ marginTop: 14, flexDirection: "row", alignItems: "center", gap: 9 }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={{ color: colors.mutedForeground, fontSize: 13 }}>Loading active sessions…</Text>
+          </View>
+        ) : sessions.isError ? (
+          <View accessibilityRole="alert" style={{ marginTop: 14, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card }}>
+            <Text style={{ color: colors.foreground, fontWeight: "700" }}>Sessions couldn’t be loaded.</Text>
+            <Pressable accessibilityRole="button" onPress={() => void sessions.refetch()} style={{ paddingVertical: 10, alignSelf: "flex-start" }}>
+              <Text style={{ color: colors.primary, fontWeight: "700" }}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : (sessions.data?.items.length ?? 0) === 0 ? (
+          <Text style={{ color: colors.mutedForeground, fontSize: 13, marginTop: 14 }}>No active sessions were found for this account.</Text>
+        ) : (
+          <View style={{ gap: 10, marginTop: 14 }}>
+            {[...(sessions.data?.items ?? [])]
+              .sort((a, b) => Number(b.current) - Number(a.current) || Date.parse(b.createdAt) - Date.parse(a.createdAt))
+              .map((session) => (
+                <View key={session.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderWidth: 1, borderColor: colors.border, borderRadius: 16, backgroundColor: colors.card }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 13, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" }}>
+                    <Feather name={session.kind === "mobile" ? "smartphone" : "globe"} size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                      <Text style={{ color: colors.foreground, fontWeight: "700" }}>{session.kind === "mobile" ? "VastMind app" : "Web browser"}</Text>
+                      {session.current ? <Text style={{ color: colors.primary, fontSize: 10, fontWeight: "800" }}>THIS SESSION</Text> : null}
+                    </View>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 4 }}>Signed in {formatDate(session.createdAt)}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Expires {formatDate(session.expiresAt)}</Text>
+                  </View>
+                  {session.current ? (
+                    <Text style={{ color: colors.mutedForeground, fontSize: 10 }}>Current</Text>
+                  ) : (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`End ${session.kind === "mobile" ? "VastMind app" : "web browser"} session`}
+                      accessibilityState={{ disabled: revoke.isPending }}
+                      disabled={revoke.isPending}
+                      onPress={() => confirmRevoke(session.id, session.kind)}
+                      style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: colors.border, opacity: revoke.isPending ? 0.5 : 1 }}
+                    >
+                      <Text style={{ color: colors.coral, fontSize: 11, fontWeight: "700" }}>End</Text>
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+          </View>
+        )}
+      </View>
     </PageFrame>
   );
 }

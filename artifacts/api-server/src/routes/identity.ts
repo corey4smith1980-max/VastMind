@@ -4,10 +4,16 @@ import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import { verifyAccountRecoveryChallenge } from "@workspace/mail-crypto";
 import { pool } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { clerkClient, getAuth } from "@clerk/express";
+import {
+  ListIdentitySessionsResponse,
+  RevokeIdentitySessionParams,
+  RevokeIdentitySessionResponse,
+} from "@workspace/api-zod";
 import { assert, HttpError, query, provision, uuid } from "../lib/social";
 import {
   createRegistrationIntent,
+  mobileSessionFromToken,
   requestHeaders,
   vastMindAuth,
 } from "../lib/vastmind-auth";
@@ -305,6 +311,133 @@ router.post("/identity/mobile-session-revoke", async (req, res) => {
   assert(token && token.length <= 256, 401, "A VastMind mobile session is required.");
   await query(`DELETE FROM "session" WHERE token=$1 AND user_agent='VastMind mobile app'`, [token]);
   res.status(200).json({ revoked: true });
+});
+
+type SessionIdentity = {
+  userId: string;
+  sessionId: string;
+  provider: "vastmind" | "clerk";
+};
+
+async function currentSessionIdentity(req: Parameters<typeof getAuth>[0]): Promise<SessionIdentity | null> {
+  const bearerToken = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (bearerToken) {
+    const nativeSession = await mobileSessionFromToken(bearerToken);
+    if (nativeSession) return { ...nativeSession, provider: "vastmind" };
+  }
+
+  const passkeySession = await vastMindAuth.api.getSession({ headers: requestHeaders(req) });
+  if (passkeySession?.user.id && passkeySession.session.id) {
+    return { userId: passkeySession.user.id, sessionId: passkeySession.session.id, provider: "vastmind" };
+  }
+
+  const legacy = getAuth(req);
+  if (legacy.userId && legacy.sessionId) {
+    return { userId: legacy.userId, sessionId: legacy.sessionId, provider: "clerk" };
+  }
+  return null;
+}
+
+// Deliberately return only a broad app/browser label and session dates. IP,
+// location, browser details, and device fingerprints never leave the server.
+router.get("/identity/sessions", async (req, res): Promise<void> => {
+  const current = await currentSessionIdentity(req);
+  assert(current, 401, "Sign in to review your sessions.");
+
+  const { rows } = await pool.query<{
+    id: string;
+    created_at: Date | string;
+    expires_at: Date | string;
+    user_agent: string | null;
+  }>(
+    `SELECT id, created_at, expires_at, user_agent
+     FROM "session"
+     WHERE user_id=$1 AND expires_at > now()
+     ORDER BY created_at DESC
+     LIMIT 100`,
+    [current.userId],
+  );
+
+  const sessions: Array<{
+    id: string;
+    provider: "vastmind" | "clerk";
+    kind: "web" | "mobile";
+    createdAt: string;
+    expiresAt: string;
+    current: boolean;
+  }> = rows.map((session) => ({
+    id: `vm:${session.id}`,
+    provider: "vastmind" as const,
+    kind: session.user_agent === "VastMind mobile app" ? "mobile" as const : "web" as const,
+    createdAt: new Date(session.created_at).toISOString(),
+    expiresAt: new Date(session.expires_at).toISOString(),
+    current: current.provider === "vastmind" && current.sessionId === session.id,
+  }));
+
+  // Clerk is retained only as a migration bridge. Ask it for session records
+  // only for legacy Clerk IDs, then project them into the same minimal shape.
+  if (current.userId.startsWith("user_")) {
+    const legacySessions = await clerkClient.sessions.getSessionList({
+      userId: current.userId,
+      status: "active",
+      limit: 100,
+    });
+    for (const session of legacySessions.data) {
+      if (session.expireAt <= Date.now()) continue;
+      sessions.push({
+        id: `clerk:${session.id}`,
+        provider: "clerk",
+        kind: "web",
+        createdAt: new Date(session.createdAt).toISOString(),
+        expiresAt: new Date(session.expireAt).toISOString(),
+        current: current.provider === "clerk" && current.sessionId === session.id,
+      });
+    }
+  }
+
+  sessions.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  res.json(ListIdentitySessionsResponse.parse({ items: sessions }));
+});
+
+router.delete("/identity/sessions/:sessionId", async (req, res): Promise<void> => {
+  const current = await currentSessionIdentity(req);
+  assert(current, 401, "Sign in to manage your sessions.");
+  const params = RevokeIdentitySessionParams.safeParse(req.params);
+  assert(params.success, 400, "Choose a valid session.");
+  const [provider, sessionId] = params.data.sessionId.split(/:(.+)/, 2);
+  assert(provider && sessionId, 400, "Choose a valid session.");
+  assert(
+    !(provider === current.provider && sessionId === current.sessionId),
+    400,
+    "This is the session you are using now. Sign out here to end it.",
+  );
+
+  if (provider === "vm") {
+    const { rows: [revoked] } = await pool.query(
+      `DELETE FROM "session"
+       WHERE id=$1 AND user_id=$2 AND expires_at > now()
+       RETURNING id`,
+      [sessionId, current.userId],
+    );
+    assert(revoked, 404, "That session is no longer active on this account.");
+  } else if (provider === "clerk" && current.userId.startsWith("user_")) {
+    let session;
+    try {
+      session = await clerkClient.sessions.getSession(sessionId);
+    } catch {
+      throw new HttpError(404, "That session is no longer active on this account.");
+    }
+    assert(
+      session.userId === current.userId && session.status === "active",
+      404,
+      "That session is no longer active on this account.",
+    );
+    await clerkClient.sessions.revokeSession(sessionId);
+  } else {
+    throw new HttpError(404, "That session is no longer active on this account.");
+  }
+
+  res.json(RevokeIdentitySessionResponse.parse({ revoked: true }));
 });
 
 export default router;

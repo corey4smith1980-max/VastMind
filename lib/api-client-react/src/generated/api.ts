@@ -85,6 +85,8 @@ import type {
   GetVideoCapabilities200,
   GetVideosParams,
   HealthStatus,
+  IdentitySessionList,
+  IdentitySessionRevoked,
   InviteResult,
   JoinResult,
   ListChannelsParams,
@@ -2988,6 +2990,157 @@ export const useRevokeMobileSession = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRevokeMobileSessionMutationOptions(options));
+    }
+
+export const getListIdentitySessionsUrl = () => {
+
+
+
+
+  return `/api/identity/sessions`
+}
+
+/**
+ * @summary List active sign-in sessions for the signed-in member
+ */
+export const listIdentitySessions = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentitySessionList> => {
+
+  return customFetch<IdentitySessionList>(getListIdentitySessionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListIdentitySessionsQueryKey = () => {
+    return [
+    `/api/identity/sessions`
+    ] as const;
+    }
+
+
+export const getListIdentitySessionsQueryOptions = <TData = Awaited<ReturnType<typeof listIdentitySessions>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIdentitySessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListIdentitySessionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listIdentitySessions>>> = ({ signal }) => listIdentitySessions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listIdentitySessions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListIdentitySessionsQueryResult = NonNullable<Awaited<ReturnType<typeof listIdentitySessions>>>
+export type ListIdentitySessionsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List active sign-in sessions for the signed-in member
+ */
+
+export function useListIdentitySessions<TData = Awaited<ReturnType<typeof listIdentitySessions>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIdentitySessions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListIdentitySessionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRevokeIdentitySessionUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/identity/sessions/${sessionId}`
+}
+
+/**
+ * @summary Revoke one of the signed-in member's sessions
+ */
+export const revokeIdentitySession = async (sessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<IdentitySessionRevoked> => {
+
+  return customFetch<IdentitySessionRevoked>(getRevokeIdentitySessionUrl(sessionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeIdentitySessionMutationKey = () => ['revokeIdentitySession'] as const;
+
+export const getRevokeIdentitySessionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeIdentitySession>>, TError,RevokeIdentitySessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeIdentitySession>>, TError,RevokeIdentitySessionMutationVariables, TContext> => {
+
+const mutationKey = getRevokeIdentitySessionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeIdentitySession>>, RevokeIdentitySessionMutationVariables> = (props) => {
+          const {sessionId} = props ?? {};
+
+          return  revokeIdentitySession(sessionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeIdentitySessionMutationResult = NonNullable<Awaited<ReturnType<typeof revokeIdentitySession>>>
+
+    export type RevokeIdentitySessionMutationError = ErrorType<void>
+    export type RevokeIdentitySessionMutationVariables = {sessionId: string}
+
+    /**
+ * @summary Revoke one of the signed-in member's sessions
+ */
+export const useRevokeIdentitySession = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeIdentitySession>>, TError,RevokeIdentitySessionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeIdentitySession>>,
+        TError,
+        RevokeIdentitySessionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRevokeIdentitySessionMutationOptions(options));
     }
 
 export const getGetMyProfileUrl = () => {

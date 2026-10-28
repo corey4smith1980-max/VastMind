@@ -1668,6 +1668,38 @@ export const RevokeMobileSessionResponse = zod.object({
 
 
 /**
+ * @summary List active sign-in sessions for the signed-in member
+ */
+export const ListIdentitySessionsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "provider": zod.enum(['vastmind', 'clerk']),
+  "kind": zod.enum(['web', 'mobile']),
+  "createdAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date(),
+  "current": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Revoke one of the signed-in member's sessions
+ */
+export const revokeIdentitySessionPathSessionIdMin = 4;
+export const revokeIdentitySessionPathSessionIdMax = 256;
+
+
+
+export const RevokeIdentitySessionParams = zod.object({
+  "sessionId": zod.coerce.string().min(revokeIdentitySessionPathSessionIdMin).max(revokeIdentitySessionPathSessionIdMax)
+})
+
+export const RevokeIdentitySessionResponse = zod.object({
+  "revoked": zod.boolean()
+})
+
+
+/**
  * @summary Get the signed-in member's profile
  */
 export const GetMyProfileResponse = zod.object({

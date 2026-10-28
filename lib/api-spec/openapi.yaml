@@ -138,6 +138,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MobileSessionRevoked"
+  /identity/sessions:
+    get:
+      operationId: listIdentitySessions
+      tags: [identity]
+      summary: List active sign-in sessions for the signed-in member
+      responses:
+        "200":
+          description: Active sessions with privacy-safe labels and dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySessionList"
+        "401":
+          description: A signed-in member is required
+  /identity/sessions/{sessionId}:
+    delete:
+      operationId: revokeIdentitySession
+      tags: [identity]
+      summary: Revoke one of the signed-in member's sessions
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema: { type: string, minLength: 4, maxLength: 256 }
+      responses:
+        "200":
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentitySessionRevoked"
+        "401":
+          description: A signed-in member is required
+        "404":
+          description: The session was not found for this account
   /me:
     get:
       operationId: getMyProfile
@@ -2469,6 +2504,31 @@ components:
         userId: { type: string }
         expiresAt: { type: string, format: date-time }
     MobileSessionRevoked:
+      type: object
+      additionalProperties: false
+      required: [revoked]
+      properties:
+        revoked: { type: boolean }
+    IdentitySession:
+      type: object
+      additionalProperties: false
+      required: [id, provider, kind, createdAt, expiresAt, current]
+      properties:
+        id: { type: string }
+        provider: { type: string, enum: [vastmind, clerk] }
+        kind: { type: string, enum: [web, mobile] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        current: { type: boolean }
+    IdentitySessionList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/IdentitySession" }
+    IdentitySessionRevoked:
       type: object
       additionalProperties: false
       required: [revoked]

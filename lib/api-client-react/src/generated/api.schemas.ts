@@ -1180,6 +1180,39 @@ export interface MobileSessionRevoked {
   revoked: boolean;
 }
 
+export type IdentitySessionProvider = typeof IdentitySessionProvider[keyof typeof IdentitySessionProvider];
+
+
+export const IdentitySessionProvider = {
+  vastmind: 'vastmind',
+  clerk: 'clerk',
+} as const;
+
+export type IdentitySessionKind = typeof IdentitySessionKind[keyof typeof IdentitySessionKind];
+
+
+export const IdentitySessionKind = {
+  web: 'web',
+  mobile: 'mobile',
+} as const;
+
+export interface IdentitySession {
+  id: string;
+  provider: IdentitySessionProvider;
+  kind: IdentitySessionKind;
+  createdAt: string;
+  expiresAt: string;
+  current: boolean;
+}
+
+export interface IdentitySessionList {
+  items: IdentitySession[];
+}
+
+export interface IdentitySessionRevoked {
+  revoked: boolean;
+}
+
 export interface CommerceAcknowledgement {
   success: boolean;
 }

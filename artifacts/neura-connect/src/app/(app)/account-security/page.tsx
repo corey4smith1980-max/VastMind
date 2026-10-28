@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { PageScroll } from "@/components/page-scroll";
 import { AddPasskeyButton, MigrationNotice } from "@/components/vastmind-access";
+import { SessionManager } from "@/components/vastmind-access/session-manager";
 import { useAuth } from "@/lib/vastmind-auth";
 import { useMe } from "@/lib/me";
 
@@ -34,6 +35,7 @@ export default function AccountSecurityPage() {
             </div>
           )}
         </section>
+        <SessionManager />
         <MigrationNotice />
       </div>
     </PageScroll>
