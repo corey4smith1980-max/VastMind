@@ -33,11 +33,17 @@ VastMind identity is for account creation, login and profile identification only
 
 **How to apply:** Do not add email delivery or require external mail hosting for these identifiers. Preserve existing account IDs and stored data during migration; do not delete legacy content as part of retiring inbox UI.
 
-Users should sign in with passkeys and a user-held recovery phrase. Web and native apps must use the same sign-up and login method. VastMind-hosted encrypted data sync comes first; self-host support comes next. The organization should not have full control of users' private data.
+Users can add another device only by scanning its short-lived QR with a device already signed in, then confirming the account password on the device being added. A direct password or passkey login must not create a concurrent session. Web and native apps must follow the same rule. Users can still download a recovery phrase as a plain-text file, but the phrase itself must stay client-side. VastMind-hosted encrypted data sync comes first; self-host support comes next. The organization should not have full control of users' private data.
 
-**Why:** The user explicitly chose passkeys and a recovery phrase, asked for web/mobile login parity, selected hosted service before self-hosting, and wants existing accounts migrated gradually.
+**Why:** The user chose a 24-word recovery phrase and later specified QR approval from an already signed-in device plus password verification as the path for adding concurrent devices, across web and native clients.
 
-**How to apply:** Keep passkey sign-up, sign-in, and recovery aligned across clients while preserving legacy accounts during migration. On native, show VastMind authentication without waiting for Clerk initialization; restore a legacy Clerk session once it becomes available. Device review should show only broad app/browser type, sign-in and expiry dates, and the current-session marker; do not expose IP, location, browser details, or device fingerprints. Keep account-recovery keys separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
+**How to apply:** Direct password/passkey sign-in must not add another active session. For additional devices, require an authenticated current device to approve its QR and require the account password on the new device; make approval/revocation visible to the user. Preserve legacy accounts during migration and keep trust credentials revocable. Show only broad app/browser type and dates; do not expose or persist IP addresses, location, or device fingerprints. Recovery phrases are not retrievable after creation; a replacement is a new phrase, downloaded unencrypted by the user and activated only after confirmation. Keep account-recovery keys separate from content-encryption keys. Distinguish authentication from actual end-to-end encryption. Do not promise absolute zero tracking, spoofing or monitoring, or claim self-hosting exists before it works.
+
+A forgotten VastMind password may be reset from a passkey- or recovery-verified session. Resetting ends other sessions but must not add any device to the trusted-password list; normal password sign-in remains limited to previously trusted devices.
+
+**Why:** The user requested passkey-based password recovery and explicitly confirmed password access must stay locked to trusted devices.
+
+**How to apply:** Keep password-reset authorization separate from trusted-device enrollment. Revoke other sessions after a reset, preserve existing trust records, and never treat a password reset as approval for a new device.
 
 Ordinary emoji should be free and static. VastMind-specific premium emoji should be animated and intended for paid access; billing is deferred until a payment provider is activated.
 

@@ -1174,6 +1174,11 @@ export interface MobileSession {
   accessToken: string;
   userId: string;
   expiresAt: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  deviceTrustToken: string;
 }
 
 export interface MobileSessionRevoked {
@@ -1211,6 +1216,179 @@ export interface IdentitySessionList {
 
 export interface IdentitySessionRevoked {
   revoked: boolean;
+}
+
+export interface IdentityPasswordStatus {
+  enabled: boolean;
+}
+
+export interface IdentityPasswordInput {
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  newPassword: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  currentPassword?: string;
+}
+
+export interface IdentityPasswordResetInput {
+  /**
+     * @minLength 12
+     * @maxLength 128
+     */
+  newPassword: string;
+}
+
+export interface IdentityPasswordSaved {
+  saved: boolean;
+}
+
+export interface IdentityPasswordSignInInput {
+  /**
+     * @minLength 3
+     * @maxLength 32
+     * @pattern ^[A-Za-z0-9_]+$
+     */
+  username: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
+export interface IdentityPasswordSignIn {
+  signedIn: boolean;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  accessToken?: string;
+  userId?: string;
+  expiresAt?: string;
+}
+
+export type IdentityTrustedDeviceKind = typeof IdentityTrustedDeviceKind[keyof typeof IdentityTrustedDeviceKind];
+
+
+export const IdentityTrustedDeviceKind = {
+  web: 'web',
+  mobile: 'mobile',
+} as const;
+
+export interface IdentityTrustedDevice {
+  id: string;
+  kind: IdentityTrustedDeviceKind;
+  createdAt: string;
+  expiresAt: string;
+  lastUsedAt?: string | null;
+  current: boolean;
+}
+
+export interface IdentityTrustedDeviceList {
+  items: IdentityTrustedDevice[];
+}
+
+export interface IdentityTrustedDeviceCreated {
+  id: string;
+  expiresAt: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  token?: string;
+}
+
+export interface IdentityTrustedDeviceStatus {
+  trusted: boolean;
+}
+
+export interface IdentityTrustedDeviceRevoked {
+  revoked: boolean;
+}
+
+export interface IdentityRecoveryKeyInput {
+  /**
+     * @minLength 64
+     * @maxLength 64
+     * @pattern ^[0-9a-fA-F]{64}$
+     */
+  publicKey: string;
+}
+
+export interface IdentityRecoveryKeySaved {
+  saved: boolean;
+}
+
+export interface IdentityDeviceLinkRequest {
+  requestId: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  token: string;
+  /** @minLength 1 */
+  qrDataUrl: string;
+  expiresAt: string;
+}
+
+export interface IdentityDeviceLinkProofInput {
+  requestId: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  token: string;
+}
+
+export type IdentityDeviceLinkStatusStatus = typeof IdentityDeviceLinkStatusStatus[keyof typeof IdentityDeviceLinkStatusStatus];
+
+
+export const IdentityDeviceLinkStatusStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  processing: 'processing',
+  completed: 'completed',
+  expired: 'expired',
+} as const;
+
+export interface IdentityDeviceLinkStatus {
+  status: IdentityDeviceLinkStatusStatus;
+  expiresAt: string;
+}
+
+export interface IdentityDeviceLinkCompleteInput {
+  requestId: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  token: string;
+  /**
+     * @minLength 1
+     * @maxLength 128
+     */
+  password: string;
+}
+
+export interface IdentityDeviceLinkComplete {
+  signedIn: boolean;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  accessToken?: string;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  deviceTrustToken?: string;
+  userId?: string;
+  expiresAt?: string;
 }
 
 export interface CommerceAcknowledgement {

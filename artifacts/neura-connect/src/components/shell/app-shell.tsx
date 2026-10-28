@@ -11,7 +11,6 @@ import { BrandMark } from "@/components/brand";
 import { BootScreen, ErrorState } from "@/components/states";
 import { UserAvatar } from "@/components/user-avatar";
 import { ConnectionPill } from "@/components/shell/connection-pill";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { MeContext } from "@/lib/me";
 import { CallProvider } from "@/components/calling/call-provider";
@@ -21,19 +20,25 @@ import { UsernameSetup } from "@/components/shell/username-setup";
 
 // ---------- Navigation model ----------
 const NAV = [
-  { href: "/chats", label: "Chats", icon: MessagesSquare, primary: true },
-  { href: "/account-security", label: "VastMind ID", icon: Fingerprint },
-  { href: "/videos", label: "Feed", icon: Newspaper, primary: true },
-  { href: "/statuses", label: "Status", icon: CircleDashed, primary: true },
-  { href: "/communities", label: "Communities", icon: UsersRound, primary: true },
-  { href: "/channels", label: "Channels", icon: Radio },
-  { href: "/business", label: "Business", icon: Briefcase },
-  { href: "/shop", label: "Shop", icon: ShoppingBag, primary: true },
-  { href: "/notifications", label: "Alerts", icon: Bell },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/chats", label: "Chats", detail: "Messages and calls", icon: MessagesSquare },
+  { href: "/videos", label: "Feed", detail: "Posts and short videos", icon: Newspaper },
+  { href: "/statuses", label: "Status", detail: "Moments that expire", icon: CircleDashed },
+  { href: "/communities", label: "Communities", detail: "Local groups and opportunities", icon: UsersRound },
+  { href: "/channels", label: "Channels", detail: "Updates you follow", icon: Radio },
+  { href: "/shop", label: "Shop", detail: "Discover products and sellers", icon: ShoppingBag },
+  { href: "/business", label: "Business", detail: "Shop and customer tools", icon: Briefcase },
+  { href: "/notifications", label: "Alerts", detail: "Important activity", icon: Bell },
+  { href: "/account-security", label: "VastMind ID", detail: "Sign-in and recovery", icon: Fingerprint },
+  { href: "/settings", label: "Settings", detail: "Privacy and preferences", icon: Settings },
 ];
-// Keep the mobile dock to four destinations plus More, with Shop in the center.
-const MOBILE_PRIMARY_HREFS = ["/chats", "/videos", "/shop", "/statuses", "/communities"] as const;
+const NAV_SECTIONS = [
+  { label: "Your space", hrefs: ["/chats", "/videos", "/statuses"] },
+  { label: "Discover", hrefs: ["/communities", "/channels"] },
+  { label: "Business", hrefs: ["/shop", "/business"] },
+  { label: "Account", hrefs: ["/notifications", "/account-security", "/settings"] },
+] as const;
+// Keep the mobile dock focused, with the Shop action in the center position.
+const MOBILE_PRIMARY_HREFS = ["/chats", "/videos", "/shop", "/communities"] as const;
 const MOBILE_PRIMARY_SET = new Set<string>(MOBILE_PRIMARY_HREFS);
 
 function Badge({ n }: { n: number }) {
@@ -86,33 +91,48 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <MeContext.Provider value={me.data}><CallProvider>
       <div className="flex h-[100dvh] overflow-hidden bg-background">
-        {/* ---------- Desktop rail ---------- */}
-        <nav aria-label="Main" className="hidden w-[76px] shrink-0 flex-col items-center gap-1 bg-sidebar py-4 text-sidebar-foreground md:flex">
-          <Link href="/chats" aria-label="Home" className="mb-4"><BrandMark className="h-10 w-10" /></Link>
-          {NAV.map((n) => (
-            <Tooltip key={n.href}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={n.href}
-                  aria-label={n.label}
-                  aria-current={active(n.href) ? "page" : undefined}
-                  data-testid={`link-nav-${n.label.toLowerCase()}`}
-                  className={cn(
-                    "relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-200",
-                    active(n.href) ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--sidebar-primary))]" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  )}
-                >
-                  <n.icon className="h-5 w-5" />
-                  <Badge n={badgeFor(n.href)} />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">{n.label}</TooltipContent>
-            </Tooltip>
-          ))}
-          <div className="mt-auto flex flex-col items-center gap-3">
-            <ConnectionPill compact className="text-sidebar-foreground/70" />
-            <Link href="/settings" aria-label="Your profile">
+        {/* ---------- Desktop navigation ---------- */}
+        <nav aria-label="Main" className="hidden w-[248px] shrink-0 flex-col border-r bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
+          <Link href="/chats" aria-label="VastMind home" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
+            <BrandMark className="h-9 w-9 shrink-0" />
+            <span className="font-display text-lg font-semibold tracking-tight">VastMind</span>
+          </Link>
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-4">
+            {NAV_SECTIONS.map((section) => (
+              <section key={section.label} aria-label={section.label}>
+                <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/45">{section.label}</h2>
+                <div className="space-y-1">
+                  {section.hrefs.map((href) => {
+                    const n = NAV.find((item) => item.href === href);
+                    if (!n) return null;
+                    const selected = active(n.href);
+                    return (
+                      <Link key={n.href} href={n.href} aria-current={selected ? "page" : undefined}
+                        data-testid={`link-nav-${n.label.toLowerCase()}`}
+                        className={cn(
+                          "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+                          selected ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                        )}>
+                        <n.icon className="h-[18px] w-[18px] shrink-0" />
+                        <span className="flex-1">{n.label}</span>
+                        <Badge n={badgeFor(n.href)} />
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 border-t border-sidebar-foreground/10 px-2 pt-4">
+            <Link href="/settings" aria-label="Your profile" className="shrink-0">
               <UserAvatar id={me.data.id} name={me.data.name} src={me.data.avatarUrl} size="md" />
+            </Link>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{me.data.name}</p>
+              <ConnectionPill compact className="mt-1 text-sidebar-foreground/60" />
+            </div>
+            <Link href="/settings" aria-label="Open settings" className="rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground">
+              <Settings className="h-4 w-4" />
             </Link>
           </div>
         </nav>
@@ -122,7 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* ---------- Mobile bottom bar ---------- */}
         <nav aria-label="Main" className={cn("fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom)] md:hidden", inChat && "hidden")}>
-          <div className="mx-auto flex max-w-md items-stretch gap-1 rounded-[1.65rem] border bg-card/95 p-1.5 shadow-[0_12px_40px_-18px_hsl(var(--ink)/.55)] backdrop-blur">
+          <div className="mx-auto flex max-w-lg items-stretch gap-0.5 rounded-[1.65rem] border bg-card/95 p-1.5 shadow-[0_12px_40px_-18px_hsl(var(--ink)/.55)] backdrop-blur">
             {MOBILE_PRIMARY_HREFS.map((href) => {
               const n = NAV.find((item) => item.href === href);
               if (!n) return null;
@@ -143,17 +163,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <span className="relative grid h-8 w-9 place-items-center"><Menu className="h-[18px] w-[18px]" /><Badge n={unreadNotes} /></span><span>More</span>
                 </button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-3xl">
-                <SheetHeader><SheetTitle className="font-display">Everything else</SheetTitle></SheetHeader>
-                <div className="grid grid-cols-2 gap-2 p-4">
-                  {NAV.filter((n) => !MOBILE_PRIMARY_SET.has(n.href)).map((n) => (
-                    <Link key={n.href} href={n.href} className={cn("relative flex items-center gap-3 rounded-2xl border p-4 text-sm font-medium", active(n.href) && "border-primary text-primary")}>
-                      <n.icon className="h-5 w-5" />{n.label}
-                      {badgeFor(n.href) ? <span className="ml-auto rounded-full bg-primary px-2 font-mono text-[10px] text-primary-foreground">{badgeFor(n.href)}</span> : null}
-                    </Link>
-                  ))}
+              <SheetContent side="bottom" className="max-h-[82dvh] overflow-y-auto rounded-t-3xl pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+                <SheetHeader className="px-1"><SheetTitle className="font-display">Explore VastMind</SheetTitle></SheetHeader>
+                <div className="space-y-5 px-4 pt-4">
+                  {NAV_SECTIONS.map((section) => {
+                    const items = section.hrefs
+                      .filter((href) => !MOBILE_PRIMARY_SET.has(href))
+                      .map((href) => NAV.find((item) => item.href === href))
+                      .filter((item): item is (typeof NAV)[number] => !!item);
+                    if (!items.length) return null;
+                    return (
+                      <section key={section.label} aria-label={section.label}>
+                        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{section.label}</h3>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {items.map((n) => (
+                            <Link key={n.href} href={n.href} className={cn(
+                              "flex min-h-[62px] items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors hover:bg-muted/50",
+                              active(n.href) && "border-primary/50 bg-primary/5 text-primary",
+                            )}>
+                              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted/70"><n.icon className="h-[18px] w-[18px]" /></span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block text-sm font-semibold">{n.label}</span>
+                                <span className="mt-0.5 block truncate text-xs text-muted-foreground">{n.detail}</span>
+                              </span>
+                              {badgeFor(n.href) ? <span className="rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] text-primary-foreground">{badgeFor(n.href)}</span> : null}
+                            </Link>
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-center pb-4"><ConnectionPill /></div>
+                <div className="flex justify-center py-4"><ConnectionPill /></div>
               </SheetContent>
             </Sheet>
           </div>

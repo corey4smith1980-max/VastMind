@@ -173,6 +173,246 @@ paths:
           description: A signed-in member is required
         "404":
           description: The session was not found for this account
+  /identity/password-status:
+    get:
+      operationId: getIdentityPasswordStatus
+      tags: [identity]
+      summary: Get the signed-in member's password status
+      responses:
+        "200":
+          description: Whether a VastMind password is configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityPasswordStatus"
+        "401":
+          description: A signed-in member is required
+  /identity/device-link-requests:
+    post:
+      operationId: startIdentityDeviceLink
+      tags: [identity]
+      summary: Start a short-lived QR pairing request on a new device
+      responses:
+        "201":
+          description: QR pairing request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDeviceLinkRequest"
+        "429":
+          description: Too many pairing requests
+  /identity/device-link-status:
+    post:
+      operationId: getIdentityDeviceLinkStatus
+      tags: [identity]
+      summary: Check the state of a QR pairing request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityDeviceLinkProofInput"
+      responses:
+        "200":
+          description: Current pairing request state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDeviceLinkStatus"
+        "404":
+          description: Pairing request expired or not found
+  /identity/device-link-approve:
+    post:
+      operationId: approveIdentityDeviceLink
+      tags: [identity]
+      summary: Approve a new device from an existing signed-in device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityDeviceLinkProofInput"
+      responses:
+        "200":
+          description: Pairing request approved and security alert created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDeviceLinkStatus"
+        "401":
+          description: A signed-in VastMind device is required
+        "409":
+          description: Pairing request is no longer available
+  /identity/device-link-complete:
+    post:
+      operationId: completeIdentityDeviceLink
+      tags: [identity]
+      summary: Complete device pairing after the account password is verified
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityDeviceLinkCompleteInput"
+      responses:
+        "200":
+          description: Device paired and signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityDeviceLinkComplete"
+        "401":
+          description: Pairing request or password is invalid
+        "409":
+          description: Pairing request is already being used
+  /identity/password:
+    post:
+      operationId: setIdentityPassword
+      tags: [identity]
+      summary: Set or change the signed-in member's VastMind password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityPasswordInput"
+      responses:
+        "200":
+          description: Password saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityPasswordSaved"
+        "400":
+          description: Password did not meet requirements
+        "401":
+          description: A recent VastMind sign-in is required
+  /identity/password/reset-with-passkey:
+    post:
+      operationId: resetIdentityPasswordWithPasskey
+      tags: [identity]
+      summary: Reset a forgotten VastMind password from a passkey-authenticated session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityPasswordResetInput"
+      responses:
+        "200":
+          description: Password reset and other sessions ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityPasswordSaved"
+        "401":
+          description: A VastMind passkey or recovery-verified session is required
+        "403":
+          description: Password-authenticated sessions cannot reset the password
+        "409":
+          description: No existing VastMind password is available to reset
+  /identity/password-sign-in:
+    post:
+      operationId: signInWithIdentityPassword
+      tags: [identity]
+      summary: Sign in with a password from a previously trusted device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityPasswordSignInInput"
+      responses:
+        "200":
+          description: Password sign-in succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityPasswordSignIn"
+        "401":
+          description: Sign-in details are invalid
+        "403":
+          description: This device must first be added with a passkey or recovery phrase
+  /identity/trusted-devices:
+    get:
+      operationId: listIdentityTrustedDevices
+      tags: [identity]
+      summary: List devices authorized for password sign-in
+      responses:
+        "200":
+          description: Trusted device types and dates without device fingerprints
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityTrustedDeviceList"
+        "401":
+          description: A signed-in member is required
+    post:
+      operationId: trustCurrentIdentityDevice
+      tags: [identity]
+      summary: Trust the current authenticated device for password sign-in
+      responses:
+        "200":
+          description: Device trust created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityTrustedDeviceCreated"
+        "401":
+          description: A signed-in VastMind member is required
+  /identity/trusted-device-status:
+    get:
+      operationId: getIdentityTrustedDeviceStatus
+      tags: [identity]
+      summary: Check whether this browser has password sign-in trust
+      responses:
+        "200":
+          description: Trust status for this browser cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityTrustedDeviceStatus"
+  /identity/trusted-devices/{deviceId}:
+    delete:
+      operationId: revokeIdentityTrustedDevice
+      tags: [identity]
+      summary: Revoke password sign-in trust for one device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 64 }
+      responses:
+        "200":
+          description: Trusted device revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityTrustedDeviceRevoked"
+        "401":
+          description: A signed-in member is required
+        "404":
+          description: The trusted device was not found for this account
+  /identity/recovery-key:
+    put:
+      operationId: rotateIdentityRecoveryKey
+      tags: [identity]
+      summary: Replace the signed-in member's recovery verification key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IdentityRecoveryKeyInput"
+      responses:
+        "200":
+          description: Recovery key replaced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityRecoveryKeySaved"
+        "401":
+          description: A signed-in VastMind member is required
   /me:
     get:
       operationId: getMyProfile
@@ -2498,11 +2738,12 @@ components:
     MobileSession:
       type: object
       additionalProperties: false
-      required: [accessToken, userId, expiresAt]
+      required: [accessToken, userId, expiresAt, deviceTrustToken]
       properties:
         accessToken: { type: string, minLength: 43, maxLength: 43 }
         userId: { type: string }
         expiresAt: { type: string, format: date-time }
+        deviceTrustToken: { type: string, minLength: 43, maxLength: 43 }
     MobileSessionRevoked:
       type: object
       additionalProperties: false
@@ -2534,4 +2775,137 @@ components:
       required: [revoked]
       properties:
         revoked: { type: boolean }
+    IdentityPasswordStatus:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    IdentityPasswordInput:
+      type: object
+      additionalProperties: false
+      required: [newPassword]
+      properties:
+        newPassword: { type: string, minLength: 12, maxLength: 128 }
+        currentPassword: { type: string, minLength: 1, maxLength: 128 }
+    IdentityPasswordResetInput:
+      type: object
+      additionalProperties: false
+      required: [newPassword]
+      properties:
+        newPassword: { type: string, minLength: 12, maxLength: 128 }
+    IdentityPasswordSaved:
+      type: object
+      additionalProperties: false
+      required: [saved]
+      properties:
+        saved: { type: boolean }
+    IdentityPasswordSignInInput:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 32, pattern: "^[A-Za-z0-9_]+$" }
+        password: { type: string, minLength: 1, maxLength: 128 }
+    IdentityPasswordSignIn:
+      type: object
+      additionalProperties: false
+      required: [signedIn]
+      properties:
+        signedIn: { type: boolean }
+        accessToken: { type: string, minLength: 43, maxLength: 43 }
+        userId: { type: string }
+        expiresAt: { type: string, format: date-time }
+    IdentityTrustedDevice:
+      type: object
+      additionalProperties: false
+      required: [id, kind, createdAt, expiresAt, current]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [web, mobile] }
+        createdAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        current: { type: boolean }
+    IdentityTrustedDeviceList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/IdentityTrustedDevice" }
+    IdentityTrustedDeviceCreated:
+      type: object
+      additionalProperties: false
+      required: [id, expiresAt]
+      properties:
+        id: { type: string }
+        expiresAt: { type: string, format: date-time }
+        token: { type: string, minLength: 43, maxLength: 43 }
+    IdentityTrustedDeviceStatus:
+      type: object
+      additionalProperties: false
+      required: [trusted]
+      properties:
+        trusted: { type: boolean }
+    IdentityTrustedDeviceRevoked:
+      type: object
+      additionalProperties: false
+      required: [revoked]
+      properties:
+        revoked: { type: boolean }
+    IdentityRecoveryKeyInput:
+      type: object
+      additionalProperties: false
+      required: [publicKey]
+      properties:
+        publicKey: { type: string, minLength: 64, maxLength: 64, pattern: "^[0-9a-fA-F]{64}$" }
+    IdentityRecoveryKeySaved:
+      type: object
+      additionalProperties: false
+      required: [saved]
+      properties:
+        saved: { type: boolean }
+    IdentityDeviceLinkRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, token, qrDataUrl, expiresAt]
+      properties:
+        requestId: { type: string, format: uuid }
+        token: { type: string, minLength: 43, maxLength: 43 }
+        qrDataUrl: { type: string, minLength: 1 }
+        expiresAt: { type: string, format: date-time }
+    IdentityDeviceLinkProofInput:
+      type: object
+      additionalProperties: false
+      required: [requestId, token]
+      properties:
+        requestId: { type: string, format: uuid }
+        token: { type: string, minLength: 43, maxLength: 43 }
+    IdentityDeviceLinkStatus:
+      type: object
+      additionalProperties: false
+      required: [status, expiresAt]
+      properties:
+        status: { type: string, enum: [pending, approved, processing, completed, expired] }
+        expiresAt: { type: string, format: date-time }
+    IdentityDeviceLinkCompleteInput:
+      type: object
+      additionalProperties: false
+      required: [requestId, token, password]
+      properties:
+        requestId: { type: string, format: uuid }
+        token: { type: string, minLength: 43, maxLength: 43 }
+        password: { type: string, minLength: 1, maxLength: 128 }
+    IdentityDeviceLinkComplete:
+      type: object
+      additionalProperties: false
+      required: [signedIn]
+      properties:
+        signedIn: { type: boolean }
+        accessToken: { type: string, minLength: 43, maxLength: 43 }
+        deviceTrustToken: { type: string, minLength: 43, maxLength: 43 }
+        userId: { type: string }
+        expiresAt: { type: string, format: date-time }
 

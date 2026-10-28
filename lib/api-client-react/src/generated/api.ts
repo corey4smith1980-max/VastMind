@@ -85,8 +85,25 @@ import type {
   GetVideoCapabilities200,
   GetVideosParams,
   HealthStatus,
+  IdentityDeviceLinkComplete,
+  IdentityDeviceLinkCompleteInput,
+  IdentityDeviceLinkProofInput,
+  IdentityDeviceLinkRequest,
+  IdentityDeviceLinkStatus,
+  IdentityPasswordInput,
+  IdentityPasswordResetInput,
+  IdentityPasswordSaved,
+  IdentityPasswordSignIn,
+  IdentityPasswordSignInInput,
+  IdentityPasswordStatus,
+  IdentityRecoveryKeyInput,
+  IdentityRecoveryKeySaved,
   IdentitySessionList,
   IdentitySessionRevoked,
+  IdentityTrustedDeviceCreated,
+  IdentityTrustedDeviceList,
+  IdentityTrustedDeviceRevoked,
+  IdentityTrustedDeviceStatus,
   InviteResult,
   JoinResult,
   ListChannelsParams,
@@ -3141,6 +3158,1075 @@ export const useRevokeIdentitySession = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getRevokeIdentitySessionMutationOptions(options));
+    }
+
+export const getGetIdentityPasswordStatusUrl = () => {
+
+
+
+
+  return `/api/identity/password-status`
+}
+
+/**
+ * @summary Get the signed-in member's password status
+ */
+export const getIdentityPasswordStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentityPasswordStatus> => {
+
+  return customFetch<IdentityPasswordStatus>(getGetIdentityPasswordStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIdentityPasswordStatusQueryKey = () => {
+    return [
+    `/api/identity/password-status`
+    ] as const;
+    }
+
+
+export const getGetIdentityPasswordStatusQueryOptions = <TData = Awaited<ReturnType<typeof getIdentityPasswordStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIdentityPasswordStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIdentityPasswordStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIdentityPasswordStatus>>> = ({ signal }) => getIdentityPasswordStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIdentityPasswordStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIdentityPasswordStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getIdentityPasswordStatus>>>
+export type GetIdentityPasswordStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the signed-in member's password status
+ */
+
+export function useGetIdentityPasswordStatus<TData = Awaited<ReturnType<typeof getIdentityPasswordStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIdentityPasswordStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIdentityPasswordStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartIdentityDeviceLinkUrl = () => {
+
+
+
+
+  return `/api/identity/device-link-requests`
+}
+
+/**
+ * @summary Start a short-lived QR pairing request on a new device
+ */
+export const startIdentityDeviceLink = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentityDeviceLinkRequest> => {
+
+  return customFetch<IdentityDeviceLinkRequest>(getStartIdentityDeviceLinkUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getStartIdentityDeviceLinkMutationKey = () => ['startIdentityDeviceLink'] as const;
+
+export const getStartIdentityDeviceLinkMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startIdentityDeviceLink>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startIdentityDeviceLink>>, TError,void, TContext> => {
+
+const mutationKey = getStartIdentityDeviceLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startIdentityDeviceLink>>, void> = () => {
+
+
+          return  startIdentityDeviceLink(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartIdentityDeviceLinkMutationResult = NonNullable<Awaited<ReturnType<typeof startIdentityDeviceLink>>>
+
+    export type StartIdentityDeviceLinkMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Start a short-lived QR pairing request on a new device
+ */
+export const useStartIdentityDeviceLink = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startIdentityDeviceLink>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startIdentityDeviceLink>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStartIdentityDeviceLinkMutationOptions(options));
+    }
+
+export const getGetIdentityDeviceLinkStatusUrl = () => {
+
+
+
+
+  return `/api/identity/device-link-status`
+}
+
+/**
+ * @summary Check the state of a QR pairing request
+ */
+export const getIdentityDeviceLinkStatus = async (identityDeviceLinkProofInput: IdentityDeviceLinkProofInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityDeviceLinkStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityDeviceLinkStatus>(getGetIdentityDeviceLinkStatusUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityDeviceLinkProofInput)
+  }
+);}
+
+
+
+
+
+export const getGetIdentityDeviceLinkStatusMutationKey = () => ['getIdentityDeviceLinkStatus'] as const;
+
+export const getGetIdentityDeviceLinkStatusMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>, TError,GetIdentityDeviceLinkStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>, TError,GetIdentityDeviceLinkStatusMutationVariables, TContext> => {
+
+const mutationKey = getGetIdentityDeviceLinkStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>, GetIdentityDeviceLinkStatusMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  getIdentityDeviceLinkStatus(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetIdentityDeviceLinkStatusMutationResult = NonNullable<Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>>
+    export type GetIdentityDeviceLinkStatusMutationBody = BodyType<IdentityDeviceLinkProofInput>
+    export type GetIdentityDeviceLinkStatusMutationError = ErrorType<void>
+    export type GetIdentityDeviceLinkStatusMutationVariables = {data: BodyType<IdentityDeviceLinkProofInput>}
+
+    /**
+ * @summary Check the state of a QR pairing request
+ */
+export const useGetIdentityDeviceLinkStatus = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>, TError,GetIdentityDeviceLinkStatusMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof getIdentityDeviceLinkStatus>>,
+        TError,
+        GetIdentityDeviceLinkStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGetIdentityDeviceLinkStatusMutationOptions(options));
+    }
+
+export const getApproveIdentityDeviceLinkUrl = () => {
+
+
+
+
+  return `/api/identity/device-link-approve`
+}
+
+/**
+ * @summary Approve a new device from an existing signed-in device
+ */
+export const approveIdentityDeviceLink = async (identityDeviceLinkProofInput: IdentityDeviceLinkProofInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityDeviceLinkStatus> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityDeviceLinkStatus>(getApproveIdentityDeviceLinkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityDeviceLinkProofInput)
+  }
+);}
+
+
+
+
+
+export const getApproveIdentityDeviceLinkMutationKey = () => ['approveIdentityDeviceLink'] as const;
+
+export const getApproveIdentityDeviceLinkMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveIdentityDeviceLink>>, TError,ApproveIdentityDeviceLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveIdentityDeviceLink>>, TError,ApproveIdentityDeviceLinkMutationVariables, TContext> => {
+
+const mutationKey = getApproveIdentityDeviceLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveIdentityDeviceLink>>, ApproveIdentityDeviceLinkMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  approveIdentityDeviceLink(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveIdentityDeviceLinkMutationResult = NonNullable<Awaited<ReturnType<typeof approveIdentityDeviceLink>>>
+    export type ApproveIdentityDeviceLinkMutationBody = BodyType<IdentityDeviceLinkProofInput>
+    export type ApproveIdentityDeviceLinkMutationError = ErrorType<void>
+    export type ApproveIdentityDeviceLinkMutationVariables = {data: BodyType<IdentityDeviceLinkProofInput>}
+
+    /**
+ * @summary Approve a new device from an existing signed-in device
+ */
+export const useApproveIdentityDeviceLink = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveIdentityDeviceLink>>, TError,ApproveIdentityDeviceLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveIdentityDeviceLink>>,
+        TError,
+        ApproveIdentityDeviceLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getApproveIdentityDeviceLinkMutationOptions(options));
+    }
+
+export const getCompleteIdentityDeviceLinkUrl = () => {
+
+
+
+
+  return `/api/identity/device-link-complete`
+}
+
+/**
+ * @summary Complete device pairing after the account password is verified
+ */
+export const completeIdentityDeviceLink = async (identityDeviceLinkCompleteInput: IdentityDeviceLinkCompleteInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityDeviceLinkComplete> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityDeviceLinkComplete>(getCompleteIdentityDeviceLinkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityDeviceLinkCompleteInput)
+  }
+);}
+
+
+
+
+
+export const getCompleteIdentityDeviceLinkMutationKey = () => ['completeIdentityDeviceLink'] as const;
+
+export const getCompleteIdentityDeviceLinkMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeIdentityDeviceLink>>, TError,CompleteIdentityDeviceLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeIdentityDeviceLink>>, TError,CompleteIdentityDeviceLinkMutationVariables, TContext> => {
+
+const mutationKey = getCompleteIdentityDeviceLinkMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeIdentityDeviceLink>>, CompleteIdentityDeviceLinkMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  completeIdentityDeviceLink(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteIdentityDeviceLinkMutationResult = NonNullable<Awaited<ReturnType<typeof completeIdentityDeviceLink>>>
+    export type CompleteIdentityDeviceLinkMutationBody = BodyType<IdentityDeviceLinkCompleteInput>
+    export type CompleteIdentityDeviceLinkMutationError = ErrorType<void>
+    export type CompleteIdentityDeviceLinkMutationVariables = {data: BodyType<IdentityDeviceLinkCompleteInput>}
+
+    /**
+ * @summary Complete device pairing after the account password is verified
+ */
+export const useCompleteIdentityDeviceLink = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeIdentityDeviceLink>>, TError,CompleteIdentityDeviceLinkMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof completeIdentityDeviceLink>>,
+        TError,
+        CompleteIdentityDeviceLinkMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCompleteIdentityDeviceLinkMutationOptions(options));
+    }
+
+export const getSetIdentityPasswordUrl = () => {
+
+
+
+
+  return `/api/identity/password`
+}
+
+/**
+ * @summary Set or change the signed-in member's VastMind password
+ */
+export const setIdentityPassword = async (identityPasswordInput: IdentityPasswordInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityPasswordSaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityPasswordSaved>(getSetIdentityPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityPasswordInput)
+  }
+);}
+
+
+
+
+
+export const getSetIdentityPasswordMutationKey = () => ['setIdentityPassword'] as const;
+
+export const getSetIdentityPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setIdentityPassword>>, TError,SetIdentityPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setIdentityPassword>>, TError,SetIdentityPasswordMutationVariables, TContext> => {
+
+const mutationKey = getSetIdentityPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setIdentityPassword>>, SetIdentityPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  setIdentityPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetIdentityPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof setIdentityPassword>>>
+    export type SetIdentityPasswordMutationBody = BodyType<IdentityPasswordInput>
+    export type SetIdentityPasswordMutationError = ErrorType<void>
+    export type SetIdentityPasswordMutationVariables = {data: BodyType<IdentityPasswordInput>}
+
+    /**
+ * @summary Set or change the signed-in member's VastMind password
+ */
+export const useSetIdentityPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setIdentityPassword>>, TError,SetIdentityPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setIdentityPassword>>,
+        TError,
+        SetIdentityPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetIdentityPasswordMutationOptions(options));
+    }
+
+export const getResetIdentityPasswordWithPasskeyUrl = () => {
+
+
+
+
+  return `/api/identity/password/reset-with-passkey`
+}
+
+/**
+ * @summary Reset a forgotten VastMind password from a passkey-authenticated session
+ */
+export const resetIdentityPasswordWithPasskey = async (identityPasswordResetInput: IdentityPasswordResetInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityPasswordSaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityPasswordSaved>(getResetIdentityPasswordWithPasskeyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityPasswordResetInput)
+  }
+);}
+
+
+
+
+
+export const getResetIdentityPasswordWithPasskeyMutationKey = () => ['resetIdentityPasswordWithPasskey'] as const;
+
+export const getResetIdentityPasswordWithPasskeyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>, TError,ResetIdentityPasswordWithPasskeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>, TError,ResetIdentityPasswordWithPasskeyMutationVariables, TContext> => {
+
+const mutationKey = getResetIdentityPasswordWithPasskeyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>, ResetIdentityPasswordWithPasskeyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  resetIdentityPasswordWithPasskey(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResetIdentityPasswordWithPasskeyMutationResult = NonNullable<Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>>
+    export type ResetIdentityPasswordWithPasskeyMutationBody = BodyType<IdentityPasswordResetInput>
+    export type ResetIdentityPasswordWithPasskeyMutationError = ErrorType<void>
+    export type ResetIdentityPasswordWithPasskeyMutationVariables = {data: BodyType<IdentityPasswordResetInput>}
+
+    /**
+ * @summary Reset a forgotten VastMind password from a passkey-authenticated session
+ */
+export const useResetIdentityPasswordWithPasskey = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>, TError,ResetIdentityPasswordWithPasskeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resetIdentityPasswordWithPasskey>>,
+        TError,
+        ResetIdentityPasswordWithPasskeyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getResetIdentityPasswordWithPasskeyMutationOptions(options));
+    }
+
+export const getSignInWithIdentityPasswordUrl = () => {
+
+
+
+
+  return `/api/identity/password-sign-in`
+}
+
+/**
+ * @summary Sign in with a password from a previously trusted device
+ */
+export const signInWithIdentityPassword = async (identityPasswordSignInInput: IdentityPasswordSignInInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityPasswordSignIn> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityPasswordSignIn>(getSignInWithIdentityPasswordUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityPasswordSignInInput)
+  }
+);}
+
+
+
+
+
+export const getSignInWithIdentityPasswordMutationKey = () => ['signInWithIdentityPassword'] as const;
+
+export const getSignInWithIdentityPasswordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInWithIdentityPassword>>, TError,SignInWithIdentityPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof signInWithIdentityPassword>>, TError,SignInWithIdentityPasswordMutationVariables, TContext> => {
+
+const mutationKey = getSignInWithIdentityPasswordMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signInWithIdentityPassword>>, SignInWithIdentityPasswordMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signInWithIdentityPassword(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignInWithIdentityPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof signInWithIdentityPassword>>>
+    export type SignInWithIdentityPasswordMutationBody = BodyType<IdentityPasswordSignInInput>
+    export type SignInWithIdentityPasswordMutationError = ErrorType<void>
+    export type SignInWithIdentityPasswordMutationVariables = {data: BodyType<IdentityPasswordSignInInput>}
+
+    /**
+ * @summary Sign in with a password from a previously trusted device
+ */
+export const useSignInWithIdentityPassword = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signInWithIdentityPassword>>, TError,SignInWithIdentityPasswordMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof signInWithIdentityPassword>>,
+        TError,
+        SignInWithIdentityPasswordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSignInWithIdentityPasswordMutationOptions(options));
+    }
+
+export const getListIdentityTrustedDevicesUrl = () => {
+
+
+
+
+  return `/api/identity/trusted-devices`
+}
+
+/**
+ * @summary List devices authorized for password sign-in
+ */
+export const listIdentityTrustedDevices = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentityTrustedDeviceList> => {
+
+  return customFetch<IdentityTrustedDeviceList>(getListIdentityTrustedDevicesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListIdentityTrustedDevicesQueryKey = () => {
+    return [
+    `/api/identity/trusted-devices`
+    ] as const;
+    }
+
+
+export const getListIdentityTrustedDevicesQueryOptions = <TData = Awaited<ReturnType<typeof listIdentityTrustedDevices>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIdentityTrustedDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListIdentityTrustedDevicesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listIdentityTrustedDevices>>> = ({ signal }) => listIdentityTrustedDevices({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listIdentityTrustedDevices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListIdentityTrustedDevicesQueryResult = NonNullable<Awaited<ReturnType<typeof listIdentityTrustedDevices>>>
+export type ListIdentityTrustedDevicesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List devices authorized for password sign-in
+ */
+
+export function useListIdentityTrustedDevices<TData = Awaited<ReturnType<typeof listIdentityTrustedDevices>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listIdentityTrustedDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListIdentityTrustedDevicesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getTrustCurrentIdentityDeviceUrl = () => {
+
+
+
+
+  return `/api/identity/trusted-devices`
+}
+
+/**
+ * @summary Trust the current authenticated device for password sign-in
+ */
+export const trustCurrentIdentityDevice = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentityTrustedDeviceCreated> => {
+
+  return customFetch<IdentityTrustedDeviceCreated>(getTrustCurrentIdentityDeviceUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getTrustCurrentIdentityDeviceMutationKey = () => ['trustCurrentIdentityDevice'] as const;
+
+export const getTrustCurrentIdentityDeviceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trustCurrentIdentityDevice>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof trustCurrentIdentityDevice>>, TError,void, TContext> => {
+
+const mutationKey = getTrustCurrentIdentityDeviceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof trustCurrentIdentityDevice>>, void> = () => {
+
+
+          return  trustCurrentIdentityDevice(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TrustCurrentIdentityDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof trustCurrentIdentityDevice>>>
+
+    export type TrustCurrentIdentityDeviceMutationError = ErrorType<void>
+
+
+    /**
+ * @summary Trust the current authenticated device for password sign-in
+ */
+export const useTrustCurrentIdentityDevice = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trustCurrentIdentityDevice>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof trustCurrentIdentityDevice>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getTrustCurrentIdentityDeviceMutationOptions(options));
+    }
+
+export const getGetIdentityTrustedDeviceStatusUrl = () => {
+
+
+
+
+  return `/api/identity/trusted-device-status`
+}
+
+/**
+ * @summary Check whether this browser has password sign-in trust
+ */
+export const getIdentityTrustedDeviceStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<IdentityTrustedDeviceStatus> => {
+
+  return customFetch<IdentityTrustedDeviceStatus>(getGetIdentityTrustedDeviceStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetIdentityTrustedDeviceStatusQueryKey = () => {
+    return [
+    `/api/identity/trusted-device-status`
+    ] as const;
+    }
+
+
+export const getGetIdentityTrustedDeviceStatusQueryOptions = <TData = Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetIdentityTrustedDeviceStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>> = ({ signal }) => getIdentityTrustedDeviceStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetIdentityTrustedDeviceStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>>
+export type GetIdentityTrustedDeviceStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check whether this browser has password sign-in trust
+ */
+
+export function useGetIdentityTrustedDeviceStatus<TData = Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getIdentityTrustedDeviceStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetIdentityTrustedDeviceStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRevokeIdentityTrustedDeviceUrl = (deviceId: string,) => {
+
+
+
+
+  return `/api/identity/trusted-devices/${deviceId}`
+}
+
+/**
+ * @summary Revoke password sign-in trust for one device
+ */
+export const revokeIdentityTrustedDevice = async (deviceId: string, options?: Parameters<typeof customFetch>[1]): Promise<IdentityTrustedDeviceRevoked> => {
+
+  return customFetch<IdentityTrustedDeviceRevoked>(getRevokeIdentityTrustedDeviceUrl(deviceId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRevokeIdentityTrustedDeviceMutationKey = () => ['revokeIdentityTrustedDevice'] as const;
+
+export const getRevokeIdentityTrustedDeviceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>, TError,RevokeIdentityTrustedDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>, TError,RevokeIdentityTrustedDeviceMutationVariables, TContext> => {
+
+const mutationKey = getRevokeIdentityTrustedDeviceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>, RevokeIdentityTrustedDeviceMutationVariables> = (props) => {
+          const {deviceId} = props ?? {};
+
+          return  revokeIdentityTrustedDevice(deviceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeIdentityTrustedDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>>
+
+    export type RevokeIdentityTrustedDeviceMutationError = ErrorType<void>
+    export type RevokeIdentityTrustedDeviceMutationVariables = {deviceId: string}
+
+    /**
+ * @summary Revoke password sign-in trust for one device
+ */
+export const useRevokeIdentityTrustedDevice = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>, TError,RevokeIdentityTrustedDeviceMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeIdentityTrustedDevice>>,
+        TError,
+        RevokeIdentityTrustedDeviceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRevokeIdentityTrustedDeviceMutationOptions(options));
+    }
+
+export const getRotateIdentityRecoveryKeyUrl = () => {
+
+
+
+
+  return `/api/identity/recovery-key`
+}
+
+/**
+ * @summary Replace the signed-in member's recovery verification key
+ */
+export const rotateIdentityRecoveryKey = async (identityRecoveryKeyInput: IdentityRecoveryKeyInput, options?: Parameters<typeof customFetch>[1]): Promise<IdentityRecoveryKeySaved> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<IdentityRecoveryKeySaved>(getRotateIdentityRecoveryKeyUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(identityRecoveryKeyInput)
+  }
+);}
+
+
+
+
+
+export const getRotateIdentityRecoveryKeyMutationKey = () => ['rotateIdentityRecoveryKey'] as const;
+
+export const getRotateIdentityRecoveryKeyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>, TError,RotateIdentityRecoveryKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>, TError,RotateIdentityRecoveryKeyMutationVariables, TContext> => {
+
+const mutationKey = getRotateIdentityRecoveryKeyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>, RotateIdentityRecoveryKeyMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  rotateIdentityRecoveryKey(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RotateIdentityRecoveryKeyMutationResult = NonNullable<Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>>
+    export type RotateIdentityRecoveryKeyMutationBody = BodyType<IdentityRecoveryKeyInput>
+    export type RotateIdentityRecoveryKeyMutationError = ErrorType<void>
+    export type RotateIdentityRecoveryKeyMutationVariables = {data: BodyType<IdentityRecoveryKeyInput>}
+
+    /**
+ * @summary Replace the signed-in member's recovery verification key
+ */
+export const useRotateIdentityRecoveryKey = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>, TError,RotateIdentityRecoveryKeyMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rotateIdentityRecoveryKey>>,
+        TError,
+        RotateIdentityRecoveryKeyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRotateIdentityRecoveryKeyMutationOptions(options));
     }
 
 export const getGetMyProfileUrl = () => {

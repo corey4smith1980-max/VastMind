@@ -1650,12 +1650,16 @@ export const ExchangeMobileSessionBody = zod.object({
 export const exchangeMobileSessionResponseAccessTokenMin = 43;
 export const exchangeMobileSessionResponseAccessTokenMax = 43;
 
+export const exchangeMobileSessionResponseDeviceTrustTokenMin = 43;
+export const exchangeMobileSessionResponseDeviceTrustTokenMax = 43;
+
 
 
 export const ExchangeMobileSessionResponse = zod.object({
   "accessToken": zod.string().min(exchangeMobileSessionResponseAccessTokenMin).max(exchangeMobileSessionResponseAccessTokenMax),
   "userId": zod.string(),
-  "expiresAt": zod.coerce.date()
+  "expiresAt": zod.coerce.date(),
+  "deviceTrustToken": zod.string().min(exchangeMobileSessionResponseDeviceTrustTokenMin).max(exchangeMobileSessionResponseDeviceTrustTokenMax)
 })
 
 
@@ -1696,6 +1700,243 @@ export const RevokeIdentitySessionParams = zod.object({
 
 export const RevokeIdentitySessionResponse = zod.object({
   "revoked": zod.boolean()
+})
+
+
+/**
+ * @summary Get the signed-in member's password status
+ */
+export const GetIdentityPasswordStatusResponse = zod.object({
+  "enabled": zod.boolean()
+})
+
+
+/**
+ * @summary Start a short-lived QR pairing request on a new device
+ */
+export const startIdentityDeviceLinkResponseTokenMin = 43;
+export const startIdentityDeviceLinkResponseTokenMax = 43;
+
+
+
+
+export const StartIdentityDeviceLinkResponse = zod.object({
+  "requestId": zod.string().uuid(),
+  "token": zod.string().min(startIdentityDeviceLinkResponseTokenMin).max(startIdentityDeviceLinkResponseTokenMax),
+  "qrDataUrl": zod.string().min(1),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Check the state of a QR pairing request
+ */
+export const getIdentityDeviceLinkStatusBodyTokenMin = 43;
+export const getIdentityDeviceLinkStatusBodyTokenMax = 43;
+
+
+
+export const GetIdentityDeviceLinkStatusBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "token": zod.string().min(getIdentityDeviceLinkStatusBodyTokenMin).max(getIdentityDeviceLinkStatusBodyTokenMax)
+})
+
+export const GetIdentityDeviceLinkStatusResponse = zod.object({
+  "status": zod.enum(['pending', 'approved', 'processing', 'completed', 'expired']),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Approve a new device from an existing signed-in device
+ */
+export const approveIdentityDeviceLinkBodyTokenMin = 43;
+export const approveIdentityDeviceLinkBodyTokenMax = 43;
+
+
+
+export const ApproveIdentityDeviceLinkBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "token": zod.string().min(approveIdentityDeviceLinkBodyTokenMin).max(approveIdentityDeviceLinkBodyTokenMax)
+})
+
+export const ApproveIdentityDeviceLinkResponse = zod.object({
+  "status": zod.enum(['pending', 'approved', 'processing', 'completed', 'expired']),
+  "expiresAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Complete device pairing after the account password is verified
+ */
+export const completeIdentityDeviceLinkBodyTokenMin = 43;
+export const completeIdentityDeviceLinkBodyTokenMax = 43;
+
+export const completeIdentityDeviceLinkBodyPasswordMax = 128;
+
+
+
+export const CompleteIdentityDeviceLinkBody = zod.object({
+  "requestId": zod.string().uuid(),
+  "token": zod.string().min(completeIdentityDeviceLinkBodyTokenMin).max(completeIdentityDeviceLinkBodyTokenMax),
+  "password": zod.string().min(1).max(completeIdentityDeviceLinkBodyPasswordMax)
+})
+
+export const completeIdentityDeviceLinkResponseAccessTokenMin = 43;
+export const completeIdentityDeviceLinkResponseAccessTokenMax = 43;
+
+export const completeIdentityDeviceLinkResponseDeviceTrustTokenMin = 43;
+export const completeIdentityDeviceLinkResponseDeviceTrustTokenMax = 43;
+
+
+
+export const CompleteIdentityDeviceLinkResponse = zod.object({
+  "signedIn": zod.boolean(),
+  "accessToken": zod.string().min(completeIdentityDeviceLinkResponseAccessTokenMin).max(completeIdentityDeviceLinkResponseAccessTokenMax).optional(),
+  "deviceTrustToken": zod.string().min(completeIdentityDeviceLinkResponseDeviceTrustTokenMin).max(completeIdentityDeviceLinkResponseDeviceTrustTokenMax).optional(),
+  "userId": zod.string().optional(),
+  "expiresAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Set or change the signed-in member's VastMind password
+ */
+export const setIdentityPasswordBodyNewPasswordMin = 12;
+export const setIdentityPasswordBodyNewPasswordMax = 128;
+
+export const setIdentityPasswordBodyCurrentPasswordMax = 128;
+
+
+
+export const SetIdentityPasswordBody = zod.object({
+  "newPassword": zod.string().min(setIdentityPasswordBodyNewPasswordMin).max(setIdentityPasswordBodyNewPasswordMax),
+  "currentPassword": zod.string().min(1).max(setIdentityPasswordBodyCurrentPasswordMax).optional()
+})
+
+export const SetIdentityPasswordResponse = zod.object({
+  "saved": zod.boolean()
+})
+
+
+/**
+ * @summary Reset a forgotten VastMind password from a passkey-authenticated session
+ */
+export const resetIdentityPasswordWithPasskeyBodyNewPasswordMin = 12;
+export const resetIdentityPasswordWithPasskeyBodyNewPasswordMax = 128;
+
+
+
+export const ResetIdentityPasswordWithPasskeyBody = zod.object({
+  "newPassword": zod.string().min(resetIdentityPasswordWithPasskeyBodyNewPasswordMin).max(resetIdentityPasswordWithPasskeyBodyNewPasswordMax)
+})
+
+export const ResetIdentityPasswordWithPasskeyResponse = zod.object({
+  "saved": zod.boolean()
+})
+
+
+/**
+ * @summary Sign in with a password from a previously trusted device
+ */
+export const signInWithIdentityPasswordBodyUsernameMin = 3;
+export const signInWithIdentityPasswordBodyUsernameMax = 32;
+
+
+export const signInWithIdentityPasswordBodyUsernameRegExp = new RegExp('^[A-Za-z0-9_]+$');
+export const signInWithIdentityPasswordBodyPasswordMax = 128;
+
+
+
+export const SignInWithIdentityPasswordBody = zod.object({
+  "username": zod.string().min(signInWithIdentityPasswordBodyUsernameMin).max(signInWithIdentityPasswordBodyUsernameMax).regex(signInWithIdentityPasswordBodyUsernameRegExp),
+  "password": zod.string().min(1).max(signInWithIdentityPasswordBodyPasswordMax)
+})
+
+export const signInWithIdentityPasswordResponseAccessTokenMin = 43;
+export const signInWithIdentityPasswordResponseAccessTokenMax = 43;
+
+
+
+export const SignInWithIdentityPasswordResponse = zod.object({
+  "signedIn": zod.boolean(),
+  "accessToken": zod.string().min(signInWithIdentityPasswordResponseAccessTokenMin).max(signInWithIdentityPasswordResponseAccessTokenMax).optional(),
+  "userId": zod.string().optional(),
+  "expiresAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary List devices authorized for password sign-in
+ */
+export const ListIdentityTrustedDevicesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['web', 'mobile']),
+  "createdAt": zod.coerce.date(),
+  "expiresAt": zod.coerce.date(),
+  "lastUsedAt": zod.coerce.date().nullish(),
+  "current": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Trust the current authenticated device for password sign-in
+ */
+export const trustCurrentIdentityDeviceResponseTokenMin = 43;
+export const trustCurrentIdentityDeviceResponseTokenMax = 43;
+
+
+
+export const TrustCurrentIdentityDeviceResponse = zod.object({
+  "id": zod.string(),
+  "expiresAt": zod.coerce.date(),
+  "token": zod.string().min(trustCurrentIdentityDeviceResponseTokenMin).max(trustCurrentIdentityDeviceResponseTokenMax).optional()
+})
+
+
+/**
+ * @summary Check whether this browser has password sign-in trust
+ */
+export const GetIdentityTrustedDeviceStatusResponse = zod.object({
+  "trusted": zod.boolean()
+})
+
+
+/**
+ * @summary Revoke password sign-in trust for one device
+ */
+export const revokeIdentityTrustedDevicePathDeviceIdMin = 8;
+export const revokeIdentityTrustedDevicePathDeviceIdMax = 64;
+
+
+
+export const RevokeIdentityTrustedDeviceParams = zod.object({
+  "deviceId": zod.coerce.string().min(revokeIdentityTrustedDevicePathDeviceIdMin).max(revokeIdentityTrustedDevicePathDeviceIdMax)
+})
+
+export const RevokeIdentityTrustedDeviceResponse = zod.object({
+  "revoked": zod.boolean()
+})
+
+
+/**
+ * @summary Replace the signed-in member's recovery verification key
+ */
+export const rotateIdentityRecoveryKeyBodyPublicKeyMin = 64;
+export const rotateIdentityRecoveryKeyBodyPublicKeyMax = 64;
+
+
+export const rotateIdentityRecoveryKeyBodyPublicKeyRegExp = new RegExp('^[0-9a-fA-F]{64}$');
+
+
+export const RotateIdentityRecoveryKeyBody = zod.object({
+  "publicKey": zod.string().min(rotateIdentityRecoveryKeyBodyPublicKeyMin).max(rotateIdentityRecoveryKeyBodyPublicKeyMax).regex(rotateIdentityRecoveryKeyBodyPublicKeyRegExp)
+})
+
+export const RotateIdentityRecoveryKeyResponse = zod.object({
+  "saved": zod.boolean()
 })
 
 

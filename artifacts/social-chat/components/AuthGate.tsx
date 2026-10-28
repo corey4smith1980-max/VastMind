@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useAuth, useClerk, useSession } from '@clerk/expo';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
@@ -8,10 +9,17 @@ import * as SecureStore from 'expo-secure-store';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   setAuthTokenGetter,
+  setTrustedDeviceTokenGetter,
   useExchangeMobileSession,
+  useStartIdentityDeviceLink,
+  useGetIdentityDeviceLinkStatus,
+  useCompleteIdentityDeviceLink,
   useGetMyProfile,
   getGetMyProfileQueryKey,
   useRevokeMobileSession,
+  type IdentityDeviceLinkRequest,
+  type IdentityDeviceLinkStatus,
+  type IdentityDeviceLinkComplete,
 } from '@workspace/api-client-react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
@@ -24,6 +32,7 @@ WebBrowser.maybeCompleteAuthSession();
 type MobileSession = { accessToken: string; userId: string; expiresAt: string };
 type AuthMethod = 'signin' | 'signup' | 'recover' | 'legacy';
 const SESSION_KEY = 'vastmind.native-session.v1';
+const TRUSTED_DEVICE_KEY = 'vastmind.native-trusted-device.v1';
 
 function validSession(value: unknown): value is MobileSession {
   if (!value || typeof value !== 'object') return false;
@@ -51,6 +60,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const exchange = useExchangeMobileSession();
   const revoke = useRevokeMobileSession();
   const [mobileSession, setMobileSession] = useState<MobileSession | null>(null);
+  const [trustedDeviceToken, setTrustedDeviceToken] = useState<string | null>(null);
   const [storedSessionLoaded, setStoredSessionLoaded] = useState(false);
   const [readyUser, setReadyUser] = useState<string | null | undefined>(undefined);
   const [authBusy, setAuthBusy] = useState(false);
@@ -69,8 +79,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       return;
     }
     let alive = true;
-    void SecureStore.getItemAsync(SESSION_KEY).then(async (raw) => {
+    void Promise.all([
+      SecureStore.getItemAsync(SESSION_KEY),
+      SecureStore.getItemAsync(TRUSTED_DEVICE_KEY),
+    ]).then(async ([raw, trustedToken]) => {
       if (!alive) return;
+      if (trustedToken && /^[A-Za-z0-9_-]{43}$/.test(trustedToken)) setTrustedDeviceToken(trustedToken);
+      else if (trustedToken) await SecureStore.deleteItemAsync(TRUSTED_DEVICE_KEY);
       if (raw) {
         try {
           const parsed: unknown = JSON.parse(raw);
@@ -92,10 +107,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // Native requests use a revocable bearer session; legacy Clerk users keep
     // their existing token. Clear cached data whenever the active identity changes.
     setAuthTokenGetter(() => getActiveToken());
+    setTrustedDeviceTokenGetter(() => trustedDeviceToken);
     client.clear();
     setReadyUser(activeUserId);
-    return () => { setAuthTokenGetter(null); client.clear(); };
-  }, [activeUserId, client, getActiveToken]);
+    return () => { setAuthTokenGetter(null); setTrustedDeviceTokenGetter(null); client.clear(); };
+  }, [activeUserId, client, getActiveToken, trustedDeviceToken]);
 
   const profileCheck = useGetMyProfile({
     query: {
@@ -120,9 +136,29 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (isSignedIn) await clerkSignOut();
     client.clear();
   }, [client, clerkSignOut, isSignedIn, mobileSession, revoke]);
+  const forgetTrustedDevice = useCallback(async () => {
+    await SecureStore.deleteItemAsync(TRUSTED_DEVICE_KEY);
+    setTrustedDeviceToken(null);
+  }, []);
+  const acceptDeviceLink = useCallback(async (result: IdentityDeviceLinkComplete) => {
+    if (!result.accessToken || !result.userId || !result.expiresAt || !result.deviceTrustToken) {
+      throw new Error('VastMind did not return a complete mobile session.');
+    }
+    const nextSession: MobileSession = {
+      accessToken: result.accessToken,
+      userId: result.userId,
+      expiresAt: result.expiresAt,
+    };
+    await SecureStore.setItemAsync(TRUSTED_DEVICE_KEY, result.deviceTrustToken);
+    setTrustedDeviceToken(result.deviceTrustToken);
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
+    setMobileSession(nextSession);
+    client.clear();
+  }, [client]);
+
   const contextValue = useMemo<AppAuthValue>(
-    () => ({ getToken: getActiveToken, userId: activeUserId, signOut }),
-    [activeUserId, getActiveToken, signOut],
+    () => ({ getToken: getActiveToken, userId: activeUserId, signOut, forgetTrustedDevice }),
+    [activeUserId, forgetTrustedDevice, getActiveToken, signOut],
   );
 
   const authenticateInBrowser = useCallback(async (method: AuthMethod) => {
@@ -166,6 +202,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         userId: session.userId,
         expiresAt: session.expiresAt,
       };
+      await SecureStore.setItemAsync(TRUSTED_DEVICE_KEY, session.deviceTrustToken);
+      setTrustedDeviceToken(session.deviceTrustToken);
       await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
       setMobileSession(nextSession);
     } catch (error) {
@@ -187,7 +225,41 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       <Pressable onPress={() => void clerkSignOut()}><Text style={{ color: colors.primary, paddingVertical: 20 }}>Sign out and try again</Text></Pressable>
     </View>;
   }
-  if (!activeUserId) return <AuthForm busy={authBusy} error={authError} onAuthenticate={authenticateInBrowser} />;
+  const signInWithPassword = useCallback(async (username: string, password: string) => {
+    if (!trustedDeviceToken) throw new Error("This device is not trusted yet. Sign in with a passkey or recovery phrase.");
+    const domain = process.env.EXPO_PUBLIC_DOMAIN?.replace(/^https?:\/\//, '').split('/')[0];
+    if (!domain) throw new Error("The VastMind sign-in service is not configured for this build.");
+    const response = await fetch(`https://${domain}/api/identity/password-sign-in`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-VastMind-Client': 'mobile',
+        'X-VastMind-Device-Trust': trustedDeviceToken,
+      },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await response.json().catch(() => null) as Partial<MobileSession> & { error?: string; signedIn?: boolean } | null;
+    if (!response.ok || !data?.accessToken || !data.userId || !data.expiresAt) {
+      throw new Error(data?.error ?? "Username or password sign-in failed.");
+    }
+    const nextSession: MobileSession = {
+      accessToken: data.accessToken,
+      userId: data.userId,
+      expiresAt: data.expiresAt,
+    };
+    await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(nextSession));
+    setMobileSession(nextSession);
+    client.clear();
+  }, [client, trustedDeviceToken]);
+
+  if (!activeUserId) return <AuthForm
+    busy={authBusy}
+    error={authError}
+    trustedDevice={!!trustedDeviceToken}
+    onAuthenticate={authenticateInBrowser}
+    onPasswordSignIn={signInWithPassword}
+    onDeviceLinkComplete={acceptDeviceLink}
+  />;
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 }
@@ -195,14 +267,86 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 function AuthForm({
   busy,
   error,
+  trustedDevice,
   onAuthenticate,
+  onPasswordSignIn,
+  onDeviceLinkComplete,
 }: {
   busy: boolean;
   error: string;
+  trustedDevice: boolean;
   onAuthenticate: (method: AuthMethod) => Promise<void>;
+  onPasswordSignIn: (username: string, password: string) => Promise<void>;
+  onDeviceLinkComplete: (result: IdentityDeviceLinkComplete) => Promise<void>;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkRequest, setLinkRequest] = useState<IdentityDeviceLinkRequest | null>(null);
+  const [linkStatus, setLinkStatus] = useState<IdentityDeviceLinkStatus['status']>('pending');
+  const [linkPassword, setLinkPassword] = useState('');
+  const [linkError, setLinkError] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+  const startLink = useStartIdentityDeviceLink();
+  const checkLink = useGetIdentityDeviceLinkStatus();
+  const completeLink = useCompleteIdentityDeviceLink();
+  const checkLinkStatus = checkLink.mutateAsync;
+
+  useEffect(() => {
+    if (!linkOpen || !linkRequest || linkStatus !== 'pending') return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
+      try {
+        const next = await checkLinkStatus({ data: { requestId: linkRequest.requestId, token: linkRequest.token } });
+        if (cancelled) return;
+        setLinkStatus(next.status);
+        if (next.status === 'pending') timer = setTimeout(() => void poll(), 5000);
+      } catch {
+        if (!cancelled) timer = setTimeout(() => void poll(), 7000);
+      }
+    };
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [checkLinkStatus, linkOpen, linkRequest, linkStatus]);
+
+  const createLinkRequest = async () => {
+    setLinkBusy(true);
+    setLinkError('');
+    try {
+      const request = await startLink.mutateAsync();
+      setLinkRequest(request);
+      setLinkStatus('pending');
+      setLinkPassword('');
+    } catch (cause) {
+      setLinkError(cause instanceof Error ? cause.message : 'Could not create a QR request.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  const finishDeviceLink = async () => {
+    if (!linkRequest || !linkPassword) return;
+    setLinkBusy(true);
+    setLinkError('');
+    try {
+      const result = await completeLink.mutateAsync({
+        data: { requestId: linkRequest.requestId, token: linkRequest.token, password: linkPassword },
+      });
+      await onDeviceLinkComplete(result);
+    } catch (cause) {
+      setLinkError(cause instanceof Error ? cause.message : 'Could not finish device sign-in.');
+    } finally {
+      setLinkBusy(false);
+    }
+  };
   const button = { padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: 14, backgroundColor: colors.card };
   return <KeyboardAwareScrollViewCompat
     contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 32, gap: 16 }}
@@ -211,10 +355,51 @@ function AuthForm({
     <AppBrand size={44} fontSize={29} />
     <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>All your socials · One mind</Text>
     <Text style={{ color: colors.foreground, fontSize: 25, fontWeight: '700' }}>Sign in to VastMind</Text>
-    <Text style={{ color: colors.mutedForeground, lineHeight: 22 }}>Use the same passkey, recovery phrase, and account you use on the web. Sign-in opens a secure browser, then returns here.</Text>
+    <Text style={{ color: colors.mutedForeground, lineHeight: 22 }}>Use your password on a trusted device. To add another device while this account is active elsewhere, scan its QR from a signed-in device and verify your password here.</Text>
+    {trustedDevice ? <>
+      <Text style={{ color: colors.foreground, fontSize: 14, fontWeight: '700' }}>Trusted device sign-in</Text>
+      <TextInput
+        accessibilityLabel="VastMind username"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="username"
+        placeholder="Username"
+        placeholderTextColor={colors.mutedForeground}
+        value={username}
+        onChangeText={setUsername}
+        style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.foreground, padding: 14 }}
+      />
+      <TextInput
+        accessibilityLabel="Password"
+        secureTextEntry
+        autoComplete="current-password"
+        placeholder="Password"
+        placeholderTextColor={colors.mutedForeground}
+        value={password}
+        onChangeText={setPassword}
+        style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.foreground, padding: 14 }}
+      />
+      <Pressable
+        accessibilityRole="button"
+        disabled={busy || passwordBusy || !username.trim() || !password}
+        onPress={() => {
+          setPasswordBusy(true); setPasswordError('');
+          void onPasswordSignIn(username.trim(), password).catch((cause) => {
+            setPasswordError(cause instanceof Error ? cause.message : 'Sign-in failed. Try again.');
+          }).finally(() => setPasswordBusy(false));
+        }}
+        style={{ ...button, backgroundColor: colors.primary, borderColor: colors.primary, opacity: busy || passwordBusy ? 0.6 : 1 }}
+      >
+        <Text style={{ color: colors.primaryForeground, fontWeight: '700', textAlign: 'center' }}>{passwordBusy ? 'Signing in…' : 'Sign in with password'}</Text>
+      </Pressable>
+      {!!passwordError && <Text accessibilityRole="alert" style={{ color: colors.destructive }}>{passwordError}</Text>}
+    </> : <Text style={{ color: colors.mutedForeground, fontSize: 13, lineHeight: 20 }}>This device has not been added yet. Use a passkey or recovery phrase to add it securely.</Text>}
     <Pressable accessibilityRole="button" disabled={busy} onPress={() => void onAuthenticate('signin')} style={{ ...button, backgroundColor: colors.primary, borderColor: colors.primary }}>
-      <Text style={{ color: colors.primaryForeground, fontWeight: '700', textAlign: 'center' }}>{busy ? 'Waiting for secure sign-in…' : 'Sign in with passkey'}</Text>
+      <Text style={{ color: colors.primaryForeground, fontWeight: '700', textAlign: 'center' }}>{busy ? 'Waiting for secure sign-in…' : 'Add or sign in with a passkey'}</Text>
     </Pressable>
+    <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, textAlign: 'center' }}>
+      Forgot your password? Sign in with a passkey, then reset it in Account Security.
+    </Text>
     <Pressable accessibilityRole="button" disabled={busy} onPress={() => void onAuthenticate('signup')} style={button}>
       <Text style={{ color: colors.foreground, fontWeight: '600', textAlign: 'center' }}>Create a VastMind ID</Text>
     </Pressable>
@@ -224,6 +409,41 @@ function AuthForm({
     <Pressable accessibilityRole="button" disabled={busy} onPress={() => void onAuthenticate('legacy')}>
       <Text style={{ color: colors.mutedForeground, textAlign: 'center', paddingVertical: 4 }}>Move an older account to VastMind login</Text>
     </Pressable>
+    <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 15, gap: 10 }}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: linkOpen }} onPress={() => { setLinkOpen((value) => !value); setLinkError(''); }} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: colors.foreground, fontWeight: '700' }}>Link this device with QR</Text>
+          <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 3 }}>Approve on a device already signed in</Text>
+        </View>
+        <Feather name={linkOpen ? 'minus' : 'plus'} size={18} color={colors.primary} />
+      </Pressable>
+      {linkOpen && (!linkRequest || linkStatus === 'expired') ? (
+        <View style={{ gap: 8 }}>
+          {linkStatus === 'expired' ? <Text style={{ color: colors.destructive, fontSize: 12 }}>This QR expired. Create a fresh one to continue.</Text> : null}
+          <Pressable accessibilityRole="button" disabled={linkBusy} onPress={() => void createLinkRequest()} style={{ ...button, opacity: linkBusy ? 0.6 : 1 }}>
+            <Text style={{ color: colors.foreground, fontWeight: '700', textAlign: 'center' }}>{linkBusy ? 'Creating QR…' : linkRequest ? 'Create a new QR' : 'Show pairing QR'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {linkOpen && linkRequest && linkStatus === 'pending' ? (
+        <View style={{ alignItems: 'center', gap: 9, paddingVertical: 8 }}>
+          <View style={{ padding: 10, borderRadius: 16, backgroundColor: '#ffffff' }}>
+            <Image source={{ uri: linkRequest.qrDataUrl }} accessibilityLabel="QR code to link this VastMind device" style={{ width: 210, height: 210 }} resizeMode="contain" />
+          </View>
+          <Text accessibilityRole="text" style={{ color: colors.mutedForeground, textAlign: 'center', fontSize: 12, lineHeight: 18 }}>Scan this QR with a device already signed in. It expires in three minutes.</Text>
+        </View>
+      ) : null}
+      {linkOpen && linkRequest && linkStatus === 'approved' ? (
+        <View style={{ gap: 9 }}>
+          <Text style={{ color: colors.primary, fontSize: 13, lineHeight: 19 }}>Approved by your signed-in device. Enter your account password to finish linking.</Text>
+          <TextInput accessibilityLabel="VastMind account password" secureTextEntry autoComplete="current-password" placeholder="Account password" placeholderTextColor={colors.mutedForeground} value={linkPassword} onChangeText={setLinkPassword} style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.foreground, padding: 14 }} />
+          <Pressable accessibilityRole="button" disabled={linkBusy || !linkPassword} onPress={() => void finishDeviceLink()} style={{ ...button, backgroundColor: colors.primary, borderColor: colors.primary, opacity: linkBusy || !linkPassword ? 0.6 : 1 }}>
+            <Text style={{ color: colors.primaryForeground, fontWeight: '700', textAlign: 'center' }}>{linkBusy ? 'Verifying…' : 'Verify password and sign in'}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {linkError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12 }}>{linkError}</Text> : null}
+    </View>
     {!!error && <Text accessibilityRole="alert" style={{ color: colors.destructive, lineHeight: 20 }}>{error}</Text>}
   </KeyboardAwareScrollViewCompat>;
 }

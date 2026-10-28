@@ -1,4 +1,5 @@
 import { createInsertSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -104,6 +105,62 @@ export const accountRecoveryChallenge = pgTable("account_recovery_challenge", {
   usedAt: timestamp("used_at", { withTimezone: true }),
   attempts: integer("attempts").notNull().default(0),
 }, (t) => [index("account_recovery_challenge_user").on(t.userId)]);
+
+// A trusted-device token is a random, revocable credential stored only as a
+// hash. No IP address, browser fingerprint, or device hardware ID is recorded.
+export const identityTrustedDevice = pgTable("identity_trusted_device", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),
+  kind: text("kind").notNull(),
+  createdAt: created(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  lastSessionId: text("last_session_id"),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, (t) => [
+  uniqueIndex("identity_trusted_device_token_unique").on(t.tokenHash),
+  index("identity_trusted_device_user").on(t.userId, t.revokedAt),
+]);
+
+// Distinguishes password-authenticated sessions from passkey sessions without
+// putting browser, IP, or device details in Better Auth's session fields.
+export const identityPasswordSession = pgTable("identity_password_session", {
+  sessionId: text("session_id").primaryKey().references(() => authSession.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: created(),
+}, (t) => [
+  index("identity_password_session_user").on(t.userId),
+]);
+
+// A QR pairing request stores only a hash of its one-time secret. It contains
+// no IP, browser fingerprint, hardware identifier, or client-provided label.
+export const identityDeviceLinkRequest = pgTable("identity_device_link_request", {
+  id: text("id").primaryKey(),
+  tokenHash: text("token_hash").notNull(),
+  status: text("status").notNull().default("pending"),
+  approvedUserId: text("approved_user_id").references(() => users.id, { onDelete: "cascade" }),
+  approvedSessionId: text("approved_session_id"),
+  createdAt: created(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  attempts: integer("attempts").notNull().default(0),
+}, (t) => [
+  uniqueIndex("identity_device_link_token_unique").on(t.tokenHash),
+  uniqueIndex("identity_device_link_processing_user")
+    .on(t.approvedUserId)
+    .where(sql`${t.status} = 'processing'`),
+  index("identity_device_link_expiry").on(t.expiresAt),
+]);
+
+// A short-lived unique reservation prevents two simultaneous first-device
+// sign-ins from racing past the active-session check.
+export const identityLoginReservation = pgTable("identity_login_reservation", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+});
 
 export const insertAuthUserSchema = createInsertSchema(authUser);
 export const insertAuthSessionSchema = createInsertSchema(authSession);

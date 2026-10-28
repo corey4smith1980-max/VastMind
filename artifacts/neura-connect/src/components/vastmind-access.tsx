@@ -1,7 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, ArrowRight, Fingerprint, KeyRound, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, Download, Fingerprint, KeyRound, Loader2, ShieldCheck } from "lucide-react";
 import { createRecoveryPhrase, accountRecoveryPublicKey, signAccountRecoveryChallenge } from "@workspace/mail-crypto";
 import { useGetMyProfile, getGetMyProfileQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth, vastMindAuthClient, identityRequest } from "@/lib/vastmind-auth";
+import { useAuth, vastMindAuthClient, identityCall, identityRequest } from "@/lib/vastmind-auth";
 import { basePath } from "@/lib/base";
+import { DeviceLinkLogin } from "@/components/vastmind-access/device-link";
 
 export const USERNAME_RE = /^(?!member_[a-f0-9]{24}$)[a-zA-Z0-9_]{3,32}$/i;
 const errText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong. Try again.");
 const goChats = () => window.location.assign(`${basePath}/chats`);
+
+function downloadRecoveryPhrase(phrase: string, username: string): void {
+  if (typeof window === "undefined" || !phrase) return;
+  const file = new Blob(
+    [`VastMind account recovery phrase\nAccount: @${username}\n\n${phrase}\n\nKeep this file private. Anyone with this phrase can add a device to your account.\n`],
+    { type: "text/plain;charset=utf-8" },
+  );
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `vastmind-recovery-${username}.txt`;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export function AccessCard({ eyebrow, title, sub, children }: { eyebrow: string; title: string; sub?: string; children: React.ReactNode }) {
   return (
@@ -64,20 +82,71 @@ export function PasskeySignIn({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  async function signIn() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [trusted, setTrusted] = useState(false);
+  const [trustLoading, setTrustLoading] = useState(true);
+  const [resetAuthorized, setResetAuthorized] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void identityCall<{ trusted: boolean }>("trusted-device-status", "GET").then((result) => {
+      if (active) setTrusted(result.trusted);
+    }).catch(() => {
+      if (active) setTrusted(false);
+    }).finally(() => {
+      if (active) setTrustLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+  async function signIn(forPasswordReset = false) {
     setBusy(true); setError(null);
     try {
       const res = await vastMindAuthClient.signIn.passkey({});
       if (res?.error) { setError(res.error.message ?? "Passkey sign-in was not completed."); return; }
+      try {
+        await identityRequest("trusted-devices", {});
+        setTrusted(true);
+      } catch {
+        setError("You are signed in with your passkey, but this browser could not be saved for password sign-in.");
+        return;
+      }
+      if (forPasswordReset) { setResetAuthorized(true); return; }
       if (onSuccess) await onSuccess();
       else goChats();
     } catch (e) { setError(errText(e)); } finally { setBusy(false); }
   }
+  async function signInWithPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError(null);
+    try {
+      await identityRequest("password-sign-in", { username: username.trim().replace(/^@/, ""), password });
+      if (onSuccess) await onSuccess();
+      else goChats();
+    } catch (cause) { setError(errText(cause)); } finally { setBusy(false); }
+  }
   return (
-    <AccessCard eyebrow="Sign in" title="Welcome back." sub="Use the passkey saved on this device. No password, no inbox code.">
-      <Button size="lg" className="w-full gap-2" onClick={signIn} disabled={busy} aria-busy={busy} data-testid="button-passkey-sign-in">
-        <Busy busy={busy}><Fingerprint className={busy ? "hidden" : "h-4 w-4"} />{busy ? "Waiting for your passkey" : "Sign in with passkey"}</Busy>
+    <AccessCard eyebrow="Sign in" title="Welcome back." sub="Use your username and password on a trusted device. New devices need a passkey or recovery phrase.">
+      {trustLoading ? <p role="status" className="text-sm text-muted-foreground">Checking this device…</p> : trusted ? <form onSubmit={signInWithPassword} className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="signin-username">VastMind username</Label>
+          <Input id="signin-username" autoComplete="username" autoCapitalize="none" autoCorrect="off" placeholder="username" value={username} onChange={(e) => setUsername(e.target.value)} data-testid="input-signin-username" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="signin-password">Password</Label>
+          <Input id="signin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} data-testid="input-signin-password" />
+        </div>
+        <Button type="submit" size="lg" className="w-full" disabled={!username.trim() || !password || busy} aria-busy={busy} data-testid="button-password-sign-in">
+          {busy ? "Signing in…" : "Sign in with username"}
+        </Button>
+      </form> : <p className="rounded-xl border bg-muted/40 p-3 text-sm text-muted-foreground">This browser is not trusted yet. Use a passkey or recovery phrase to add it before password sign-in is enabled.</p>}
+      <Button size="lg" className="w-full gap-2" onClick={() => void signIn()} disabled={busy} aria-busy={busy} data-testid="button-passkey-sign-in">
+        <Busy busy={busy}><Fingerprint className={busy ? "hidden" : "h-4 w-4"} />{busy ? "Waiting for your passkey" : "Use a passkey / add this device"}</Busy>
       </Button>
+      <button type="button" onClick={() => void signIn(true)} disabled={busy} className="w-full rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-muted/50 disabled:opacity-50">
+        Forgot your password? Verify with a passkey
+      </button>
+      {resetAuthorized && <PasskeyPasswordResetForm />}
+      <DeviceLinkLogin />
       <ErrorNote message={error} />
       <div className="grid gap-2 text-sm">
         <button type="button" onClick={onRecover} className="flex items-center justify-between rounded-lg border px-4 py-3 text-left hover:bg-muted/50" data-testid="button-open-recovery">
@@ -92,6 +161,41 @@ export function PasskeySignIn({
       <p className="text-center text-sm text-muted-foreground">New here? {onSignup ? <button type="button" onClick={onSignup} className="font-medium text-primary hover:underline" data-testid="button-sign-up">Create a VastMind ID</button> : <Link href="/sign-up" className="font-medium text-primary hover:underline" data-testid="link-sign-up">Create a VastMind ID</Link>}</p>
       <MigrationNotice />
     </AccessCard>
+  );
+}
+
+/** Reset is allowed only from a passkey/recovery-backed VastMind session. */
+export function PasskeyPasswordResetForm() {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function resetPassword(event: React.FormEvent) {
+    event.preventDefault();
+    if (newPassword.length < 12 || newPassword !== confirmPassword) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await identityRequest("password/reset-with-passkey", { newPassword });
+      setNewPassword("");
+      setConfirmPassword("");
+      setMessage("Password reset. Other sessions were ended; trusted-device access was not changed.");
+    } catch (error) {
+      setMessage(errText(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={resetPassword} className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+      <div><p className="font-semibold">Reset your password</p><p className="mt-1 text-xs text-muted-foreground">Your passkey just verified this session. At least 12 characters; other active sessions will be signed out.</p></div>
+      <div className="space-y-1.5"><Label htmlFor="passkey-reset-new-password">New password</Label><Input id="passkey-reset-new-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="passkey-reset-confirm-password">Confirm new password</Label><Input id="passkey-reset-confirm-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
+      <Button type="submit" disabled={busy || newPassword.length < 12 || newPassword !== confirmPassword}>{busy ? "Resetting…" : "Reset password with passkey"}</Button>
+      {message && <p role={message.startsWith("Password reset") ? "status" : "alert"} className="text-sm text-muted-foreground">{message}</p>}
+    </form>
   );
 }
 
@@ -114,6 +218,7 @@ export function RecoveryFlow({ onBack, onSuccess }: { onBack: () => void; onSucc
       const { context } = await identityRequest<{ context: string }>("recovery-registration-intents", { challengeId, challenge, signature });
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
       if (res?.error) { setError(res.error.message ?? "The new passkey was not saved."); return; }
+      await identityRequest("trusted-devices", {});
       setPhrase("");
       if (onSuccess) await onSuccess();
       else goChats();
@@ -165,6 +270,8 @@ export function SignupFlow({
   const [username, setUsername] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [phrase, setPhrase] = useState<string>("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [backedUp, setBackedUp] = useState(false);
   const [checks, setChecks] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -174,7 +281,7 @@ export function SignupFlow({
   const u = username ?? prof?.username ?? "";
   const n = displayName ?? prof?.name ?? "";
   const words = useMemo(() => phrase.split(" "), [phrase]);
-  const detailsValid = USERNAME_RE.test(u) && n.trim().length > 0;
+  const detailsValid = USERNAME_RE.test(u) && n.trim().length > 0 && password.length >= 12 && password === passwordConfirm;
   const wordsOk = checks.length > 0 && checks.every((i) => (answers[i] ?? "").trim().toLowerCase() === words[i]);
 
   if (!isLoaded) return <AccessCard eyebrow="Create" title="One moment."><div className="h-24 animate-pulse rounded-lg bg-muted" /></AccessCard>;
@@ -196,7 +303,11 @@ export function SignupFlow({
       const { context } = await identityRequest<{ context: string }>("passkey-registration-intents", { username: u, displayName: n.trim(), recoveryPublicKey });
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
       if (res?.error) { setError(res.error.message ?? "The passkey was not saved."); return; }
+      await identityRequest("trusted-devices", {});
+      await identityRequest("password", { newPassword: password });
       setPhrase("");
+      setPassword("");
+      setPasswordConfirm("");
       if (onSuccess) await onSuccess();
       else goChats();
     } catch (e) { setError(errText(e)); } finally { setBusy(false); }
@@ -212,7 +323,7 @@ export function SignupFlow({
 
   if (step === "details") return (
     <AccessCard eyebrow={isClerk ? "Move to passkeys" : "Create"} title={isClerk ? "Keep your account, drop the password." : "Claim your VastMind ID."}
-      sub={isClerk ? "Your chats, follows and history stay with the same account. Sign in on the web with a passkey while migration continues." : "Pick a handle. No email address or password needed."}>
+      sub={isClerk ? "Your chats, follows and history stay with the same account. Add a VastMind password and passkey while migration continues." : "Choose your username and a password. Your passkey and recovery phrase protect new devices."}>
       {stepper}
       {!isClerk && migrate && <p className="text-sm text-muted-foreground">To move an existing account, <Link href="/sign-in/legacy" className="font-medium text-primary hover:underline">sign in to it first</Link>.</p>}
       <form onSubmit={(e) => { e.preventDefault(); if (detailsValid) toPhrase(); }} className="space-y-4">
@@ -228,6 +339,16 @@ export function SignupFlow({
           </div>
           <p id="su-username-hint" className={`text-xs ${u && !USERNAME_RE.test(u) ? "text-destructive" : "text-muted-foreground"}`}>3 to 32 letters, numbers or underscores.</p>
         </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="su-password">Password</Label>
+          <Input id="su-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <p className="text-xs text-muted-foreground">Use at least 12 characters. Password sign-in works only on devices you have added.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="su-password-confirm">Confirm password</Label>
+          <Input id="su-password-confirm" type="password" autoComplete="new-password" maxLength={128} value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} />
+          {passwordConfirm && passwordConfirm !== password ? <p className="text-xs text-destructive">Passwords do not match.</p> : null}
+        </div>
         <Button type="submit" className="w-full" disabled={!detailsValid} data-testid="button-continue-details">Continue</Button>
       </form>
       {!isClerk && <p className="text-center text-sm text-muted-foreground">Already have one? {onSignIn ? <button type="button" onClick={onSignIn} className="font-medium text-primary hover:underline">Sign in</button> : <Link href="/sign-in" className="font-medium text-primary hover:underline">Sign in</Link>}</p>}
@@ -241,9 +362,15 @@ export function SignupFlow({
       <ol className="grid grid-cols-3 gap-1.5 rounded-xl bg-muted/60 p-3 font-mono text-sm" data-testid="recovery-phrase-grid">
         {words.map((w, i) => <li key={i} className="flex gap-1.5 rounded-md bg-card px-2 py-1"><span className="w-5 text-right text-muted-foreground">{i + 1}</span>{w}</li>)}
       </ol>
+      <div className="space-y-2">
+        <Button type="button" variant="outline" className="w-full gap-2" onClick={() => downloadRecoveryPhrase(phrase, u)}>
+          <Download className="h-4 w-4" />Download recovery phrase as .txt
+        </Button>
+        <p className="text-xs leading-relaxed text-muted-foreground">The text file is unencrypted. Store it somewhere private. VastMind never receives or stores this phrase.</p>
+      </div>
       <label className="flex items-start gap-3 text-sm">
         <Checkbox checked={backedUp} onCheckedChange={(v) => setBackedUp(v === true)} data-testid="checkbox-phrase-backed-up" />
-        <span>I wrote this phrase down somewhere safe. VastMind cannot show it again or recover it for me.</span>
+        <span>I saved this phrase somewhere safe. VastMind cannot show it again or recover it for me.</span>
       </label>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => { setPhrase(""); setStep("details"); }}>Back</Button>

@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _trustedDeviceTokenGetter: AuthTokenGetter | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -42,6 +43,11 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/** Attach native device trust only in apps that explicitly register this getter. */
+export function setTrustedDeviceTokenGetter(getter: AuthTokenGetter | null): void {
+  _trustedDeviceTokenGetter = getter;
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -355,6 +361,13 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+  if (_trustedDeviceTokenGetter) {
+    const trustedToken = await _trustedDeviceTokenGetter();
+    if (trustedToken && !headers.has("x-vastmind-device-trust")) {
+      headers.set("x-vastmind-device-trust", trustedToken);
+      headers.set("x-vastmind-client", "mobile");
     }
   }
 

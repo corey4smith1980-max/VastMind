@@ -62,14 +62,22 @@ export function useAuth(): Identity {
 }
 
 /** Auth-related JSON calls deliberately never accept or send a recovery phrase. */
-export async function identityRequest<T>(path: string, body: Record<string, unknown>): Promise<T> {
+export async function identityCall<T>(
+  path: string,
+  method: "POST" | "PUT" | "DELETE" | "GET",
+  body?: Record<string, unknown>,
+): Promise<T> {
   const response = await fetch(`/api/identity/${path}`, {
-    method: "POST",
+    method,
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
   });
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new Error(data?.error ?? "Unable to complete the request. Try again.");
   return data as T;
+}
+
+export function identityRequest<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  return identityCall<T>(path, "POST", body);
 }

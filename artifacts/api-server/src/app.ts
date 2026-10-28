@@ -13,6 +13,11 @@ import { vastMindAuth } from "./lib/vastmind-auth";
 
 const app: Express = express();
 
+// Replit serves this API through one trusted reverse proxy. Respect its
+// forwarded client address so IP-based rate limits work without trusting
+// arbitrary proxy chains supplied by callers.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
@@ -41,12 +46,17 @@ const expoOrigin = process.env.REPLIT_EXPO_DEV_DOMAIN
 app.use(cors({
   credentials: true,
   origin: (origin, callback) => callback(null, !!origin && origin === expoOrigin),
-  allowedHeaders: ["Authorization", "Content-Type"],
+  allowedHeaders: ["Authorization", "Content-Type", "X-VastMind-Client", "X-VastMind-Device-Trust"],
   methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
   maxAge: 600,
 }));
 // Better Auth consumes the raw request stream for passkey/WebAuthn endpoints.
-// Mount it before Express body parsing and keep Clerk available for migration.
+// The raw email/password endpoint is intentionally not exposed: usernames are
+// resolved server-side and password sign-in is checked against device trust.
+app.all("/api/auth/sign-in/email", (_req, res) => {
+  res.status(403).json({ error: "Use VastMind username sign-in on a trusted device." });
+});
+// Mount the remaining handlers before Express body parsing and keep Clerk available for migration.
 app.all("/api/auth/*splat", toNodeHandler(vastMindAuth));
 app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: false, limit: "32kb" }));

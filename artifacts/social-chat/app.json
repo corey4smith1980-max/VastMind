@@ -39,6 +39,13 @@
       "expo-video",
       "expo-audio",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow VastMind to scan QR codes when linking a new device.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "cameraPermission": "Allow VastMind to use the camera when you record a clip or story.",

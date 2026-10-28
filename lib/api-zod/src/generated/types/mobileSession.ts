@@ -14,4 +14,9 @@ export interface MobileSession {
   accessToken: string;
   userId: string;
   expiresAt: Date;
+  /**
+     * @minLength 43
+     * @maxLength 43
+     */
+  deviceTrustToken: string;
 }
