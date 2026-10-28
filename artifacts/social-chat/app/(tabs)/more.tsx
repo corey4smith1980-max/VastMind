@@ -9,7 +9,6 @@ const GROUPS = [
   {
     title: "Discover",
     items: [
-      { label: "Communities", detail: "Local groups and opportunities", icon: "users", href: "/communities" },
       { label: "Channels", detail: "Updates from the people you follow", icon: "radio", href: "/(tabs)/channels" },
       { label: "Status & stories", detail: "Photos and moments that expire", icon: "aperture", href: "/stories" },
     ],

@@ -12,6 +12,7 @@ import { BootScreen, ErrorState } from "@/components/states";
 import { UserAvatar } from "@/components/user-avatar";
 import { ConnectionPill } from "@/components/shell/connection-pill";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MeContext } from "@/lib/me";
 import { CallProvider } from "@/components/calling/call-provider";
 import { usePollInterval } from "@/lib/realtime";
@@ -98,30 +99,58 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="font-display text-lg font-semibold tracking-tight">VastMind</span>
           </Link>
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-4">
-            {NAV_SECTIONS.map((section) => (
-              <section key={section.label} aria-label={section.label}>
-                <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/45">{section.label}</h2>
-                <div className="space-y-1">
-                  {section.hrefs.map((href) => {
-                    const n = NAV.find((item) => item.href === href);
-                    if (!n) return null;
-                    const selected = active(n.href);
-                    return (
-                      <Link key={n.href} href={n.href} aria-current={selected ? "page" : undefined}
-                        data-testid={`link-nav-${n.label.toLowerCase()}`}
-                        className={cn(
-                          "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
-                          selected ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                        )}>
-                        <n.icon className="h-[18px] w-[18px] shrink-0" />
-                        <span className="flex-1">{n.label}</span>
-                        <Badge n={badgeFor(n.href)} />
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+            <section aria-label="Daily use">
+              <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-sidebar-foreground/45">Daily use</h2>
+              <div className="space-y-1">
+                {MOBILE_PRIMARY_HREFS.map((href) => {
+                  const n = NAV.find((item) => item.href === href);
+                  if (!n) return null;
+                  const selected = active(n.href);
+                  return (
+                    <Link key={n.href} href={n.href} aria-current={selected ? "page" : undefined}
+                      data-testid={`link-nav-${n.label.toLowerCase()}`}
+                      className={cn(
+                        "relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors",
+                        selected ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                      )}>
+                      <n.icon className="h-[18px] w-[18px] shrink-0" />
+                      <span className="flex-1">{n.label}</span>
+                      <Badge n={badgeFor(n.href)} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" aria-label="More navigation" data-testid="button-desktop-nav-more"
+                  className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">
+                  <span className="relative grid h-[18px] w-[18px] place-items-center"><Menu className="h-[18px] w-[18px]" /><Badge n={unreadNotes} /></span>
+                  More
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-64">
+                {NAV_SECTIONS.map((section) => {
+                  const items = section.hrefs
+                    .filter((href) => !MOBILE_PRIMARY_SET.has(href))
+                    .map((href) => NAV.find((item) => item.href === href))
+                    .filter((item): item is (typeof NAV)[number] => !!item);
+                  if (!items.length) return null;
+                  return (
+                    <div key={section.label}>
+                      <DropdownMenuLabel className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{section.label}</DropdownMenuLabel>
+                      {items.map((n) => (
+                        <DropdownMenuItem key={n.href} onSelect={() => router.push(n.href)} data-testid={`more-nav-${n.label.toLowerCase()}`}>
+                          <n.icon className="h-4 w-4" />
+                          <span className="flex-1">{n.label}</span>
+                          {badgeFor(n.href) > 0 ? <span className="rounded-full bg-primary px-1.5 font-mono text-[10px] text-primary-foreground">{badgeFor(n.href)}</span> : null}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="flex items-center gap-3 border-t border-sidebar-foreground/10 px-2 pt-4">
             <Link href="/settings" aria-label="Your profile" className="shrink-0">
@@ -159,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
             <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
               <SheetTrigger asChild>
-                <button className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] font-semibold", moreOpen ? "bg-muted text-foreground" : "text-muted-foreground")} data-testid="button-nav-more">
+                <button aria-label="More navigation" className={cn("relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-2xl py-1.5 text-[10px] font-semibold", moreOpen ? "bg-muted text-foreground" : "text-muted-foreground")} data-testid="button-nav-more">
                   <span className="relative grid h-8 w-9 place-items-center"><Menu className="h-[18px] w-[18px]" /><Badge n={unreadNotes} /></span><span>More</span>
                 </button>
               </SheetTrigger>

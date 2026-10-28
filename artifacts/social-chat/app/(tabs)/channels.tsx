@@ -6,75 +6,77 @@ import { Avatar, AppHeader, Eyebrow, PageFrame, StorageNotice } from '@/componen
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
 
+type ChannelFilter = 'All' | 'Following' | 'Yours';
+
 export default function ChannelsScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { state, toggleChannelFollow } = useAppStore();
+  const { state, rawChannels, profile, toggleChannelFollow } = useAppStore();
   const [query, setQuery] = useState('');
-  const channels = useMemo(() => state.channels.filter((channel) => `${channel.name} ${channel.category}`.toLowerCase().includes(query.toLowerCase())), [query, state.channels]);
-  const following = state.channels.filter((channel) => channel.followed);
+  const [filter, setFilter] = useState<ChannelFilter>('All');
+  const channels = useMemo(() => state.channels.filter((channel) =>
+    `${channel.name} ${channel.category} ${channel.description}`.toLowerCase().includes(query.toLowerCase())
+    && (filter === 'All' || (filter === 'Following' ? channel.followed : rawChannels.find((item) => item.id === channel.id)?.owner.id === profile?.id))),
+  [filter, profile?.id, query, rawChannels, state.channels]);
 
   return (
     <PageFrame>
-      <AppHeader label="communities" />
+      <AppHeader label="channels" />
       <StorageNotice />
-      <Pressable onPress={() => router.push('/new-channel')}><Text style={{ color: colors.primary, marginBottom: 16 }}>Create a channel</Text></Pressable>
-      <Eyebrow>PUBLIC CHANNELS</Eyebrow>
-      <Text style={[styles.title, { color: colors.forest }]}>Find your people.</Text>
-      <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Follow the conversations and communities you care about.</Text>
+      <View style={styles.titleRow}>
+        <View><Eyebrow>CHANNEL UPDATES</Eyebrow><Text style={[styles.title, { color: colors.forest }]}>Channels</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Create a channel" onPress={() => router.push('/new-channel')} style={styles.createButton}><Feather name="plus" size={23} color={colors.primary} /></Pressable>
+      </View>
+      <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>Follow shops, clubs and organisers. Open any channel for its full update thread.</Text>
       <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Feather name="search" size={17} color={colors.mutedForeground} />
         <TextInput accessibilityLabel="Search channels" placeholder="Search channels" placeholderTextColor={colors.mutedForeground} value={query} onChangeText={setQuery} style={[styles.searchInput, { color: colors.foreground }]} />
       </View>
-      <View style={[styles.followingCard, { backgroundColor: colors.forest }]}>
-        <View style={styles.followingTop}><View><Text style={[styles.followingTitle, { color: colors.primaryForeground }]}>Your channels</Text><Text style={[styles.followingSub, { color: colors.primaryForeground }]}>{following.length} communities in your orbit</Text></View><Feather name="radio" size={22} color={colors.lime} /></View>
-        <View style={styles.followingAvatars}>{following.slice(0, 4).map((channel) => <Avatar key={channel.id} initials={channel.initials} size={32} tone={channel.color} />)}<Text style={[styles.followingCaption, { color: colors.primaryForeground }]}>Latest updates are ready</Text></View>
+      <View style={styles.filters}>
+        {(['All', 'Following', 'Yours'] as ChannelFilter[]).map((item) => <Pressable key={item} accessibilityRole="tab" accessibilityState={{ selected: filter === item }} onPress={() => setFilter(item)} style={[styles.filter, { backgroundColor: filter === item ? colors.primary : colors.secondary }]}><Text style={[styles.filterText, { color: filter === item ? colors.primaryForeground : colors.mutedForeground }]}>{item}</Text></Pressable>)}
       </View>
-      <View style={styles.listHeader}><Eyebrow>EXPLORE CHANNELS</Eyebrow><Text style={[styles.sortText, { color: colors.mutedForeground }]}>Recommended</Text></View>
       <View style={styles.channelList}>
         {channels.map((channel) => {
           const latest = channel.updates[0];
+          const owned = rawChannels.find((item) => item.id === channel.id)?.owner.id === profile?.id;
           return (
-            <Pressable key={channel.id} onPress={() => router.push(`/channel/${channel.id}`)} style={[styles.channelCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.channelTop}><Avatar initials={channel.initials} size={48} tone={channel.color} /><View style={styles.channelMeta}><Text style={[styles.channelName, { color: colors.forest }]}>{channel.name}</Text><Text style={[styles.channelCategory, { color: colors.mutedForeground }]}>{channel.category} · {channel.followers} members</Text></View><Feather name="chevron-right" size={17} color={colors.mutedForeground} /></View>
-              <Text numberOfLines={2} style={[styles.description, { color: colors.mutedForeground }]}>{channel.description}</Text>
-              <View style={[styles.updatePreview, { backgroundColor: colors.secondary }]}><Text numberOfLines={2} style={[styles.updateText, { color: colors.foreground }]}>{latest?.text ?? 'No updates yet'}</Text></View>
-              <View style={styles.channelFooter}><Text style={[styles.updateTime, { color: colors.mutedForeground }]}>{latest?.time ?? ''}</Text><Pressable onPress={async (event) => { event.stopPropagation(); await toggleChannelFollow(channel.id); }} style={[styles.followButton, { backgroundColor: channel.followed ? colors.secondary : colors.lime }]}><Text style={[styles.followText, { color: colors.forest }]}>{channel.followed ? 'Following' : 'Follow'}</Text></Pressable></View>
+            <Pressable key={channel.id} accessibilityRole="button" accessibilityLabel={`Open ${channel.name}`} onPress={() => router.push(`/channel/${channel.id}`)} style={[styles.channelRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+              <Avatar initials={channel.initials} size={50} tone={channel.color} />
+              <View style={styles.channelMeta}>
+                <View style={styles.nameRow}><Text numberOfLines={1} style={[styles.channelName, { color: colors.foreground }]}>{channel.name}{owned ? ' · Yours' : ''}</Text><Text style={[styles.updateTime, { color: colors.mutedForeground }]}>{latest?.time ?? ''}</Text></View>
+                <Text numberOfLines={1} style={[styles.updateText, { color: colors.mutedForeground }]}>{latest?.text ?? channel.description}</Text>
+                <Text style={[styles.channelCategory, { color: colors.mutedForeground }]}>{channel.category} · {channel.followers} followers</Text>
+              </View>
+              {owned ? <Pressable accessibilityRole="button" accessibilityLabel={`Open ${channel.name} controls`} onPress={(event) => { event.stopPropagation(); router.push(`/channel/${channel.id}`); }} style={styles.rowAction}><Feather name="chevron-right" size={19} color={colors.mutedForeground} /></Pressable>
+                : <Pressable accessibilityRole="button" accessibilityState={{ selected: channel.followed }} accessibilityLabel={channel.followed ? `Unfollow ${channel.name}` : `Follow ${channel.name}`} onPress={(event) => { event.stopPropagation(); void toggleChannelFollow(channel.id); }} style={[styles.rowAction, { borderColor: channel.followed ? colors.border : colors.primary }]}><Feather name={channel.followed ? 'check' : 'plus'} size={17} color={channel.followed ? colors.mutedForeground : colors.primary} /></Pressable>}
             </Pressable>
           );
         })}
-        {channels.length === 0 ? <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="compass" size={22} color={colors.mutedForeground} /><Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No channels match that search.</Text></View> : null}
+        {channels.length === 0 ? <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}><Feather name="radio" size={22} color={colors.mutedForeground} /><Text style={[styles.emptyText, { color: colors.mutedForeground }]}>{query || filter !== 'All' ? 'No channels match this view.' : 'No channels yet.'}</Text></View> : null}
       </View>
     </PageFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 29, fontWeight: '700', letterSpacing: -1, marginTop: 8 },
-  subtitle: { fontSize: 13, lineHeight: 19, marginTop: 6, marginBottom: 17, maxWidth: 290 },
-  searchBox: { height: 47, borderRadius: 15, borderWidth: 1, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 },
+  title: { fontSize: 27, fontWeight: '800', letterSpacing: -0.8, marginTop: 4 },
+  createButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  subtitle: { fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 15, maxWidth: 310 },
+  searchBox: { height: 46, borderRadius: 15, borderWidth: 1, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 10 },
   searchInput: { flex: 1, fontSize: 13 },
-  followingCard: { borderRadius: 20, padding: 16, marginTop: 15, marginBottom: 23 },
-  followingTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  followingTitle: { fontSize: 15, fontWeight: '700' },
-  followingSub: { fontSize: 11, opacity: 0.75, marginTop: 4 },
-  followingAvatars: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 18 },
-  followingCaption: { fontSize: 11, marginLeft: 3, opacity: 0.8 },
-  listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sortText: { fontSize: 11, fontWeight: '600' },
-  channelList: { gap: 11 },
-  channelCard: { borderRadius: 18, borderWidth: 1, padding: 13 },
-  channelTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  channelMeta: { flex: 1, gap: 4 },
-  channelName: { fontSize: 14, fontWeight: '700' },
+  filters: { flexDirection: 'row', gap: 8, marginTop: 12, marginBottom: 8 },
+  filter: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 },
+  filterText: { fontSize: 11, fontWeight: '700' },
+  channelList: { paddingBottom: 16 },
+  channelRow: { minHeight: 74, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: StyleSheet.hairlineWidth },
+  channelMeta: { flex: 1, minWidth: 0, gap: 3 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  channelName: { flex: 1, fontSize: 13, fontWeight: '700' },
   channelCategory: { fontSize: 10 },
-  description: { fontSize: 11, lineHeight: 16, marginTop: 11 },
-  updatePreview: { padding: 10, borderRadius: 12, marginTop: 10 },
-  updateText: { fontSize: 11, lineHeight: 16 },
-  channelFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  updateTime: { fontSize: 10 },
-  followButton: { borderRadius: 11, paddingVertical: 7, paddingHorizontal: 12 },
-  followText: { fontSize: 11, fontWeight: '700' },
-  emptyState: { borderRadius: 16, borderWidth: 1, padding: 20, alignItems: 'center', gap: 8 },
+  updateText: { fontSize: 11, lineHeight: 15 },
+  updateTime: { fontSize: 9, flexShrink: 0 },
+  rowAction: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyState: { borderRadius: 16, borderWidth: 1, marginTop: 8, padding: 20, alignItems: 'center', gap: 8 },
   emptyText: { fontSize: 12 },
 });

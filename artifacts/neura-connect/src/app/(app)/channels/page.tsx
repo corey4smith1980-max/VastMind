@@ -18,6 +18,8 @@ import { errMessage, relTime } from "@/lib/format";
 import { useMe } from "@/lib/me";
 import { useInvalidate, usePollInterval } from "@/lib/realtime";
 
+type ChannelFilter = "All" | "Following" | "Yours";
+
 // ---------- Follow toggle ----------
 function FollowButton({ c }: { c: Channel }) {
   const { toast } = useToast();
@@ -67,11 +69,14 @@ export default function ChannelsPage() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
+  const [filter, setFilter] = useState<ChannelFilter>("All");
   const [createOpen, setCreateOpen] = useState(false);
   useEffect(() => { const t = window.setTimeout(() => setDq(q.trim()), 300); return () => window.clearTimeout(t); }, [q]);
   const params = dq ? { q: dq } : undefined;
   const poll = usePollInterval(30_000);
   const list = useListChannels(params, { query: { queryKey: getListChannelsQueryKey(params), refetchInterval: poll } });
+  const visibleChannels = (list.data ?? []).filter((channel) =>
+    filter === "All" || (filter === "Following" ? channel.followed : channel.owner.id === me.id));
   return (
     <PageScroll>
       <PageHeader kicker="Broadcast" title="Channels" sub="Follow the shops, clubs and organisers you care about. Run your own to keep people in the loop."
@@ -80,26 +85,33 @@ export default function ChannelsPage() {
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search channels" className="h-11 rounded-full bg-card pl-10" aria-label="Search channels" data-testid="input-search-channels" />
       </div>
+      <div role="tablist" aria-label="Filter channels" className="mt-4 flex gap-2">
+        {(["All", "Following", "Yours"] as ChannelFilter[]).map((item) => (
+          <button key={item} type="button" role="tab" aria-selected={filter === item} onClick={() => setFilter(item)}
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${filter === item ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+            data-testid={`tab-channel-filter-${item.toLowerCase()}`}>{item}</button>
+        ))}
+      </div>
       <div className="mt-6 overflow-hidden rounded-[1.6rem] border bg-card">
         {list.isLoading ? <RowSkeleton count={4} /> : null}
         {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-        {list.data?.length === 0 ? <EmptyState icon={Radio} title={dq ? "No channels match" : "No channels yet"} body={dq ? "Try another name." : "Create one for your shop, team or block."} /> : null}
+        {list.data && visibleChannels.length === 0 ? <EmptyState icon={Radio} title={dq || filter !== "All" ? "No channels here" : "No channels yet"} body={dq ? "Try another name." : filter === "Following" ? "Channels you follow will appear here." : filter === "Yours" ? "Channels you create will appear here." : "Create one for your shop, team or block."} /> : null}
         <ul className="divide-y">
-          {list.data?.map((c, i) => {
+          {visibleChannels.map((c, i) => {
             const show = c.pinnedUpdate ?? c.latestUpdate;
             return (
-              <li key={c.id} className="rise flex items-start gap-3 p-4 hover:bg-muted/50" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }} data-testid={`row-channel-${c.id}`}>
-                <button className="flex min-w-0 flex-1 items-start gap-3 text-left" onClick={() => router.push(`/channels/${c.id}`)} aria-label={`Open ${c.name} channel`}>
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[hsl(var(--ink))] text-accent"><Radio className="h-5 w-5" /></span>
+              <li key={c.id} className="rise flex items-center gap-3 border-border/55 p-3 transition-colors hover:bg-muted/50 sm:px-4" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }} data-testid={`row-channel-${c.id}`}>
+                <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => router.push(`/channels/${c.id}`)} aria-label={`Open ${c.name} channel`}>
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--ink))] text-accent"><Radio className="h-5 w-5" /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-baseline gap-2"><span className="truncate font-semibold">{c.name}</span>{c.owner.id === me.id ? <span className="rounded-full bg-accent/40 px-1.5 text-[10px] font-bold uppercase">Yours</span> : null}</span>
-                    <span className="block truncate text-sm text-muted-foreground">
+                    <span className="flex items-baseline justify-between gap-2"><span className="truncate font-semibold">{c.name}{c.owner.id === me.id ? <span className="ml-2 rounded-full bg-accent/40 px-1.5 py-0.5 text-[9px] font-bold uppercase">Yours</span> : null}</span><time className="shrink-0 font-mono text-[10px] text-muted-foreground">{c.latestUpdate ? relTime(c.latestUpdate.createdAt) : ""}</time></span>
+                    <span className="mt-0.5 block truncate text-sm text-muted-foreground">
                       {show ? <>{c.pinnedUpdate ? <Pin className="mr-1 inline h-3 w-3 text-primary" /> : null}{show.content}</> : c.description}
                     </span>
-                    <span className="font-mono text-[11px] text-muted-foreground">{c.subscriberCount} follower{c.subscriberCount === 1 ? "" : "s"}{c.latestUpdate ? ` · ${relTime(c.latestUpdate.createdAt)}` : ""}</span>
+                    <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">{c.subscriberCount} follower{c.subscriberCount === 1 ? "" : "s"}</span>
                   </span>
                 </button>
-                {c.owner.id !== me.id ? <FollowButton c={c} /> : <Button size="sm" variant="outline" className="rounded-full" onClick={() => router.push(`/channels/${c.id}`)}>Manage</Button>}
+                {c.owner.id !== me.id ? <FollowButton c={c} /> : <Button size="sm" variant="ghost" className="rounded-full text-xs" onClick={() => router.push(`/channels/${c.id}`)}>Open</Button>}
               </li>
             );
           })}

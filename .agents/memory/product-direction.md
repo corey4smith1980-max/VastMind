@@ -63,11 +63,11 @@ Feed and posted videos belong together on the Videos page across web and mobile.
 
 **How to apply:** Keep posts and clips in one vertical timeline, preserve existing social features and content, and redirect old Feed links instead of reintroducing a second feed destination.
 
-Preserve the existing VastMind menu order unless the user asks to move or rename a destination. Shop belongs in the center of the primary mobile menu, and the combined video-and-post destination is labeled “Feed.”
+Primary navigation should prioritize Chats, Feed, Shop and Communities across web and mobile. Shop stays in the center of the five-item mobile bar, while Channels and other less-frequent tools go under More. Keep Channels separate from Communities and use a chat-style full-page layout for channel browsing and updates.
 
-**Why:** The user asked to keep the existing menu arrangements while centering Shop and renaming Videos to Feed.
+**Why:** The user explicitly asked to prioritize daily-use destinations, move secondary items into More, keep Shop centered, and make Channels feel like chat without adding channel tools to Communities.
 
-**How to apply:** Keep other destinations accessible and in their existing order. If a platform's tab limit requires an overflow menu, move secondary links there without removing them.
+**How to apply:** Use a More dropdown on desktop and the existing More destination/sheet on mobile. Preserve links to secondary tools, keep Channels accessible from More, and do not duplicate channel management inside Communities.
 
 Chat discovery should not suggest people; starting a new relationship requires searching an exact username. Status browsing belongs in the chat surface and is limited to mutual contacts, while the status page is for managing the signed-in user's own posts, listed one per card.
 

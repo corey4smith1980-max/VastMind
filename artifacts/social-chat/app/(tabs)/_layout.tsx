@@ -15,8 +15,9 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="chats"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="videos"><NativeTabs.Trigger.Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} /><NativeTabs.Trigger.Label>Feed</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="shop"><NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} /><NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label></NativeTabs.Trigger>
-      <NativeTabs.Trigger name="channels"><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="community"><NativeTabs.Trigger.Icon sf={{ default: 'person.3', selected: 'person.3.fill' }} /><NativeTabs.Trigger.Label>Communities</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="more"><NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} /><NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="channels" hidden><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -29,7 +30,7 @@ function ClassicTabLayout() {
   const tabOptions = (title: string, icon: React.ComponentProps<typeof Feather>['name']) => ({
     title,
     tabBarIcon: ({ color }: { color: ColorValue }) => isIOS
-      ? <SymbolView name={icon === 'home' ? 'house' : icon === 'message-circle' ? 'bubble.left.and.bubble.right' : icon === 'shield' ? 'lock.shield' : icon === 'mail' ? 'envelope' : icon === 'briefcase' ? 'storefront' : icon === 'shopping-bag' ? 'bag' : icon === 'grid' ? 'rectangle.stack' : icon === 'more-horizontal' ? 'ellipsis' : 'dot.radiowaves.left.and.right'} tintColor={color} size={21} />
+       ? <SymbolView name={icon === 'home' ? 'house' : icon === 'message-circle' ? 'bubble.left.and.bubble.right' : icon === 'shield' ? 'lock.shield' : icon === 'mail' ? 'envelope' : icon === 'briefcase' ? 'storefront' : icon === 'shopping-bag' ? 'bag' : icon === 'grid' ? 'rectangle.stack' : icon === 'users' ? 'person.3' : icon === 'more-horizontal' ? 'ellipsis' : 'dot.radiowaves.left.and.right'} tintColor={color} size={21} />
       : <Feather name={icon} size={20} color={color} />,
   });
   return (
@@ -47,8 +48,9 @@ function ClassicTabLayout() {
       <Tabs.Screen name="chats" options={tabOptions('Chats', 'message-circle')} />
       <Tabs.Screen name="videos" options={tabOptions('Feed', 'grid')} />
       <Tabs.Screen name="shop" options={tabOptions('Shop', 'shopping-bag')} />
-      <Tabs.Screen name="channels" options={tabOptions('Channels', 'radio')} />
+      <Tabs.Screen name="community" options={tabOptions('Communities', 'users')} />
       <Tabs.Screen name="more" options={tabOptions('More', 'more-horizontal')} />
+      <Tabs.Screen name="channels" options={{ href: null }} />
       <Tabs.Screen name="mail" options={{ href: null }} />
       <Tabs.Screen name="business" options={{ href: null }} />
     </Tabs>
