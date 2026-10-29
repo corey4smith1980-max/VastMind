@@ -34,6 +34,7 @@ export default function ChatsScreen() {
     return matchesText && matchesFilter;
   }), [filter, query, state.conversations]);
   const unreadCount = state.conversations.reduce((sum, chat) => sum + chat.unread, 0);
+  const quickStatusAuthor = mutualStatuses[0]?.[0]?.author;
 
   return (
     <View style={{ flex: 1 }}>
@@ -42,8 +43,22 @@ export default function ChatsScreen() {
         <StorageNotice />
         <View style={styles.headingRow}>
           <View style={styles.headingBrand}>
-            {mutualStatuses.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.compactStatusStrip} contentContainerStyle={styles.compactStatusContent}>
-              {mutualStatuses.map((items) => {
+            <Pressable accessibilityRole="button"
+                accessibilityLabel={quickStatusAuthor ? `View ${quickStatusAuthor.name}'s status` : 'Open statuses'}
+                onPress={() => quickStatusAuthor
+                  ? router.push({ pathname: '/stories', params: { authorId: quickStatusAuthor.id } })
+                  : router.push('/stories')}
+                style={styles.quickStatusButton} data-testid="button-chat-friends-status">
+                <StatusRing size={38} active={!!quickStatusAuthor} stroke={2.5}>
+                  <View style={{ width: 30, height: 30, borderRadius: 15, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
+                    {quickStatusAuthor?.avatarUrl ? <Image source={{ uri: quickStatusAuthor.avatarUrl }} style={{ width: 30, height: 30 }} />
+                      : quickStatusAuthor ? <Avatar initials={initials(quickStatusAuthor.name)} size={30} tone="blue" />
+                        : <Feather name="aperture" size={16} color={colors.mutedForeground} />}
+                  </View>
+                </StatusRing>
+            </Pressable>
+            {mutualStatuses.length > 1 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.compactStatusStrip} contentContainerStyle={styles.compactStatusContent}>
+              {mutualStatuses.slice(1, 4).map((items) => {
                 const author = items[0].author;
                 return <Pressable key={author.id} accessibilityRole="button"
                   accessibilityLabel={`View ${author.name}'s ${items.length} active status ${items.length === 1 ? 'update' : 'updates'}`}
@@ -100,6 +115,7 @@ export default function ChatsScreen() {
 const styles = StyleSheet.create({
   headingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   headingBrand: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  quickStatusButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   compactStatusStrip: { maxWidth: 86, flexGrow: 0, flexShrink: 0 },
   compactStatusContent: { alignItems: 'center', gap: 2, paddingVertical: 2 },
   compactStatusButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

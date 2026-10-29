@@ -55,11 +55,21 @@ export function MutualStatusStrip({ meId, compact = false }: { meId: string; com
       .sort((a, b) => new Date(b[0].createdAt).getTime() - new Date(a[0].createdAt).getTime());
   }, [statuses.active, meId]);
 
-  if (!statuses.isLoading && contacts.length === 0) return null;
-  if (compact) return (
-    <div className="flex max-w-[88px] shrink-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Mutual contacts' active statuses" data-testid="mutual-status-strip">
-      {statuses.isLoading && contacts.length === 0 ? <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-muted" aria-label="Checking for statuses" /> : null}
-      {contacts.map((items) => {
+  if (compact) {
+    const first = contacts[0]?.[0];
+    const quickLabel = first ? `View ${first.author.name}'s status` : "Open statuses";
+    return (
+    <div className="flex max-w-[116px] shrink-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Friends' statuses" data-testid="mutual-status-strip">
+      <Link href={first ? `/statuses?authorId=${encodeURIComponent(first.author.id)}` : "/statuses"}
+        aria-label={quickLabel} title={quickLabel}
+        className="h-9 w-9 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        data-testid="button-chat-friends-status">
+        <StatusRing active={!!first} className="h-9 w-9">
+          {first ? <UserAvatar id={first.author.id} name={first.author.name} src={first.author.avatarUrl} size="sm" />
+            : <span className="grid h-full w-full place-items-center rounded-full bg-muted text-muted-foreground"><CircleDashed className="h-4 w-4" aria-hidden="true" /></span>}
+        </StatusRing>
+      </Link>
+      {contacts.slice(1, 3).map((items) => {
         const latest = items[0];
         return (
           <Link key={latest.author.id} href={`/statuses?authorId=${encodeURIComponent(latest.author.id)}`}
@@ -75,6 +85,8 @@ export function MutualStatusStrip({ meId, compact = false }: { meId: string; com
       })}
     </div>
   );
+  }
+  if (!statuses.isLoading && contacts.length === 0) return null;
   return (
     <section className="mt-4" aria-label="Mutual contacts' active statuses" data-testid="mutual-status-strip">
       <p className="mb-2 font-mono text-[9px] font-semibold uppercase tracking-[.18em] text-muted-foreground">Mutual statuses</p>

@@ -213,18 +213,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
   }, [exchange]);
 
-  if (!storedSessionLoaded || readyUser !== activeUserId) {
-    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: colors.background }}>
-      <ActivityIndicator accessibilityLabel="Loading secure session" color={colors.primary} />
-      <Text accessibilityLabel="Checking your secure VastMind sign-in" style={{ color: colors.mutedForeground, textAlign: 'center' }}>Checking your secure VastMind sign-in…</Text>
-    </View>;
-  }
-  if (!mobileSession && session?.currentTask) {
-    return <View style={{ flex: 1, padding: 32, justifyContent: 'center', backgroundColor: colors.background }}>
-      <Text style={{ color: colors.foreground }}>Complete account setup in the web app, then sign in here.</Text>
-      <Pressable onPress={() => void clerkSignOut()}><Text style={{ color: colors.primary, paddingVertical: 20 }}>Sign out and try again</Text></Pressable>
-    </View>;
-  }
   const signInWithPassword = useCallback(async (username: string, password: string) => {
     if (!trustedDeviceToken) throw new Error("This device is not trusted yet. Sign in with a passkey or recovery phrase.");
     const domain = process.env.EXPO_PUBLIC_DOMAIN?.replace(/^https?:\/\//, '').split('/')[0];
@@ -251,6 +239,19 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     setMobileSession(nextSession);
     client.clear();
   }, [client, trustedDeviceToken]);
+
+  if (!storedSessionLoaded || readyUser !== activeUserId) {
+    return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24, backgroundColor: colors.background }}>
+      <ActivityIndicator accessibilityLabel="Loading secure session" color={colors.primary} />
+      <Text accessibilityLabel="Checking your secure VastMind sign-in" style={{ color: colors.mutedForeground, textAlign: 'center' }}>Checking your secure VastMind sign-in…</Text>
+    </View>;
+  }
+  if (!mobileSession && session?.currentTask) {
+    return <View style={{ flex: 1, padding: 32, justifyContent: 'center', backgroundColor: colors.background }}>
+      <Text style={{ color: colors.foreground }}>Complete account setup in the web app, then sign in here.</Text>
+      <Pressable onPress={() => void clerkSignOut()}><Text style={{ color: colors.primary, paddingVertical: 20 }}>Sign out and try again</Text></Pressable>
+    </View>;
+  }
 
   if (!activeUserId) return <AuthForm
     busy={authBusy}
