@@ -39,11 +39,14 @@ const relevance = `
   + 8.0/(1+GREATEST(0,EXTRACT(EPOCH FROM (now()-p.created_at)))/86400.0)
   - CASE WHEN EXISTS(SELECT 1 FROM video_engagement WHERE user_id=$1 AND post_id=p.id AND watch_ms>=3000) THEN 18 ELSE 0 END`;
 
-export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; surface?: string; q?: string }, q: Query = query) {
+export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; surface?: string; q?: string; topic?: string }, q: Query = query) {
   const feed = input.feed || "for-you";
   assert(["for-you", "following", "latest"].includes(feed), 400, "Invalid feed");
   const surface = input.surface || "feed";
   assert(["feed", "community", "profile"].includes(surface), 400, "Invalid destination");
+  const topic = input.topic || null;
+  assert(!topic || ["opportunity", "help", "service", "connection"].includes(topic), 400, "Invalid Community topic");
+  assert(!topic || surface === "community", 400, "Community topics only apply to Community posts");
   assert(surface !== "profile" || !!input.creatorId, 400, "A creator is required for profile posts");
   const creator = input.creatorId ? (await creatorProfile(input.creatorId, viewer, q)).user.id : null;
   const search = input.q?.trim() || null;
@@ -55,7 +58,7 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
     ? visible
     : `p.community_id IS NULL AND p.surface='${surface}'
       AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%')) AND ${privacy}`;
-  const scope = `v3:${feed}:${createHash("sha256").update(JSON.stringify([surface, search])).digest("hex")}`;
+  const scope = `v4:${feed}:${createHash("sha256").update(JSON.stringify([surface, search, topic])).digest("hex")}`;
   const searchLike = search ? `%${search.replace(/[%_\\]/g, "\\$&")}%` : null;
   let ids: string[], sessionId: string, offset = 0;
   if (input.before) {
@@ -79,7 +82,8 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
       AND ($3::text<>'following' OR EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id))
       AND p.community_id IS NULL
       AND ($4::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$4) OR p.content ILIKE $5)
-      ORDER BY rank DESC,p.created_at DESC,p.id DESC LIMIT 300`, [viewer, creator, feed, search, searchLike]);
+      AND ($6::text IS NULL OR p.community_topic=$6)
+      ORDER BY rank DESC,p.created_at DESC,p.id DESC LIMIT 300`, [viewer, creator, feed, search, searchLike, topic]);
     ids = rows.map(row => row.id);
     sessionId = uuid();
     if (ids.length) await q(`INSERT INTO video_feed_sessions (id,user_id,feed,creator_id,post_ids,expires_at)
@@ -92,7 +96,8 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
     AND ($3::text<>'following' OR EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id))
     AND p.community_id IS NULL
     AND ($4::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$4) OR p.content ILIKE $5)
-    ORDER BY array_position($2::text[],p.id)`, [viewer, pageIds, feed, search, searchLike]) : [];
+    AND ($6::text IS NULL OR p.community_topic=$6)
+    ORDER BY array_position($2::text[],p.id)`, [viewer, pageIds, feed, search, searchLike, topic]) : [];
   // Preserve serial use of transaction-bound query clients and avoid sharing one
   // PostgreSQL client across concurrent post-mapping queries.
   const items = [];

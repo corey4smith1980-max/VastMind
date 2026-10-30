@@ -5,6 +5,7 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { CommunityPostTopic } from './communityPostTopic';
 import type { GetVideosFeed } from './getVideosFeed';
 import type { GetVideosSurface } from './getVideosSurface';
 
@@ -26,4 +27,8 @@ surface?: GetVideosSurface;
  * @maxLength 200
  */
 q?: string;
+/**
+ * Filter Community posts by topic. Ignored for Feed clips and Profile posts.
+ */
+topic?: CommunityPostTopic;
 };

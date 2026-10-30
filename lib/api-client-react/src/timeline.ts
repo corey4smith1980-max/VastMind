@@ -12,6 +12,7 @@ export function usePagedSocialTimeline(input: Omit<GetVideosParams, "before">, e
     ...(input.feed ? { feed: input.feed } : {}),
     ...(input.creatorId ? { creatorId: input.creatorId } : {}),
     ...(input.q?.trim() ? { q: input.q.trim() } : {}),
+    ...(input.topic ? { topic: input.topic } : {}),
   };
   const client = useQueryClient();
   const key = [...getGetVideosQueryKey(base), "infinite"];

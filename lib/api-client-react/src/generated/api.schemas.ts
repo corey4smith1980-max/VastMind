@@ -310,6 +310,16 @@ export const PostSurface = {
   profile: 'profile',
 } as const;
 
+export type CommunityPostTopic = typeof CommunityPostTopic[keyof typeof CommunityPostTopic];
+
+
+export const CommunityPostTopic = {
+  opportunity: 'opportunity',
+  help: 'help',
+  service: 'service',
+  connection: 'connection',
+} as const;
+
 export interface PollOption {
   id: string;
   label: string;
@@ -345,6 +355,7 @@ export interface Post {
   /** @nullable */
   communityName: string | null;
   surface: PostSurface;
+  communityTopic: CommunityPostTopic | null;
   pollOptions: PollOption[];
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;
@@ -391,6 +402,7 @@ export interface PostInput {
      */
   content: string;
   surface?: PostSurface;
+  communityTopic?: CommunityPostTopic;
   /**
      * @maxItems 6
      * @items.minLength 1
@@ -2136,6 +2148,7 @@ limit?: number;
 export type GetFeedParams = {
 q?: string;
 before?: string;
+topic?: CommunityPostTopic;
 };
 
 export type GetVideosParams = {
@@ -2156,6 +2169,10 @@ surface?: GetVideosSurface;
  * @maxLength 200
  */
 q?: string;
+/**
+ * Filter Community posts by topic. Ignored for Feed clips and Profile posts.
+ */
+topic?: CommunityPostTopic;
 };
 
 export type GetVideosFeed = typeof GetVideosFeed[keyof typeof GetVideosFeed];

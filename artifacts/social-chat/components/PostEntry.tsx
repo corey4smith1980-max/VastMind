@@ -4,8 +4,9 @@ import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  getListPostCommentsQueryKey, useAddPostComment, useCreatePost,
+  COMMUNITY_POST_TOPICS, communityTopicLabel, getListPostCommentsQueryKey, useAddPostComment, useCreatePost,
   useListPostComments, useTogglePostReaction, useVoteOnPoll, type MediaAttachment, type Post,
+  type CommunityPostTopic,
 } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
@@ -50,7 +51,10 @@ export function PostEntry({ post, height, near, bottomInset, variant = 'reel' }:
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.foreground, fontWeight: '700' }} numberOfLines={1}>{author}{p.isAnonymous ? '' : <Text style={{ color: colors.mutedForeground, fontWeight: '400' }}>  @{p.author.username}</Text>}</Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{ago(p.createdAt)}</Text>
+            <View style={s.row}>
+              <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{ago(p.createdAt)}</Text>
+              {variant === 'community' && p.communityTopic ? <Text style={{ color: colors.primary, backgroundColor: colors.muted, borderRadius: 10, overflow: 'hidden', paddingHorizontal: 7, paddingVertical: 2, fontSize: 10, fontWeight: '700' }}>{communityTopicLabel(p.communityTopic)}</Text> : null}
+            </View>
           </View>
         </View>
         {p.content ? <Text style={{ color: colors.foreground, fontSize: 16, lineHeight: 23, marginTop: 14 }}>{p.content}</Text> : null}
@@ -94,29 +98,40 @@ export function PostEntry({ post, height, near, bottomInset, variant = 'reel' }:
 }
 
 /** Native post / poll composer using the real Post contract. */
-export function CreatePostSheet({ onClose, onPublished, surface = 'community' }: { onClose: () => void; onPublished: () => void; surface?: 'community' | 'profile' }) {
+export function CreatePostSheet({ onClose, onPublished, surface = 'community', initialCommunityTopic }: { onClose: () => void; onPublished: () => void; surface?: 'community' | 'profile'; initialCommunityTopic?: CommunityPostTopic }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const [content, setContent] = useState('');
+  const [communityTopic, setCommunityTopic] = useState<CommunityPostTopic | null>(initialCommunityTopic ?? null);
   const [anon, setAnon] = useState(false);
   const [poll, setPoll] = useState<string[] | null>(null);
   const [photo, setPhoto] = useState<MediaAttachment>();
   const [uploading, setUploading] = useState(false);
   const create = useCreatePost({ mutation: { onSuccess: () => {
     void qc.invalidateQueries({ queryKey: ['/api/videos'] }); void qc.invalidateQueries({ queryKey: ['/api/feed'] });
-    setContent(''); setPoll(null); setAnon(false); setPhoto(undefined); onPublished();
+    setContent(''); setCommunityTopic(initialCommunityTopic ?? null); setPoll(null); setAnon(false); setPhoto(undefined); onPublished();
   } } });
   const opts = (poll ?? []).map(o => o.trim()).filter(Boolean);
   const distinct = new Set(opts.map(o => o.toLowerCase())).size === opts.length;
-  const ok = (poll ? !!content.trim() && opts.length >= 2 && distinct : !!content.trim() || !!photo) && !create.isPending && !uploading;
-  const hint = uploading ? 'Wait for the photo to finish uploading.' : poll && !content.trim() ? 'Polls need a question.' : poll && opts.length < 2 ? 'Add at least two options.' : poll && !distinct ? 'Poll options must be different.' : '';
+  const ok = (poll ? !!content.trim() && opts.length >= 2 && distinct : !!content.trim() || !!photo) && (surface !== 'community' || !!communityTopic) && !create.isPending && !uploading;
+  const hint = uploading ? 'Wait for the photo to finish uploading.' : surface === 'community' && !communityTopic ? 'Choose a Community topic to continue.' : poll && !content.trim() ? 'Polls need a question.' : poll && opts.length < 2 ? 'Add at least two options.' : poll && !distinct ? 'Poll options must be different.' : '';
   return <Modal visible animationType="slide" transparent onRequestClose={onClose}>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(5,20,24,0.55)' }}>
       <View style={[s.sheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 14, maxHeight: '92%', flexShrink: 1 }]}>
-        <View style={[s.row, { justifyContent: 'space-between' }]}><Text style={{ color: colors.foreground, fontSize: 19, fontWeight: '700' }}>{poll ? (photo ? 'New photo poll' : 'New poll') : photo ? 'New photo post' : 'New post'}</Text><Pressable accessibilityLabel="Close" onPress={onClose} style={{ padding: 8 }}><Feather name="x" size={22} color={colors.foreground} /></Pressable></View>
+        <View style={[s.row, { justifyContent: 'space-between' }]}><Text style={{ color: colors.foreground, fontSize: 19, fontWeight: '700' }}>{poll ? (photo ? 'New photo poll' : 'New poll') : photo ? 'New photo post' : surface === 'community' ? 'Community post' : 'New post'}</Text><Pressable accessibilityLabel="Close" onPress={onClose} style={{ padding: 8 }}><Feather name="x" size={22} color={colors.foreground} /></Pressable></View>
         <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" style={{ flexGrow: 0, flexShrink: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
-          <TextInput accessibilityLabel="Post content" multiline maxLength={5000} value={content} onChangeText={setContent} placeholder={poll ? 'Ask a question' : photo ? 'Add a caption (optional)' : 'What is on your mind?'} placeholderTextColor={colors.mutedForeground} style={{ color: colors.foreground, minHeight: 90, fontSize: 16, textAlignVertical: 'top' }} />
+          <TextInput accessibilityLabel="Post content" multiline maxLength={5000} value={content} onChangeText={setContent} placeholder={poll ? 'Ask a question' : photo ? 'Add a caption (optional)' : surface === 'community' ? 'Share an opportunity, ask for help, or offer a skill…' : 'What is on your mind?'} placeholderTextColor={colors.mutedForeground} style={{ color: colors.foreground, minHeight: 90, fontSize: 16, textAlignVertical: 'top' }} />
+          {surface === 'community' ? <View style={{ marginTop: 6, marginBottom: 14 }}>
+            <Text style={{ color: colors.mutedForeground, fontSize: 12, fontWeight: '700', marginBottom: 8 }}>Choose a topic</Text>
+            <View style={[s.row, { flexWrap: 'wrap' }]}>
+              {COMMUNITY_POST_TOPICS.map(option => <Pressable key={option.id} accessibilityRole="button" accessibilityState={{ selected: communityTopic === option.id }} onPress={() => setCommunityTopic(option.id)}
+                style={{ borderWidth: 1, borderColor: communityTopic === option.id ? colors.primary : colors.border, borderRadius: 18, paddingHorizontal: 11, paddingVertical: 8, backgroundColor: communityTopic === option.id ? colors.primary : colors.card }}>
+                <Text style={{ color: communityTopic === option.id ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: '700' }}>{option.label}</Text>
+              </Pressable>)}
+            </View>
+            {communityTopic ? <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 8 }}>{COMMUNITY_POST_TOPICS.find(option => option.id === communityTopic)?.prompt}</Text> : null}
+          </View> : null}
           {poll ? <View style={{ gap: 8 }}>{poll.map((o, i) => <View key={i} style={s.row}>
             <TextInput accessibilityLabel={`Poll option ${i + 1}`} value={o} maxLength={120} onChangeText={v => setPoll(pp => pp!.map((x, j) => j === i ? v : x))} placeholder={`Option ${i + 1}`} placeholderTextColor={colors.mutedForeground} style={[s.input, { flex: 1, color: colors.foreground, borderColor: colors.border }]} />
             {poll.length > 2 ? <Pressable accessibilityLabel="Remove option" onPress={() => setPoll(pp => pp!.filter((_, j) => j !== i))}><Feather name="minus-circle" size={20} color={colors.mutedForeground} /></Pressable> : null}
@@ -131,7 +146,7 @@ export function CreatePostSheet({ onClose, onPublished, surface = 'community' }:
         </ScrollView>
         {create.isError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginTop: 8 }}>{errorText(create.error)}</Text> : null}
         {hint ? <Text accessibilityLiveRegion="polite" style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>{hint}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), surface, isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), surface, communityTopic: surface === 'community' ? communityTopic ?? undefined : undefined, isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
           {create.isPending ? <ActivityIndicator color={colors.primaryForeground} /> : <Text style={{ color: colors.primaryForeground, fontWeight: '700' }}>Share</Text>}
         </Pressable>
       </View>

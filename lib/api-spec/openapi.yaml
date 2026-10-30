@@ -782,6 +782,11 @@ paths:
           schema:
             type: string
             format: date-time
+        - in: query
+          name: topic
+          required: false
+          schema:
+            $ref: "#/components/schemas/CommunityPostTopic"
       responses:
         "200":
           description: Feed posts
@@ -812,6 +817,11 @@ paths:
         - in: query
           name: q
           schema: { type: string, maxLength: 200 }
+        - in: query
+          name: topic
+          description: Filter Community posts by topic. Ignored for Feed clips and Profile posts.
+          schema:
+            $ref: "#/components/schemas/CommunityPostTopic"
       responses:
         "200":
           description: Videos and the next paging cursor
@@ -2096,7 +2106,7 @@ components:
         inviteUrl: { type: string }
     Post:
       type: object
-      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, surface, pollOptions, media, audioMedia, effect, isAnonymous]
+      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, surface, communityTopic, pollOptions, media, audioMedia, effect, isAnonymous]
       properties:
         id: { type: string }
         author:
@@ -2109,6 +2119,10 @@ components:
         communityId: { type: ["string", "null"] }
         communityName: { type: ["string", "null"] }
         surface: { $ref: "#/components/schemas/PostSurface" }
+        communityTopic:
+          anyOf:
+            - $ref: "#/components/schemas/CommunityPostTopic"
+            - type: "null"
         pollOptions:
           type: array
           items:
@@ -2150,6 +2164,9 @@ components:
     PostSurface:
       type: string
       enum: [feed, community, profile]
+    CommunityPostTopic:
+      type: string
+      enum: [opportunity, help, service, connection]
     PollOption:
       type: object
       required: [id, label, votes, votedByMe]
@@ -2180,6 +2197,7 @@ components:
           maxLength: 5000
           description: Caption or poll question. May be empty only for an ordinary photo post; polls require a question.
         surface: { $ref: "#/components/schemas/PostSurface" }
+        communityTopic: { $ref: "#/components/schemas/CommunityPostTopic" }
         pollOptions:
           type: array
           maxItems: 6

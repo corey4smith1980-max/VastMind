@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { COMMUNITY_POST_TOPICS, type CommunityPostTopic } from "@workspace/api-client-react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CreatePostSheet, PostEntry } from "@/components/PostEntry";
 import { usePagedVideos } from "@/components/videoKit";
@@ -12,13 +13,14 @@ export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
   const { height: viewportHeight } = useWindowDimensions();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [topic, setTopic] = useState<CommunityPostTopic | "all">("all");
   const [search, setSearch] = useState("");
   const [settledSearch, setSettledSearch] = useState("");
   useEffect(() => {
     const timeout = setTimeout(() => setSettledSearch(search.trim()), 300);
     return () => clearTimeout(timeout);
   }, [search]);
-  const posts = usePagedVideos({ surface: "community", feed: "latest", q: settledSearch });
+  const posts = usePagedVideos({ surface: "community", feed: "latest", q: settledSearch, topic: topic === "all" ? undefined : topic });
   const cardHeight = useMemo(() => Math.min(560, Math.max(420, viewportHeight * 0.58)), [viewportHeight]);
 
   return <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -26,14 +28,14 @@ export default function CommunityScreen() {
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <View>
           <Text style={{ color: colors.foreground, fontSize: 24, fontWeight: "800" }}>Community</Text>
-          <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 2 }}>Posts, photos and polls from people on VastMind.</Text>
+          <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 2 }}>Find opportunities, get help, offer skills, and connect.</Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel="Create a community post" onPress={() => setComposerOpen(true)} style={{ width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary }}>
           <Feather name="plus" size={22} color={colors.primaryForeground} />
         </Pressable>
       </View>
       <Pressable accessibilityRole="button" onPress={() => setComposerOpen(true)} style={{ marginTop: 12, minHeight: 46, borderWidth: 1, borderColor: colors.border, borderRadius: 16, backgroundColor: colors.card, paddingHorizontal: 14, justifyContent: "center" }}>
-        <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Share a thought, photo, or poll…</Text>
+        <Text style={{ color: colors.mutedForeground, fontSize: 14 }}>Share an opportunity, ask for help, or offer a skill…</Text>
       </Pressable>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9, marginTop: 10, minHeight: 42, borderWidth: 1, borderColor: colors.border, borderRadius: 16, backgroundColor: colors.card, paddingHorizontal: 12 }}>
         <Feather name="search" size={16} color={colors.mutedForeground} />
@@ -51,6 +53,16 @@ export default function CommunityScreen() {
           <Feather name="x" size={16} color={colors.foreground} />
         </Pressable> : null}
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10, paddingRight: 8 }}>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: topic === "all" }} onPress={() => setTopic("all")}
+          style={{ minHeight: 34, justifyContent: "center", borderRadius: 18, paddingHorizontal: 12, backgroundColor: topic === "all" ? colors.primary : colors.card, borderWidth: 1, borderColor: topic === "all" ? colors.primary : colors.border }}>
+          <Text style={{ color: topic === "all" ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: "700" }}>All</Text>
+        </Pressable>
+        {COMMUNITY_POST_TOPICS.map(option => <Pressable key={option.id} accessibilityRole="button" accessibilityState={{ selected: topic === option.id }} onPress={() => setTopic(option.id)}
+          style={{ minHeight: 34, justifyContent: "center", borderRadius: 18, paddingHorizontal: 12, backgroundColor: topic === option.id ? colors.primary : colors.card, borderWidth: 1, borderColor: topic === option.id ? colors.primary : colors.border }}>
+          <Text style={{ color: topic === option.id ? colors.primaryForeground : colors.foreground, fontSize: 11, fontWeight: "700" }}>{option.label}</Text>
+        </Pressable>)}
+      </ScrollView>
     </View>
 
     <FlatList
@@ -68,9 +80,9 @@ export default function CommunityScreen() {
         ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 36 }}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.mutedForeground, marginTop: 12 }}>Loading Community…</Text></View>
         : posts.isError
           ? <Pressable accessibilityRole="button" onPress={posts.retry} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 36 }}><Feather name="refresh-cw" size={28} color={colors.primary} /><Text style={{ color: colors.foreground, textAlign: "center", marginTop: 12 }}>Couldn't load posts. Tap to retry.</Text></Pressable>
-          : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 36 }}><Feather name={settledSearch ? "search" : "message-square"} size={32} color={colors.primary} /><Text style={{ color: colors.foreground, fontSize: 19, fontWeight: "700", marginTop: 14 }}>{settledSearch ? "No matching posts" : "Start the conversation"}</Text><Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 6 }}>{settledSearch ? `No Community posts match "${settledSearch}". Try another search.` : "Share a photo, thought, or poll with everyone."}</Text></View>}
+          : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 36 }}><Feather name={settledSearch ? "search" : "message-square"} size={32} color={colors.primary} /><Text style={{ color: colors.foreground, fontSize: 19, fontWeight: "700", marginTop: 14 }}>{settledSearch || topic !== "all" ? "No matching posts" : "Start a connection"}</Text><Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 6 }}>{settledSearch ? `No Community posts match "${settledSearch}". Try another search.` : topic !== "all" ? `No ${COMMUNITY_POST_TOPICS.find(option => option.id === topic)?.label.toLowerCase()} posts yet.` : "Share an opportunity, ask for help, or offer a skill to get started."}</Text></View>}
       ListFooterComponent={posts.loadingMore ? <ActivityIndicator color={colors.primary} style={{ padding: 18 }} accessibilityLabel="Loading more community posts" /> : null}
     />
-    {composerOpen ? <CreatePostSheet surface="community" onClose={() => setComposerOpen(false)} onPublished={() => { setComposerOpen(false); posts.refresh(); }} /> : null}
+    {composerOpen ? <CreatePostSheet surface="community" initialCommunityTopic={topic === "all" ? undefined : topic} onClose={() => setComposerOpen(false)} onPublished={() => { setComposerOpen(false); posts.refresh(); }} /> : null}
   </View>;
 }

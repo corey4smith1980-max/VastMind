@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CaptionCue } from './captionCue';
+import type { CommunityPostTopic } from './communityPostTopic';
 import type { MediaAttachment } from './mediaAttachment';
 import type { PollOption } from './pollOption';
 import type { PostEffect } from './postEffect';
@@ -25,6 +26,7 @@ export interface Post {
   /** @nullable */
   communityName: string | null;
   surface: PostSurface;
+  communityTopic: CommunityPostTopic | null;
   pollOptions: PollOption[];
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;

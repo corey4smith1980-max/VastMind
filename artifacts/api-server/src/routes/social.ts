@@ -286,15 +286,18 @@ route("post","/invites/:inviteCode/join","AcceptChatInvite",async c=>{
   await groupAddition(c,chat.id,c.u);await chatImpact(c,chat.id);return conversation(chat.id,c.u,c.q);
 });
 route("get","/feed","GetFeed",async c=>{
+  const topic=c.s.topic??null;
+  assert(!topic || ["opportunity","help","service","connection"].includes(topic),400,"Invalid Community topic");
   const rows=await c.q(`SELECT p.id FROM posts p LEFT JOIN media_uploads m ON m.id=p.media_id WHERE p.community_id IS NULL
     AND p.surface='community' AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%'))
     AND ($2::timestamptz IS NULL OR p.created_at<$2)
     AND ($3::text IS NULL
       OR to_tsvector('simple', p.content) @@ websearch_to_tsquery('simple', $3)
       OR p.content ILIKE $4)
+    AND ($5::text IS NULL OR p.community_topic=$5)
     AND NOT EXISTS(SELECT 1 FROM blocks WHERE
       (user_id=$1 AND target_id=p.author_id) OR (target_id=$1 AND user_id=p.author_id))
-    ORDER BY p.created_at DESC LIMIT 40`,[c.u,c.s.before??null,c.s.q??null,c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null]);
+    ORDER BY p.created_at DESC LIMIT 40`,[c.u,c.s.before??null,c.s.q??null,c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null,topic]);
   return Promise.all(rows.map(r=>post(r.id,c.u,c.q)));
 });
 route("get","/videos","GetVideos",async c=>{
@@ -328,10 +331,13 @@ route("post","/posts","CreatePost",async c=>{
   assert(!main||!main.content_type.startsWith("audio/"),400,"Choose a photo or video clip");
   const surface=c.b.surface??(main?.content_type.startsWith("video/")?"feed":"community");
   assert(["feed","community","profile"].includes(surface),400,"Choose a valid post destination");
+  const communityTopic=surface==="community"?(c.b.communityTopic??"opportunity"):null;
+  assert(!c.b.communityTopic || surface==="community",400,"Topics only apply to Community posts");
+  assert(!communityTopic || ["opportunity","help","service","connection"].includes(communityTopic),400,"Choose a valid Community topic");
   assert(surface==="feed"?main?.content_type.startsWith("video/"):!main?.content_type.startsWith("video/"),400,
     surface==="feed"?"Feed posts must include a video clip":"Video clips belong in Feed, not Community or Profile");
   validatePostComposition(c.b.content,main?.content_type,c.b.pollOptions);
-  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,surface,content,media_id,audio_media_id,effect,captions,is_anonymous) VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9)",[id,c.u,surface,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions),c.b.isAnonymous??false]);
+  const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,surface,community_topic,content,media_id,audio_media_id,effect,captions,is_anonymous) VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10)",[id,c.u,surface,communityTopic,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions),c.b.isAnonymous??false]);
   for(const label of c.b.pollOptions??[])await c.q("INSERT INTO poll_options (id,post_id,label) VALUES ($1,$2,$3)",[uuid(),id,label]);
   await feedImpact(c,null);return post(id,c.u,c.q);
 },201);

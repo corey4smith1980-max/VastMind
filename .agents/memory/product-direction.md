@@ -51,11 +51,11 @@ Ordinary emoji should be free and static. VastMind-specific premium emoji should
 
 **How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.
 
-Community is a global public text/photo/poll discussion board, while Feed is a separate TikTok-style short-video destination. Neither is a community-group feature.
+Community is a focused public opportunities-and-connections board for finding help, offering support, sharing services and skills, and showcasing potential. Feed remains a separate TikTok-style short-video destination; neither is a community-group feature.
 
-**Why:** The user renamed Home to Community, removed groups, and later explicitly separated Community posts from the TikTok-like Feed.
+**Why:** The user clarified that Community is only for opportunities, connections, support and help, and offering services, skills, and potential.
 
-**How to apply:** Keep text, photo, poll, reaction, and comment posts in Community; keep clips in Feed. Do not add group discovery, membership, opportunity listings, or group-scoped posts. Keep `/home` for compatibility.
+**How to apply:** Categorize Community posts as Opportunities, Help & support, Services & skills, or Connections & showcase. Keep Community posts separate from clips and profile posts. Do not add group discovery, membership, or group-scoped posts. Preserve older posts without deleting or reclassifying them; keep `/home` for compatibility.
 
 Posts created on a member profile belong only on that profile; they must not appear in Community or Feed.
 

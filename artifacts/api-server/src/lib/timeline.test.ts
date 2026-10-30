@@ -24,6 +24,7 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
       const expected: string[] = [];
       for (let i = 0; i < 56; i++) {
         const id = uuid(), media = i % 3 === 0 ? "video/mp4" : i % 3 === 1 ? "image/png" : null;
+        const topic = media === "video/mp4" ? null : ["opportunity", "help", "service", "connection"][i % 4];
         const group = i === 24 ? privateGroup : i === 23 ? publicGroup : null;
         const ready = i !== 55;
         // Last fixture deliberately has an unready attachment.
@@ -31,8 +32,8 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
         if (i < 54 && i !== 23 && i !== 24 && i % 3 !== 0) expected.push(id);
         if (contentType) await q(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose,ready,attached)
           VALUES($1,$2,'/objects/test-only','fixture',$3,'12','post',$4,true)`, [id, author, contentType, ready]);
-        await q(`INSERT INTO posts(id,author_id,media_id,content,community_id,surface,is_anonymous)
-          VALUES($1,$2,$3,$4,$5,$6,$7)`, [id, author, contentType ? id : null, `${needle} post ${i}`, group, contentType?.startsWith("video/") ? "feed" : "community", i === 2]);
+        await q(`INSERT INTO posts(id,author_id,media_id,content,community_id,surface,community_topic,is_anonymous)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, [id, author, contentType ? id : null, `${needle} post ${i}`, group, contentType?.startsWith("video/") ? "feed" : "community", topic, i === 2]);
       }
       const profilePost = uuid();
       await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,'Profile only post','profile')", [profilePost, author]);
@@ -50,6 +51,10 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
       strict.ok(community.some(p => p.media?.contentType === "image/png"));
       strict.ok(community.some(p => !p.media));
       strict.ok(!community.some(p => p.id === profilePost), "profile posts must not appear in Community");
+      const helpPosts = await videoPage(viewer, { ...input, topic: "help" }, q);
+      strict.ok(helpPosts.items.length > 0);
+      strict.ok(helpPosts.items.every(p => p.communityTopic === "help" && p.surface === "community" && !p.media?.contentType.startsWith("video/")));
+      await strict.rejects(() => videoPage(viewer, { ...input, topic: "help", before: first.nextBefore! }, q), HttpError);
       const anonymous = community.find(p => p.isAnonymous);
       strict.ok(anonymous);
       strict.notEqual(anonymous.author.id, author, "anonymous author identity must remain hidden");

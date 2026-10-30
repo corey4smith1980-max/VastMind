@@ -5,8 +5,10 @@
  * NeuraCoreConnect API for profiles, messaging, communities, channels, and social activity.
  * OpenAPI spec version: 0.1.0
  */
+import type { CommunityPostTopic } from './communityPostTopic';
 
 export type GetFeedParams = {
 q?: string;
 before?: Date;
+topic?: CommunityPostTopic;
 };

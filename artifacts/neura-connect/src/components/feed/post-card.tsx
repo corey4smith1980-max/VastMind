@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { EyeOff, Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, Share2, SendHorizontal, ThumbsUp, Check } from "lucide-react";
 import {
-  useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
+  communityTopicLabel, useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
   type Post, type ReactionInputReaction,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,10 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           : <UserAvatar id={post.author.id} name={post.author.name} src={post.author.avatarUrl} online={post.author.online} />}
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{post.isAnonymous ? "Anonymous member" : <>{post.author.name} <span className="font-normal text-muted-foreground">@{post.author.username}</span></>}</p>
-          <p className="text-xs text-muted-foreground">{post.isAnonymous ? "Posted anonymously · " : ""}{relTime(post.createdAt)}</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span>{post.isAnonymous ? "Posted anonymously · " : ""}{relTime(post.createdAt)}</span>
+            {post.communityTopic ? <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">{communityTopicLabel(post.communityTopic)}</span> : null}
+          </div>
         </div>
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{post.content}</p>

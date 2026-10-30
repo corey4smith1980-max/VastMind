@@ -2469,7 +2469,8 @@ export const AcceptChatInviteResponse = zod.object({
  */
 export const GetFeedQueryParams = zod.object({
   "q": zod.coerce.string().optional(),
-  "before": zod.date().optional()
+  "before": zod.date().optional(),
+  "topic": zod.enum(['opportunity', 'help', 'service', 'connection']).optional()
 })
 
 export const getFeedResponseCaptionsItemStartMin = 0;
@@ -2502,6 +2503,7 @@ export const GetFeedResponseItem = zod.object({
   "communityId": zod.string().nullable(),
   "communityName": zod.string().nullable(),
   "surface": zod.enum(['feed', 'community', 'profile']),
+  "communityTopic": zod.union([zod.enum(['opportunity', 'help', 'service', 'connection']),zod.null()]),
   "pollOptions": zod.array(zod.object({
   "id": zod.string(),
   "label": zod.string(),
@@ -2549,7 +2551,8 @@ export const GetVideosQueryParams = zod.object({
   "feed": zod.enum(['for-you', 'following', 'latest']).optional(),
   "creatorId": zod.coerce.string().max(getVideosQueryCreatorIdMax).optional(),
   "surface": zod.enum(['feed', 'community', 'profile']).optional().describe('Feed contains clips; Community and Profile contain only posts assigned to those destinations.'),
-  "q": zod.coerce.string().max(getVideosQueryQMax).optional()
+  "q": zod.coerce.string().max(getVideosQueryQMax).optional(),
+  "topic": zod.enum(['opportunity', 'help', 'service', 'connection']).optional().describe('Filter Community posts by topic. Ignored for Feed clips and Profile posts.')
 })
 
 export const getVideosResponseItemsItemCaptionsItemStartMin = 0;
@@ -2583,6 +2586,7 @@ export const GetVideosResponse = zod.object({
   "communityId": zod.string().nullable(),
   "communityName": zod.string().nullable(),
   "surface": zod.enum(['feed', 'community', 'profile']),
+  "communityTopic": zod.union([zod.enum(['opportunity', 'help', 'service', 'connection']),zod.null()]),
   "pollOptions": zod.array(zod.object({
   "id": zod.string(),
   "label": zod.string(),
@@ -2771,6 +2775,7 @@ export const createPostBodyCaptionsMax = 60;
 export const CreatePostBody = zod.object({
   "content": zod.string().min(createPostBodyContentMin).max(createPostBodyContentMax).describe('Caption or poll question. May be empty only for an ordinary photo post; polls require a question.'),
   "surface": zod.enum(['feed', 'community', 'profile']).optional(),
+  "communityTopic": zod.enum(['opportunity', 'help', 'service', 'connection']).optional(),
   "pollOptions": zod.array(zod.string().min(1).max(createPostBodyPollOptionsItemMax)).max(createPostBodyPollOptionsMax).optional(),
   "mediaId": zod.string().optional().describe('A ready, owned post upload. Photos may accompany polls; video and audio may not.'),
   "audioMediaId": zod.string().optional(),
@@ -2813,6 +2818,7 @@ export const CreatePostResponse = zod.object({
   "communityId": zod.string().nullable(),
   "communityName": zod.string().nullable(),
   "surface": zod.enum(['feed', 'community', 'profile']),
+  "communityTopic": zod.union([zod.enum(['opportunity', 'help', 'service', 'connection']),zod.null()]),
   "pollOptions": zod.array(zod.object({
   "id": zod.string(),
   "label": zod.string(),
@@ -2954,6 +2960,7 @@ export const VoteOnPollResponse = zod.object({
   "communityId": zod.string().nullable(),
   "communityName": zod.string().nullable(),
   "surface": zod.enum(['feed', 'community', 'profile']),
+  "communityTopic": zod.union([zod.enum(['opportunity', 'help', 'service', 'connection']),zod.null()]),
   "pollOptions": zod.array(zod.object({
   "id": zod.string(),
   "label": zod.string(),

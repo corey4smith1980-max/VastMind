@@ -100,6 +100,7 @@ export * from './communityGigState';
 export * from './communityInput';
 export * from './communityList';
 export * from './communityMembership';
+export * from './communityPostTopic';
 export * from './conversation';
 export * from './conversationList';
 export * from './conversationMember';

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CaptionCue } from './captionCue';
+import type { CommunityPostTopic } from './communityPostTopic';
 import type { PostInputEffect } from './postInputEffect';
 import type { PostSurface } from './postSurface';
 
@@ -17,6 +18,7 @@ export interface PostInput {
      */
   content: string;
   surface?: PostSurface;
+  communityTopic?: CommunityPostTopic;
   /**
      * @maxItems 6
      * @items.minLength 1
