@@ -290,6 +290,7 @@ route("get","/feed","GetFeed",async c=>{
   assert(!topic || ["opportunity","help","service","connection"].includes(topic),400,"Invalid Community topic");
   const rows=await c.q(`SELECT p.id FROM posts p LEFT JOIN media_uploads m ON m.id=p.media_id WHERE p.community_id IS NULL
     AND p.surface='community' AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%'))
+    AND p.community_topic IN ('opportunity','help','service','connection')
     AND ($2::timestamptz IS NULL OR p.created_at<$2)
     AND ($3::text IS NULL
       OR to_tsvector('simple', p.content) @@ websearch_to_tsquery('simple', $3)
@@ -329,7 +330,7 @@ route("post","/posts","CreatePost",async c=>{
   assert(!main||mediaTypes.has(main.content_type),400,"Unsupported media format");
   assert(!soundtrack||soundtrack.content_type.startsWith("audio/"),400,"Choose an audio track");
   assert(!main||!main.content_type.startsWith("audio/"),400,"Choose a photo or video clip");
-  const surface=c.b.surface??(main?.content_type.startsWith("video/")?"feed":"community");
+  const surface=c.b.surface;
   assert(["feed","community","profile"].includes(surface),400,"Choose a valid post destination");
   const communityTopic=surface==="community"?(c.b.communityTopic??"opportunity"):null;
   assert(!c.b.communityTopic || surface==="community",400,"Topics only apply to Community posts");

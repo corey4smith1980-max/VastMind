@@ -2774,7 +2774,7 @@ export const createPostBodyCaptionsMax = 60;
 
 export const CreatePostBody = zod.object({
   "content": zod.string().min(createPostBodyContentMin).max(createPostBodyContentMax).describe('Caption or poll question. May be empty only for an ordinary photo post; polls require a question.'),
-  "surface": zod.enum(['feed', 'community', 'profile']).optional(),
+  "surface": zod.enum(['feed', 'community', 'profile']),
   "communityTopic": zod.enum(['opportunity', 'help', 'service', 'connection']).optional(),
   "pollOptions": zod.array(zod.string().min(1).max(createPostBodyPollOptionsItemMax)).max(createPostBodyPollOptionsMax).optional(),
   "mediaId": zod.string().optional().describe('A ready, owned post upload. Photos may accompany polls; video and audio may not.'),

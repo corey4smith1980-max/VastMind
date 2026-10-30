@@ -2189,7 +2189,7 @@ components:
         nextBefore: { type: ["string", "null"] }
     PostInput:
       type: object
-      required: [content]
+      required: [content, surface]
       properties:
         content:
           type: string

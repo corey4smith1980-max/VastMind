@@ -55,13 +55,13 @@ Community is a focused public opportunities-and-connections board for finding he
 
 **Why:** The user clarified that Community is only for opportunities, connections, support and help, and offering services, skills, and potential.
 
-**How to apply:** Categorize Community posts as Opportunities, Help & support, Services & skills, or Connections & showcase. Keep Community posts separate from clips and profile posts. Do not add group discovery, membership, or group-scoped posts. Preserve older posts without deleting or reclassifying them; keep `/home` for compatibility.
+**How to apply:** Categorize Community posts as Opportunities, Help & support, Services & skills, or Connections & showcase. Keep Community posts separate from clips and profile posts. Do not add group discovery, membership, or group-scoped posts. Preserve older unclassified posts without deleting or reclassifying them, but keep them out of Community until categorized; keep `/home` for compatibility.
 
 Posts created on a member profile belong only on that profile; they must not appear in Community or Feed.
 
 **Why:** When asked where profile posts should appear, the user chose “Only on the profile.”
 
-**How to apply:** Give each post one destination: Community, Feed, or Profile. Default ordinary text/photo/poll posts to Community, clips to Feed, and profile-created posts to Profile; do not cross-post them.
+**How to apply:** Give each post one explicit destination: Community, Feed, or Profile. Client composers may default ordinary text/photo/poll posts to Community, clips to Feed, and profile-created posts to Profile, but every request must send its destination; do not cross-post them.
 
 Primary navigation should prioritize Chats, Feed, Shop and the Community post feed across web and mobile. Shop stays in the center of the five-item mobile bar, while Channels and other less-frequent tools go under More. Keep Channels separate from the Community feed and use a chat-style full-page layout for channel browsing and updates.
 

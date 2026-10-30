@@ -54,9 +54,12 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
   // destination simply because a shared feed happens to display mixed post types.
   const timelineJoins = surface !== "feed"
     ? joins.replace("JOIN media_uploads", "LEFT JOIN media_uploads") : joins;
+  const communityTopicGuard = surface === "community"
+    ? "AND p.community_topic IN ('opportunity','help','service','connection')" : "";
   const timelineVisible = surface === "feed"
     ? visible
     : `p.community_id IS NULL AND p.surface='${surface}'
+      ${communityTopicGuard}
       AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%')) AND ${privacy}`;
   const scope = `v4:${feed}:${createHash("sha256").update(JSON.stringify([surface, search, topic])).digest("hex")}`;
   const searchLike = search ? `%${search.replace(/[%_\\]/g, "\\$&")}%` : null;

@@ -26,7 +26,9 @@ export function usePagedSocialTimeline(input: Omit<GetVideosParams, "before">, e
   const seen = new Set<string>();
   const items = (query.data?.pages.flatMap(page => page.items) ?? []).filter(post => {
     const isClip = post.media?.contentType.toLowerCase().startsWith("video/") ?? false;
-    if (seen.has(post.id) || post.surface !== base.surface || (base.surface === "feed" && !isClip) || (base.surface !== "feed" && isClip)) return false;
+    if (seen.has(post.id) || post.surface !== base.surface ||
+      (base.surface === "community" && !post.communityTopic) ||
+      (base.surface === "feed" && !isClip) || (base.surface !== "feed" && isClip)) return false;
     seen.add(post.id);
     return true;
   });

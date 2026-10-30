@@ -36,7 +36,9 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
           VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, [id, author, contentType ? id : null, `${needle} post ${i}`, group, contentType?.startsWith("video/") ? "feed" : "community", topic, i === 2]);
       }
       const profilePost = uuid();
-      await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,'Profile only post','profile')", [profilePost, author]);
+      await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,$3,'profile')", [profilePost, author, `${needle} profile only post`]);
+      const unclassifiedPost = uuid();
+      await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,$3,'community')", [unclassifiedPost, author, `${needle} unclassified legacy post`]);
       const input = { surface: "community", feed: "latest", q: needle };
       const first = await videoPage(viewer, input, q);
       GetVideosResponse.parse(JSON.parse(JSON.stringify(first)));
@@ -51,6 +53,7 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
       strict.ok(community.some(p => p.media?.contentType === "image/png"));
       strict.ok(community.some(p => !p.media));
       strict.ok(!community.some(p => p.id === profilePost), "profile posts must not appear in Community");
+      strict.ok(!community.some(p => p.id === unclassifiedPost), "unclassified legacy posts must not appear in Community");
       const helpPosts = await videoPage(viewer, { ...input, topic: "help" }, q);
       strict.ok(helpPosts.items.length > 0);
       strict.ok(helpPosts.items.every(p => p.communityTopic === "help" && p.surface === "community" && !p.media?.contentType.startsWith("video/")));

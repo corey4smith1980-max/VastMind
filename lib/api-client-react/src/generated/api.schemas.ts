@@ -401,7 +401,7 @@ export interface PostInput {
      * @maxLength 5000
      */
   content: string;
-  surface?: PostSurface;
+  surface: PostSurface;
   communityTopic?: CommunityPostTopic;
   /**
      * @maxItems 6
