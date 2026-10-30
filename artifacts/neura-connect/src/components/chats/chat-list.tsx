@@ -100,7 +100,7 @@ export function ChatList({ activeId, onSelect, onNew }: { activeId: string | nul
           );
         })}
       </div>
-      <Button size="icon" className="absolute bottom-24 right-5 z-20 h-12 w-12 rounded-full shadow-lg md:bottom-5" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
+      <Button size="icon" className="absolute bottom-24 right-3 z-20 h-12 w-12 rounded-full shadow-lg md:bottom-5" onClick={onNew} aria-label="New conversation" data-testid="button-new-chat">
         <MessageSquarePlus className="h-5 w-5" />
       </Button>
     </div>
