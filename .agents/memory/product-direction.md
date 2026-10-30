@@ -57,11 +57,11 @@ Communities should combine Nextdoor-style local conversation with opportunities 
 
 **How to apply:** Preserve group discussions and membership while adding community-scoped service listings and private introductions. Do not treat a rate note as checkout or a payout.
 
-The Communities page should use a Craigslist-inspired, listings-first local board, with public posts and comments as the discussion format. Do not offer community creation from that page.
+The Communities page should use a Facebook-inspired home feed, with public posts and comments as the discussion format. Do not offer community creation from that page.
 
-**Why:** The user stated Craigslist as the preferred design direction, asked to remove community creation from Communities, and chose public posts/comments instead of a live group chat.
+**Why:** The user initially named Craigslist as a design reference, then superseded it with a Facebook home-page direction; they also asked to remove community creation from Communities and chose public posts/comments instead of a live group chat.
 
-**How to apply:** Keep community listings easy to scan, retain member join/request controls, and link each joined community to its existing community-filtered discussion feed. Do not label that feed as a live chat.
+**How to apply:** Lead with a friend-and-community post feed, retain member join/request controls and local skill/help opportunities, and link each joined community to its existing community-filtered discussion feed. Do not label that feed as a live chat.
 
 Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
 

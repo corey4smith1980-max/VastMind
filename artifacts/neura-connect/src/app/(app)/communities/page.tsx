@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Check, Clock, HandHeart, HeartHandshake, Loader2, Lock, Mic, Plus, Search,
   ShieldCheck, UserCheck, UsersRound, X, MessageCircle, Sparkles, CircleDollarSign,
+  Newspaper, Users, ChevronRight,
 } from "lucide-react";
 import {
   useListCommunities, getListCommunitiesQueryKey, useJoinCommunity,
@@ -30,6 +31,9 @@ import { useMe } from "@/lib/me";
 import { useInvalidate, usePollInterval } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 import { useCall } from "@/components/calling/call-provider";
+import { Composer } from "@/components/feed/composer";
+import { PostCard } from "@/components/feed/post-card";
+import { usePagedVideos } from "@/components/videos/video-kit";
 
 const gigCategories: { value: CommunityGigCategory; label: string }[] = [
   { value: "home-repairs", label: "Home & repairs" }, { value: "learning", label: "Learning" },
@@ -292,6 +296,8 @@ export default function CommunitiesPage() {
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
   const [category, setCategory] = useState<string | null>(null);
+  const [section, setSection] = useState<"feed" | "opportunities">("feed");
+  const [selectedCommunityId, setSelectedCommunityId] = useState("");
   const [reqFor, setReqFor] = useState<Community | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setDq(q.trim()), 300); return () => window.clearTimeout(t); }, [q]);
   const params = dq || category ? { ...(dq ? { q: dq } : {}), ...(category ? { category } : {}) } : undefined;
@@ -299,26 +305,117 @@ export default function CommunitiesPage() {
   const list = useListCommunities(params, { query: { queryKey: getListCommunitiesQueryKey(params), refetchInterval: poll } });
   const all = useListCommunities(undefined, { query: { queryKey: getListCommunitiesQueryKey(), staleTime: 60_000 } });
   const categories = useMemo(() => Array.from(new Set((all.data ?? []).map((c) => c.category))).sort(), [all.data]);
+  const joined = (all.data ?? []).filter((community) => community.membership === "member");
+  const timeline = usePagedVideos({
+    feed: "latest",
+    includePosts: true,
+    ...(selectedCommunityId ? { communityId: selectedCommunityId } : {}),
+  });
+  const selectedCommunity = joined.find((community) => community.id === selectedCommunityId);
 
   return (
-    <PageScroll className="max-w-5xl">
-      <PageHeader kicker="VastMind local" title="Community board" sub="Find neighbors, useful conversations, and local people ready to help. Browse listings first, then join a community." />
-      <Marketplace communities={all.data ?? []} />
-      <section aria-label="Discover communities">
-        <div className="mt-12 border-b pb-4">
-          <h2 className="text-xl font-semibold">Local groups and conversations</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Join open groups or request access to private communities.</p>
+    <PageScroll className="max-w-[1440px]">
+      <PageHeader kicker="VastMind local" title="Communities" sub="Keep up with your groups, share what’s happening, and find people nearby who can help." />
+      <div className="grid items-start gap-5 xl:grid-cols-[240px_minmax(0,680px)_280px]">
+        <aside className="hidden xl:block" aria-label="Community navigation">
+          <div className="sticky top-4 space-y-4">
+            <section className="rounded-2xl border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Your communities</h2>
+                <span className="text-xs text-muted-foreground">{joined.length}</span>
+              </div>
+              <button type="button" onClick={() => setSelectedCommunityId("")} aria-pressed={!selectedCommunityId}
+                className={cn("flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted", !selectedCommunityId && "bg-primary/10 font-semibold text-primary")}>
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10"><Newspaper className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1 truncate">All updates</span>
+              </button>
+              {joined.slice(0, 8).map((community) => (
+                <button key={community.id} type="button" onClick={() => setSelectedCommunityId(community.id)} aria-pressed={selectedCommunityId === community.id}
+                  className={cn("mt-1 flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm transition-colors hover:bg-muted", selectedCommunityId === community.id && "bg-primary/10 font-semibold text-primary")}>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted"><Users className="h-4 w-4" /></span>
+                  <span className="min-w-0 flex-1 truncate">{community.name}</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+              {joined.length === 0 ? <p className="px-2 py-3 text-xs leading-relaxed text-muted-foreground">Join a community to see its updates here.</p> : null}
+              <a href="#discover-communities" className="mt-3 flex items-center justify-between border-t pt-3 text-sm font-medium text-primary hover:underline">
+                Find communities <ChevronRight className="h-4 w-4" />
+              </a>
+            </section>
+            {categories.length ? <section className="rounded-2xl border bg-card p-4">
+              <h2 className="mb-2 text-sm font-semibold">Explore topics</h2>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.slice(0, 6).map((item) => <button key={item} type="button" onClick={() => { setCategory(item); document.getElementById("discover-communities")?.scrollIntoView({ behavior: "smooth" }); }}
+                  className="rounded-full bg-muted px-2.5 py-1 text-xs hover:bg-primary/10 hover:text-primary">{item}</button>)}
+              </div>
+            </section> : null}
+          </div>
+        </aside>
+
+        <main className="min-w-0 space-y-4" aria-label="Community home feed">
+          <nav className="flex gap-1 border-b" role="tablist" aria-label="Community sections">
+            <button type="button" role="tab" aria-selected={section === "feed"} onClick={() => setSection("feed")}
+              className={cn("border-b-2 px-4 py-3 text-sm font-medium", section === "feed" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              Home feed
+            </button>
+            <button type="button" role="tab" aria-selected={section === "opportunities"} onClick={() => setSection("opportunities")}
+              className={cn("border-b-2 px-4 py-3 text-sm font-medium", section === "opportunities" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              Help & opportunities
+            </button>
+          </nav>
+          <div className="flex gap-2 overflow-x-auto pb-1 xl:hidden" role="group" aria-label="Filter feed by community">
+            <button type="button" onClick={() => setSelectedCommunityId("")} aria-pressed={!selectedCommunityId}
+              className={cn("shrink-0 rounded-full border px-3 py-1.5 text-sm", !selectedCommunityId ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>All updates</button>
+            {joined.map((community) => <button key={community.id} type="button" onClick={() => setSelectedCommunityId(community.id)} aria-pressed={selectedCommunityId === community.id}
+              className={cn("max-w-[180px] shrink-0 truncate rounded-full border px-3 py-1.5 text-sm", selectedCommunityId === community.id ? "border-primary bg-primary text-primary-foreground" : "bg-card text-muted-foreground")}>{community.name}</button>)}
+          </div>
+
+          {section === "feed" ? <>
+            <Composer defaultCommunityId={selectedCommunityId || undefined} onPublished={timeline.refresh} />
+            {selectedCommunity ? <div className="flex items-center justify-between rounded-xl bg-primary/5 px-3 py-2 text-sm">
+              <span>Showing updates from <strong>{selectedCommunity.name}</strong></span>
+              <button type="button" onClick={() => setSelectedCommunityId("")} className="font-medium text-primary hover:underline">Show all</button>
+            </div> : null}
+            {timeline.isLoading && timeline.items.length === 0 ? <div className="space-y-4" aria-label="Loading community feed"><Skeleton className="h-28 rounded-2xl" /><Skeleton className="h-64 rounded-2xl" /><Skeleton className="h-64 rounded-2xl" /></div> : null}
+            {timeline.isError && timeline.items.length === 0 ? <ErrorState error={timeline.error} onRetry={timeline.retry} /> : null}
+            {!timeline.isLoading && !timeline.isError && timeline.items.length === 0 ? <EmptyState icon={MessageCircle} title="Your community feed is quiet" body={selectedCommunity ? "Share the first update with this community." : "Join a community or share an update to get the conversation started."} /> : null}
+            <div className="space-y-4">{timeline.items.map((post, index) => <PostCard key={post.id} post={post} index={index} />)}</div>
+            {timeline.hasMore ? <Button variant="outline" className="w-full" onClick={timeline.loadNext} disabled={timeline.loadingMore}>{timeline.loadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Load more updates</Button> : null}
+            {timeline.isError && timeline.items.length > 0 ? <Button variant="outline" className="w-full" onClick={timeline.retry}>Retry loading more</Button> : null}
+          </> : <Marketplace communities={all.data ?? []} />}
+        </main>
+
+        <aside className="hidden xl:block" aria-label="Community information">
+          <div className="sticky top-4 space-y-4">
+            <section className="rounded-2xl border bg-card p-4">
+              <h2 className="text-sm font-semibold">Community is better together</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Share updates with people in your groups, ask a question, or offer a skill to someone nearby.</p>
+              <button type="button" onClick={() => setSection("opportunities")} className="mt-3 flex w-full items-center justify-between rounded-xl bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                Browse local opportunities <ChevronRight className="h-4 w-4" />
+              </button>
+            </section>
+            <section className="rounded-2xl border bg-card p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Community guidelines</div>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Be respectful, protect private details, and keep help requests and offers clear. Introductions to opportunity listings stay private to their author.</p>
+            </section>
+          </div>
+        </aside>
+      </div>
+
+      <section id="discover-communities" className="mt-10 scroll-mt-6" aria-label="Discover communities">
+        <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div><h2 className="text-xl font-semibold">Find a community</h2><p className="mt-1 text-sm text-muted-foreground">Join an open group or request access to a private one.</p></div>
+          <div className="relative w-full sm:max-w-sm"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search communities" className="h-10 rounded-xl bg-card pl-9" aria-label="Search communities" data-testid="input-search-communities" /></div>
         </div>
-        <div className="relative mt-4"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search local groups" className="h-10 max-w-xl rounded-md bg-card pl-9" aria-label="Search communities" data-testid="input-search-communities" /></div>
         {categories.length ? <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Community categories">
-          <button onClick={() => setCategory(null)} className={cn("rounded-full border px-3 py-1 text-sm", !category ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>All</button>
-          {categories.map((c) => <button key={c} onClick={() => setCategory(c === category ? null : c)} className={cn("rounded-full border px-3 py-1 text-sm", category === c ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>{c}</button>)}
+          <button type="button" onClick={() => setCategory(null)} className={cn("rounded-full border px-3 py-1 text-sm", !category ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>All topics</button>
+          {categories.map((item) => <button type="button" key={item} onClick={() => setCategory(item === category ? null : item)} className={cn("rounded-full border px-3 py-1 text-sm", category === item ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>{item}</button>)}
         </div> : null}
-        <div className="mt-6">
+        <div className="mt-4">
           {list.isLoading ? <CardSkeleton /> : null}
           {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-          {list.data?.length === 0 ? <EmptyState icon={UsersRound} title={dq || category ? "No matches" : "No groups listed yet"} body={dq || category ? "Try a different search or category." : "Check back soon, or browse the community board above."} /> : null}
-          <div className="divide-y">{list.data?.map((c, i) => <CommunityCard key={c.id} c={c} i={i} onRequests={setReqFor} />)}</div>
+          {!list.isLoading && !list.isError && list.data?.length === 0 ? <EmptyState icon={UsersRound} title={dq || category ? "No matches" : "No communities yet"} body={dq || category ? "Try a different search or topic." : "There are no communities to join yet."} /> : null}
+          <div className="grid gap-3 md:grid-cols-2">{list.data?.map((community, index) => <CommunityCard key={community.id} c={community} i={index} onRequests={setReqFor} />)}</div>
         </div>
       </section>
       <RequestsDialog community={reqFor} onClose={() => setReqFor(null)} />
