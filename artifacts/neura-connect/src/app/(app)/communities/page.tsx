@@ -7,7 +7,7 @@ import {
   ShieldCheck, UserCheck, UsersRound, X, MessageCircle, Sparkles, CircleDollarSign,
 } from "lucide-react";
 import {
-  useListCommunities, getListCommunitiesQueryKey, useCreateCommunity, useJoinCommunity,
+  useListCommunities, getListCommunitiesQueryKey, useJoinCommunity,
   useListCommunityRequests, getListCommunityRequestsQueryKey, useDecideCommunityRequest,
   type Community, useListCommunityGigs, getListCommunityGigsQueryKey, useCreateCommunityGig,
   useCreateCommunityGigResponse, useListCommunityGigResponses, getListCommunityGigResponsesQueryKey,
@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
@@ -40,38 +39,6 @@ const gigCategories: { value: CommunityGigCategory; label: string }[] = [
   { value: "childcare", label: "Childcare" }, { value: "other", label: "Other" },
 ];
 const categoryLabel = (value: string) => gigCategories.find((item) => item.value === value)?.label ?? value;
-
-function CreateCommunityDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
-  const { toast } = useToast();
-  const invalidate = useInvalidate();
-  const [f, setF] = useState({ name: "", description: "", category: "", isPrivate: false });
-  const create = useCreateCommunity({
-    mutation: {
-      onSuccess: (c) => { invalidate("/api/communities"); toast({ title: `${c.name} is live` }); setF({ name: "", description: "", category: "", isPrivate: false }); onOpenChange(false); },
-      onError: (e) => toast({ title: "Couldn't create", description: errMessage(e), variant: "destructive" }),
-    },
-  });
-  const valid = f.name.trim().length >= 2 && f.description.trim().length >= 2 && f.category.trim().length >= 2;
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-3xl">
-        <DialogHeader><DialogTitle className="font-display text-2xl">Start a community</DialogTitle><DialogDescription>A home for a street, a club, a cause or a craft.</DialogDescription></DialogHeader>
-        <div className="space-y-3">
-          <div><Label htmlFor="c-name">Name</Label><Input id="c-name" value={f.name} maxLength={80} onChange={(e) => setF({ ...f, name: e.target.value })} data-testid="input-community-name" /></div>
-          <div><Label htmlFor="c-cat">Category</Label><Input id="c-cat" value={f.category} maxLength={40} placeholder="Neighbourhood, Sport, Food…" onChange={(e) => setF({ ...f, category: e.target.value })} data-testid="input-community-category" /></div>
-          <div><Label htmlFor="c-desc">Description</Label><Textarea id="c-desc" value={f.description} maxLength={500} rows={3} onChange={(e) => setF({ ...f, description: e.target.value })} data-testid="input-community-description" /></div>
-          <div className="flex items-center justify-between rounded-xl border p-3">
-            <Label htmlFor="c-priv">Request to join<span className="block text-xs font-normal text-muted-foreground">You approve every new member</span></Label>
-            <Switch id="c-priv" checked={f.isPrivate} onCheckedChange={(v) => setF({ ...f, isPrivate: v })} />
-          </div>
-        </div>
-        <DialogFooter><Button disabled={!valid || create.isPending} className="rounded-full" onClick={() => create.mutate({ data: { name: f.name.trim(), description: f.description.trim(), category: f.category.trim(), isPrivate: f.isPrivate } })} data-testid="button-submit-community">
-          {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Create community
-        </Button></DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function RequestsDialog({ community, onClose }: { community: Community | null; onClose: () => void }) {
   const { toast } = useToast();
@@ -117,21 +84,24 @@ function CommunityCard({ c, i, onRequests }: { c: Community; i: number; onReques
   const owner = c.ownerId === me.id;
   const call = useCall();
   return (
-    <article className={cn("rise flex flex-col rounded-[1.6rem] border bg-card p-5", i % 5 === 0 && "sm:col-span-2")} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} data-testid={`card-community-${c.id}`}>
-      <div className="flex items-start justify-between gap-3">
-        <span className="rounded-full bg-accent/40 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest">{c.category}</span>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">{c.isPrivate ? <Lock className="h-3 w-3" /> : <UsersRound className="h-3 w-3" />}{c.isPrivate ? "Request" : "Open"}</span>
+    <article className="rise grid gap-3 border-b py-4 first:border-t sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }} data-testid={`card-community-${c.id}`}>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="font-semibold uppercase tracking-wide text-primary">{c.category}</span>
+          <span className="flex items-center gap-1">{c.isPrivate ? <Lock className="h-3 w-3" /> : <UsersRound className="h-3 w-3" />}{c.isPrivate ? "Members by request" : "Open to join"}</span>
+          <span>{c.memberCount} member{c.memberCount === 1 ? "" : "s"}</span>
+          <span>{relTime(c.createdAt)}</span>
+        </div>
+        <Link href={`/videos?community=${c.id}`} className="mt-1 inline-block text-lg font-semibold leading-tight hover:text-primary">{c.name}</Link>
+        <p className="mt-1 line-clamp-2 max-w-3xl text-sm text-muted-foreground">{c.description}</p>
       </div>
-      <Link href={`/videos?community=${c.id}`} className="mt-3 hover:text-primary"><h3 className="font-display text-2xl font-semibold leading-tight">{c.name}</h3></Link>
-      <p className="mt-1.5 line-clamp-3 flex-1 text-sm text-muted-foreground">{c.description}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="mr-auto font-mono text-xs text-muted-foreground">{c.memberCount} member{c.memberCount === 1 ? "" : "s"} · {relTime(c.createdAt)}</span>
-        {owner ? <><span className="flex items-center gap-1 text-xs font-semibold text-primary"><UserCheck className="h-3.5 w-3.5" /> You run this</span>
-          {c.isPrivate ? <Button size="sm" variant="outline" className="rounded-full" onClick={() => onRequests(c)} data-testid={`button-requests-${c.id}`}><UserCheck className="mr-1 h-3.5 w-3.5" /> Requests</Button> : null}</>
-          : c.membership === "member" ? <Button size="sm" variant="secondary" className="rounded-full" asChild><Link href={`/videos?community=${c.id}`}><Check className="mr-1 h-3.5 w-3.5" /> Joined · open</Link></Button>
-          : c.membership === "requested" ? <Button size="sm" variant="outline" className="rounded-full" disabled><Clock className="mr-1 h-3.5 w-3.5" /> Requested</Button>
-          : <Button size="sm" className="rounded-full" disabled={join.isPending} onClick={() => join.mutate({ communityId: c.id })} data-testid={`button-join-${c.id}`}>{join.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}{c.isPrivate ? "Ask to join" : "Join"}</Button>}
-        {c.membership === "member" ? <Button size="sm" variant="outline" className="rounded-full" disabled={call.busy} onClick={() => call.startCall({ scope: "community", id: c.id, video: false, title: c.name })} data-testid={`button-voice-room-${c.id}`}><Mic className="mr-1 h-3.5 w-3.5" /> Join voice room</Button> : null}
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        {owner ? <><span className="flex items-center gap-1 text-xs font-semibold text-primary"><UserCheck className="h-3.5 w-3.5" /> You manage this</span>
+          {c.isPrivate ? <Button size="sm" variant="outline" onClick={() => onRequests(c)} data-testid={`button-requests-${c.id}`}><UserCheck className="mr-1 h-3.5 w-3.5" /> Requests</Button> : null}</>
+          : c.membership === "member" ? <Button size="sm" variant="outline" asChild><Link href={`/videos?community=${c.id}`}><MessageCircle className="mr-1 h-3.5 w-3.5" /> Open discussion</Link></Button>
+          : c.membership === "requested" ? <Button size="sm" variant="outline" disabled><Clock className="mr-1 h-3.5 w-3.5" /> Requested</Button>
+          : <Button size="sm" disabled={join.isPending} onClick={() => join.mutate({ communityId: c.id })}>{join.isPending ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}{c.isPrivate ? "Request to join" : "Join"}</Button>}
+        {c.membership === "member" ? <Button size="sm" variant="ghost" disabled={call.busy} onClick={() => call.startCall({ scope: "community", id: c.id, video: false, title: c.name })} data-testid={`button-voice-room-${c.id}`}><Mic className="mr-1 h-3.5 w-3.5" /> Voice room</Button> : null}
       </div>
     </article>
   );
@@ -191,33 +161,31 @@ function GigCard({ gig, onOpen }: { gig: CommunityGig; onOpen: (gig: CommunityGi
   const matched = gig.state === "matched";
   const stateCopy = { open: "Open", matched: "Matched", completed: "Completed", closed: "Closed" }[gig.state];
   return (
-    <article className="group flex min-w-0 flex-col rounded-[1.5rem] border bg-card p-5 transition-transform hover:-translate-y-0.5" data-testid={`card-gig-${gig.id}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", gig.kind === "offer" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground")}>
+    <article className="grid min-w-0 gap-3 border-b bg-card px-4 py-4 transition-colors hover:bg-muted/30 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" data-testid={`card-gig-${gig.id}`}>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+        <span className={cn("inline-flex items-center gap-1.5 rounded-sm px-2 py-1 text-xs font-semibold", gig.kind === "offer" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground")}>
           {gig.kind === "offer" ? <Sparkles className="h-3.5 w-3.5" /> : <HandHeart className="h-3.5 w-3.5" />}{gig.kind === "offer" ? "Skill offered" : "Help requested"}
         </span>
-        <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">{stateCopy}</span>
-      </div>
-      <div className="mt-4 flex items-start gap-3">
-        <UserAvatar id={gig.author.id} name={gig.author.name} src={gig.author.avatarUrl} online={gig.author.online} size="sm" />
-        <div className="min-w-0 flex-1">
-          <h3 className="font-display text-xl font-semibold leading-tight">{gig.title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{gig.author.name} · {gig.communityName} · {relTime(gig.createdAt)}</p>
+        <span className="text-xs text-muted-foreground">{categoryLabel(gig.category)}</span>
+        <span className="text-xs text-muted-foreground">{stateCopy}</span>
+        {gig.rateNote ? <span className="inline-flex items-center gap-1 text-xs font-medium"><CircleDollarSign className="h-3.5 w-3.5" />{gig.rateNote}</span> : null}
+        </div>
+        <h3 className="mt-1 text-base font-semibold leading-tight">{gig.title}</h3>
+        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{gig.description}</p>
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <UserAvatar id={gig.author.id} name={gig.author.name} src={gig.author.avatarUrl} online={gig.author.online} size="sm" />
+          <span>{gig.author.name}</span><span>·</span><span>{gig.communityName}</span><span>·</span><span>{relTime(gig.createdAt)}</span>
         </div>
       </div>
-      <p className="mt-4 line-clamp-3 flex-1 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{gig.description}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-        <span className="rounded-full bg-muted px-2.5 py-1">{categoryLabel(gig.category)}</span>
-        {gig.rateNote ? <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1"><CircleDollarSign className="h-3.5 w-3.5" />{gig.rateNote}</span> : null}
-      </div>
-      <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4">
-        <span className="mr-auto text-xs text-muted-foreground">{gig.responseCount} response{gig.responseCount === 1 ? "" : "s"}{gig.myResponseState === "pending" ? " · You responded" : gig.myResponseState === "accepted" ? " · You’re matched" : ""}</span>
-        {isAuthor ? <Button size="sm" variant="outline" className="rounded-full" onClick={() => onOpen(gig)}><MessageCircle className="mr-1.5 h-4 w-4" /> Responses</Button>
-          : gig.myResponseId ? <Button size="sm" variant="outline" className="rounded-full" disabled>{gig.myResponseState === "accepted" ? "Matched with you" : gig.myResponseState === "declined" ? "Response declined" : "Response sent"}</Button>
-          : gig.state === "open" ? <Button size="sm" className="rounded-full" onClick={() => onOpen(gig)}><MessageCircle className="mr-1.5 h-4 w-4" /> Introduce yourself</Button>
-          : matched && isResponder ? <Button size="sm" variant="outline" className="rounded-full" onClick={() => complete.mutate({ gigId: gig.id })} disabled={complete.isPending}>Mark complete</Button> : null}
-        {isAuthor && gig.state === "open" ? <Button size="sm" variant="ghost" className="rounded-full text-muted-foreground" disabled={close.isPending} onClick={() => close.mutate({ gigId: gig.id })}>Close listing</Button> : null}
-        {isAuthor && matched ? <Button size="sm" variant="outline" className="rounded-full" disabled={complete.isPending} onClick={() => complete.mutate({ gigId: gig.id })}>Mark complete</Button> : null}
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <span className="mr-auto text-xs text-muted-foreground sm:mr-2">{gig.responseCount} response{gig.responseCount === 1 ? "" : "s"}{gig.myResponseState === "pending" ? " · You responded" : gig.myResponseState === "accepted" ? " · Matched" : ""}</span>
+        {isAuthor ? <Button size="sm" variant="outline" onClick={() => onOpen(gig)}><MessageCircle className="mr-1.5 h-4 w-4" /> Responses</Button>
+          : gig.myResponseId ? <Button size="sm" variant="outline" disabled>{gig.myResponseState === "accepted" ? "Matched with you" : gig.myResponseState === "declined" ? "Response declined" : "Response sent"}</Button>
+          : gig.state === "open" ? <Button size="sm" onClick={() => onOpen(gig)}><MessageCircle className="mr-1.5 h-4 w-4" /> Contact</Button>
+          : matched && isResponder ? <Button size="sm" variant="outline" onClick={() => complete.mutate({ gigId: gig.id })} disabled={complete.isPending}>Mark complete</Button> : null}
+        {isAuthor && gig.state === "open" ? <Button size="sm" variant="ghost" className="text-muted-foreground" disabled={close.isPending} onClick={() => close.mutate({ gigId: gig.id })}>Close</Button> : null}
+        {isAuthor && matched ? <Button size="sm" variant="outline" disabled={complete.isPending} onClick={() => complete.mutate({ gigId: gig.id })}>Mark complete</Button> : null}
       </div>
     </article>
   );
@@ -284,37 +252,35 @@ function Marketplace({ communities }: { communities: Community[] }) {
   }), [debouncedSearch, communityId, kind, category, scope]);
   const list = useListCommunityGigs(params, { query: { queryKey: getListCommunityGigsQueryKey(params), refetchInterval: poll } });
   return (
-    <section className="mt-12 scroll-mt-6" aria-labelledby="marketplace-title">
-      <div className="relative overflow-hidden rounded-[2rem] border bg-accent/25 p-5 sm:p-8">
-        <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full border-[24px] border-primary/5" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl"><span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.22em] text-primary"><HeartHandshake className="h-4 w-4" /> Neighbourhood exchange</span>
-            <h2 id="marketplace-title" className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Good at something?<br className="hidden sm:block" /> Good people are nearby.</h2>
-            <p className="mt-2 max-w-lg text-sm text-muted-foreground">Find a helping hand or offer your know-how to the communities you call home.</p>
-          </div>
-          <Button className="shrink-0 self-start rounded-full sm:self-auto" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> Post an opportunity</Button>
+    <section className="scroll-mt-6" aria-labelledby="marketplace-title">
+      <div className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary"><HeartHandshake className="h-4 w-4" /> Community board</span>
+          <h2 id="marketplace-title" className="mt-1 text-2xl font-semibold tracking-tight">Help wanted. Skills offered.</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Find local help or share what you know. Contact stays private until you choose to respond.</p>
         </div>
-        <p className="relative mt-5 flex items-center gap-2 rounded-xl border border-primary/10 bg-background/70 px-3 py-2.5 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" />Payment is arranged between members; VastMind checkout and payouts aren’t enabled yet.</p>
+        <Button className="shrink-0" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> Post a listing</Button>
       </div>
-      <div className="mt-6 flex flex-col gap-4">
+      <p className="mt-3 flex items-center gap-2 border-l-2 border-primary/40 bg-muted/30 px-3 py-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0 text-primary" /> Payment is arranged between members; VastMind checkout and payouts aren’t enabled yet.</p>
+      <div className="mt-5 flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-full border bg-card p-1" role="tablist" aria-label="Opportunity view">
-            {([["community", "Community listings"], ["mine", "My opportunities"]] as const).map(([value, label]) => <button key={value} role="tab" aria-selected={scope === value} onClick={() => setScope(value)} className={cn("rounded-full px-4 py-2 text-sm transition-colors", scope === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>{label}</button>)}
+          <div className="inline-flex border-b" role="tablist" aria-label="Opportunity view">
+            {([["community", "All listings"], ["mine", "My listings"]] as const).map(([value, label]) => <button key={value} role="tab" aria-selected={scope === value} onClick={() => setScope(value)} className={cn("border-b-2 px-4 py-2 text-sm transition-colors", scope === value ? "border-primary font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>{label}</button>)}
           </div>
           <p className="text-xs text-muted-foreground">Messages on responses are private to the listing author.</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_repeat(3,minmax(140px,auto))]">
-          <div className="relative"><Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search opportunities" className="h-10 rounded-full bg-card pl-10" aria-label="Search opportunities" /></div>
-          <select aria-label="Filter by community" value={communityId} onChange={(e) => setCommunityId(e.target.value)} className="h-10 rounded-full border bg-card px-4 text-sm"><option value="">All communities</option>{communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-          <select aria-label="Filter by offer or request" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="h-10 rounded-full border bg-card px-4 text-sm"><option value="all">Offers & requests</option><option value="offer">Skill offers</option><option value="request">Help requests</option></select>
-          <select aria-label="Filter by category" value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 rounded-full border bg-card px-4 text-sm"><option value="">All categories</option>{gigCategories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
+          <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search help and skills" className="h-10 rounded-md bg-card pl-9" aria-label="Search opportunities" /></div>
+          <select aria-label="Filter by community" value={communityId} onChange={(e) => setCommunityId(e.target.value)} className="h-10 rounded-md border bg-card px-3 text-sm"><option value="">All communities</option>{communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+          <select aria-label="Filter by offer or request" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="h-10 rounded-md border bg-card px-3 text-sm"><option value="all">Offers & requests</option><option value="offer">Skill offers</option><option value="request">Help requests</option></select>
+          <select aria-label="Filter by category" value={category} onChange={(e) => setCategory(e.target.value)} className="h-10 rounded-md border bg-card px-3 text-sm"><option value="">All categories</option>{gigCategories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
         </div>
       </div>
       <div className="mt-5">
         {list.isLoading ? <div className="grid gap-4 md:grid-cols-2"><Skeleton className="h-64 rounded-3xl" /><Skeleton className="h-64 rounded-3xl" /></div> : null}
         {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-        {!list.isLoading && !list.isError && list.data?.length === 0 ? <div className="rounded-[1.5rem] border border-dashed bg-card/70 px-6 py-12 text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary"><HandHeart className="h-6 w-6" /></div><h3 className="mt-4 font-display text-xl font-semibold">{scope === "mine" ? "Your next opportunity starts here" : "Nothing posted just yet"}</h3><p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{scope === "mine" ? "Post a skill you can share, or ask your community for a hand." : "Try another filter, or be the first to offer a skill or request help."}</p><Button className="mt-5 rounded-full" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> Post an opportunity</Button></div> : null}
-        {list.data?.length ? <div className="grid gap-4 md:grid-cols-2">{list.data.map((gig) => <GigCard key={gig.id} gig={gig} onOpen={setSelectedGig} />)}</div> : null}
+        {!list.isLoading && !list.isError && list.data?.length === 0 ? <div className="border-y border-dashed bg-card/40 px-6 py-10 text-center"><div className="mx-auto grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary"><HandHeart className="h-5 w-5" /></div><h3 className="mt-3 font-semibold">{scope === "mine" ? "No listings from you yet" : "No listings found"}</h3><p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{scope === "mine" ? "Post a skill you can share, or ask your community for a hand." : "Try a different search or filter, or add the first listing."}</p><Button className="mt-4" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> Post a listing</Button></div> : null}
+        {list.data?.length ? <div className="border-t">{list.data.map((gig) => <GigCard key={gig.id} gig={gig} onOpen={setSelectedGig} />)}</div> : null}
       </div>
       <CreateGigDialog open={createOpen} onOpenChange={setCreateOpen} communities={communities} />
       <GigDetailsDialog gig={selectedGig} onClose={() => setSelectedGig(null)} />
@@ -326,7 +292,6 @@ export default function CommunitiesPage() {
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
   const [category, setCategory] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
   const [reqFor, setReqFor] = useState<Community | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setDq(q.trim()), 300); return () => window.clearTimeout(t); }, [q]);
   const params = dq || category ? { ...(dq ? { q: dq } : {}), ...(category ? { category } : {}) } : undefined;
@@ -337,10 +302,14 @@ export default function CommunitiesPage() {
 
   return (
     <PageScroll className="max-w-5xl">
-      <PageHeader kicker="Find your people" title="Communities" sub="Neighbourhoods, clubs and causes. Join the open ones, ask to join the rest."
-        actions={<Button className="rounded-full" onClick={() => setCreateOpen(true)} data-testid="button-new-community"><Plus className="mr-1 h-4 w-4" /> New community</Button>} />
+      <PageHeader kicker="VastMind local" title="Community board" sub="Find neighbors, useful conversations, and local people ready to help. Browse listings first, then join a community." />
+      <Marketplace communities={all.data ?? []} />
       <section aria-label="Discover communities">
-        <div className="relative mt-6"><Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search communities" className="h-11 rounded-full bg-card pl-10" aria-label="Search communities" data-testid="input-search-communities" /></div>
+        <div className="mt-12 border-b pb-4">
+          <h2 className="text-xl font-semibold">Local groups and conversations</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Join open groups or request access to private communities.</p>
+        </div>
+        <div className="relative mt-4"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search local groups" className="h-10 max-w-xl rounded-md bg-card pl-9" aria-label="Search communities" data-testid="input-search-communities" /></div>
         {categories.length ? <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Community categories">
           <button onClick={() => setCategory(null)} className={cn("rounded-full border px-3 py-1 text-sm", !category ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>All</button>
           {categories.map((c) => <button key={c} onClick={() => setCategory(c === category ? null : c)} className={cn("rounded-full border px-3 py-1 text-sm", category === c ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>{c}</button>)}
@@ -348,12 +317,10 @@ export default function CommunitiesPage() {
         <div className="mt-6">
           {list.isLoading ? <CardSkeleton /> : null}
           {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-          {list.data?.length === 0 ? <EmptyState icon={UsersRound} title={dq || category ? "No matches" : "No communities yet"} body={dq || category ? "Try a different search or category." : "Start the first one — your street, your club, your cause."} action={<Button className="rounded-full" onClick={() => setCreateOpen(true)}>Start a community</Button>} /> : null}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{list.data?.map((c, i) => <CommunityCard key={c.id} c={c} i={i} onRequests={setReqFor} />)}</div>
+          {list.data?.length === 0 ? <EmptyState icon={UsersRound} title={dq || category ? "No matches" : "No groups listed yet"} body={dq || category ? "Try a different search or category." : "Check back soon, or browse the community board above."} /> : null}
+          <div className="divide-y">{list.data?.map((c, i) => <CommunityCard key={c.id} c={c} i={i} onRequests={setReqFor} />)}</div>
         </div>
       </section>
-      <Marketplace communities={all.data ?? []} />
-      <CreateCommunityDialog open={createOpen} onOpenChange={setCreateOpen} />
       <RequestsDialog community={reqFor} onClose={() => setReqFor(null)} />
     </PageScroll>
   );
