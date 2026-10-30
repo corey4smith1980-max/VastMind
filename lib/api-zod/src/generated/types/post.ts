@@ -9,6 +9,7 @@ import type { CaptionCue } from './captionCue';
 import type { MediaAttachment } from './mediaAttachment';
 import type { PollOption } from './pollOption';
 import type { PostEffect } from './postEffect';
+import type { PostSurface } from './postSurface';
 import type { UserSummary } from './userSummary';
 
 export interface Post {
@@ -23,6 +24,7 @@ export interface Post {
   communityId: string | null;
   /** @nullable */
   communityName: string | null;
+  surface: PostSurface;
   pollOptions: PollOption[];
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;

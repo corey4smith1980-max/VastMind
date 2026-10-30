@@ -15,6 +15,7 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="chats"><NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} /><NativeTabs.Trigger.Label>Chats</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="videos"><NativeTabs.Trigger.Icon sf={{ default: 'rectangle.stack', selected: 'rectangle.stack.fill' }} /><NativeTabs.Trigger.Label>Feed</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="shop"><NativeTabs.Trigger.Icon sf={{ default: 'bag', selected: 'bag.fill' }} /><NativeTabs.Trigger.Label>Shop</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="community"><NativeTabs.Trigger.Icon sf={{ default: 'text.bubble', selected: 'text.bubble.fill' }} /><NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="more"><NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} /><NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="channels" hidden><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
@@ -47,6 +48,7 @@ function ClassicTabLayout() {
       <Tabs.Screen name="chats" options={tabOptions('Chats', 'message-circle')} />
       <Tabs.Screen name="videos" options={tabOptions('Feed', 'grid')} />
       <Tabs.Screen name="shop" options={tabOptions('Shop', 'shopping-bag')} />
+      <Tabs.Screen name="community" options={tabOptions('Community', 'users')} />
       <Tabs.Screen name="more" options={tabOptions('More', 'more-horizontal')} />
       <Tabs.Screen name="channels" options={{ href: null }} />
       <Tabs.Screen name="mail" options={{ href: null }} />

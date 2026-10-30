@@ -7,6 +7,7 @@
  */
 import type { CaptionCue } from './captionCue';
 import type { PostInputEffect } from './postInputEffect';
+import type { PostSurface } from './postSurface';
 
 export interface PostInput {
   /**
@@ -15,8 +16,7 @@ export interface PostInput {
      * @maxLength 5000
      */
   content: string;
-  /** @nullable */
-  communityId?: string | null;
+  surface?: PostSurface;
   /**
      * @maxItems 6
      * @items.minLength 1

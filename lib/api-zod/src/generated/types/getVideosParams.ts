@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GetVideosFeed } from './getVideosFeed';
+import type { GetVideosSurface } from './getVideosSurface';
 
 export type GetVideosParams = {
 /**
@@ -18,15 +19,11 @@ feed?: GetVideosFeed;
  */
 creatorId?: string;
 /**
- * Include text, photo and poll posts alongside clips in one timeline.
+ * Feed contains clips; Community and Profile contain only posts assigned to those destinations.
  */
-includePosts?: boolean;
+surface?: GetVideosSurface;
 /**
  * @maxLength 200
  */
 q?: string;
-/**
- * @maxLength 160
- */
-communityId?: string;
 };

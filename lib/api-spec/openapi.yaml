@@ -769,15 +769,10 @@ paths:
     get:
       operationId: getFeed
       tags: [feed]
-      summary: Get the member feed
+      summary: Get public community posts
       parameters:
         - in: query
           name: q
-          required: false
-          schema:
-            type: string
-        - in: query
-          name: communityId
           required: false
           schema:
             type: string
@@ -798,7 +793,7 @@ paths:
     get:
       operationId: getVideos
       tags: [feed]
-      summary: List visible clips or the combined posts-and-clips timeline
+      summary: List content from one social destination
       parameters:
         - in: query
           name: before
@@ -811,15 +806,12 @@ paths:
           name: creatorId
           schema: { type: string, maxLength: 160 }
         - in: query
-          name: includePosts
-          description: Include text, photo and poll posts alongside clips in one timeline.
-          schema: { type: boolean }
+          name: surface
+          description: Feed contains clips; Community and Profile contain only posts assigned to those destinations.
+          schema: { type: string, enum: [feed, community, profile] }
         - in: query
           name: q
           schema: { type: string, maxLength: 200 }
-        - in: query
-          name: communityId
-          schema: { type: string, maxLength: 160 }
       responses:
         "200":
           description: Videos and the next paging cursor
@@ -2104,7 +2096,7 @@ components:
         inviteUrl: { type: string }
     Post:
       type: object
-      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, pollOptions, media, audioMedia, effect, isAnonymous]
+      required: [id, author, content, createdAt, reactionsCount, reacted, commentsCount, communityId, communityName, surface, pollOptions, media, audioMedia, effect, isAnonymous]
       properties:
         id: { type: string }
         author:
@@ -2116,6 +2108,7 @@ components:
         commentsCount: { type: integer }
         communityId: { type: ["string", "null"] }
         communityName: { type: ["string", "null"] }
+        surface: { $ref: "#/components/schemas/PostSurface" }
         pollOptions:
           type: array
           items:
@@ -2154,6 +2147,9 @@ components:
       required: [success]
       properties:
         success: { type: boolean }
+    PostSurface:
+      type: string
+      enum: [feed, community, profile]
     PollOption:
       type: object
       required: [id, label, votes, votedByMe]
@@ -2183,7 +2179,7 @@ components:
           minLength: 0
           maxLength: 5000
           description: Caption or poll question. May be empty only for an ordinary photo post; polls require a question.
-        communityId: { type: ["string", "null"] }
+        surface: { $ref: "#/components/schemas/PostSurface" }
         pollOptions:
           type: array
           maxItems: 6

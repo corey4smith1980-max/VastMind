@@ -252,7 +252,7 @@ export function ClipComposer({ onClose }: { onClose: (published?: boolean) => vo
         extra = { effect, ...(audio ? { audioMediaId: audio.id } : {}) };
       }
       setStage("publishing");
-      await create.mutateAsync({ data: { content: caption.trim(), mediaId, ...extra, ...(cleanCues.length ? { captions: cleanCues } : {}) } });
+      await create.mutateAsync({ data: { content: caption.trim(), surface: "feed", mediaId, ...extra, ...(cleanCues.length ? { captions: cleanCues } : {}) } });
       void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey() });
       toast({ title: "Your clip is live" });
       onClose(true);

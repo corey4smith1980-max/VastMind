@@ -16,8 +16,8 @@ import { MobileMediaPicker, MobileMediaPreview } from '@/components/Media';
 const INK = 'hsl(192,52%,9%)';
 const ago = (iso: string) => { const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 60 ? `${m}m` : m < 1440 ? `${Math.round(m / 60)}h` : `${Math.round(m / 1440)}d`; };
 
-/** Text / photo / poll post as a full-height page in the reel. Never mounts a video player. */
-export function PostEntry({ post, height, near, bottomInset }: { post: Post; height: number; near: boolean; bottomInset: number }) {
+/** Text/photo/poll card; the reel variant remains for older navigation paths. */
+export function PostEntry({ post, height, near, bottomInset, variant = 'reel' }: { post: Post; height: number; near: boolean; bottomInset: number; variant?: 'reel' | 'community' }) {
   const colors = useColors();
   const qc = useQueryClient();
   const { profile } = useAppStore();
@@ -40,9 +40,9 @@ export function PostEntry({ post, height, near, bottomInset }: { post: Post; hei
   };
   const author = p.isAnonymous ? 'Anonymous member' : p.author.name;
 
-  return <View style={{ height, backgroundColor: INK, paddingHorizontal: 14, paddingTop: 12, paddingBottom: bottomInset + 10 }}>
-    <Text style={s.kicker}>{p.pollOptions.length && isImage ? 'PHOTO POLL' : p.pollOptions.length ? 'POLL' : isImage ? 'PHOTO POST' : 'POST'}</Text>
-    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+  return <View style={{ height, backgroundColor: variant === 'community' ? colors.background : INK, paddingHorizontal: 14, paddingTop: variant === 'community' ? 8 : 12, paddingBottom: variant === 'community' ? 8 : bottomInset + 10 }}>
+    {variant === 'reel' ? <Text style={s.kicker}>{p.pollOptions.length && isImage ? 'PHOTO POLL' : p.pollOptions.length ? 'POLL' : isImage ? 'PHOTO POST' : 'POST'}</Text> : null}
+    <View style={[s.card, { backgroundColor: colors.card, borderColor: colors.border, ...(variant === 'community' ? { borderRadius: 18 } : {}) }]}>
       <ScrollView nestedScrollEnabled contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
         <View style={s.row}>
           <View style={[s.avatar, { backgroundColor: p.isAnonymous ? colors.muted : colors.primary }]}>
@@ -94,7 +94,7 @@ export function PostEntry({ post, height, near, bottomInset }: { post: Post; hei
 }
 
 /** Native post / poll composer using the real Post contract. */
-export function CreatePostSheet({ onClose, onPublished }: { onClose: () => void; onPublished: () => void }) {
+export function CreatePostSheet({ onClose, onPublished, surface = 'community' }: { onClose: () => void; onPublished: () => void; surface?: 'community' | 'profile' }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const qc = useQueryClient();
@@ -131,7 +131,7 @@ export function CreatePostSheet({ onClose, onPublished }: { onClose: () => void;
         </ScrollView>
         {create.isError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginTop: 8 }}>{errorText(create.error)}</Text> : null}
         {hint ? <Text accessibilityLiveRegion="polite" style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>{hint}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), surface, isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
           {create.isPending ? <ActivityIndicator color={colors.primaryForeground} /> : <Text style={{ color: colors.primaryForeground, fontWeight: '700' }}>Share</Text>}
         </Pressable>
       </View>

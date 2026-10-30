@@ -136,7 +136,7 @@ export default function VideoStudioScreen() {
     if (!edited || !caption.trim() || busy) { if (!caption.trim()) setError("Add a caption to your post."); return; }
     try {
       setError(""); setBusy("Publishing clip");
-      await create.mutateAsync({ data: { content: caption.trim(), mediaId: edited.id, effect: "none", ...(captions.length ? { captions } : {}) } });
+      await create.mutateAsync({ data: { content: caption.trim(), surface: "feed", mediaId: edited.id, effect: "none", ...(captions.length ? { captions } : {}) } });
       invalidate();
       Alert.alert("Clip shared", "Your edited video is on your VastMind feed.", [{ text: "Done", onPress: () => router.back() }]);
     } catch (e) { setError(message(e)); }

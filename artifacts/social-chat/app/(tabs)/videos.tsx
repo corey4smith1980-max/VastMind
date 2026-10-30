@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResetVideoHistory } from "@workspace/api-client-react";
 import { ReelPager } from "@/components/VideoReel";
 import { usePagedVideos } from "@/components/videoKit";
-import { CreatePostSheet } from "@/components/PostEntry";
 import { useColors } from "@/hooks/useColors";
 
 const FEEDS = [
@@ -24,13 +23,8 @@ export default function VideosScreen() {
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
   useEffect(() => { const t = setTimeout(() => setDq(q.trim()), 300); return () => clearTimeout(t); }, [q]);
-  const [posting, setPosting] = useState(false);
-  const clips = usePagedVideos({ feed, includePosts: true, q: dq });
-  const create = () => Alert.alert("Share something", "Pick what to add to Feed.", [
-    { text: "Post, photo or poll", onPress: () => setPosting(true) },
-    { text: "Clip", onPress: () => router.push("/video-studio") },
-    { text: "Cancel", style: "cancel" },
-  ]);
+  const clips = usePagedVideos({ surface: "feed", feed, q: dq });
+  const create = () => router.push("/video-studio");
   const reset = useResetVideoHistory({ mutation: { onSuccess: clips.refresh } });
 
   const confirmReset = () => Alert.alert(
@@ -46,12 +40,12 @@ export default function VideosScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ minHeight: 98, paddingHorizontal: 15, paddingTop: 5, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ color: colors.foreground, fontSize: 23, fontWeight: "800" }}>Your feed</Text>
+          <Text style={{ color: colors.foreground, fontSize: 23, fontWeight: "800" }}>Feed</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Reset video viewing history" disabled={reset.isPending} onPress={confirmReset}>
               <Feather name="rotate-ccw" size={19} color={colors.foreground} />
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Create a post, photo, poll, or clip" onPress={create}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Create a clip" onPress={create}>
               <Feather name="plus-circle" size={24} color={colors.primary} />
             </Pressable>
           </View>
@@ -66,7 +60,7 @@ export default function VideosScreen() {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 18, paddingHorizontal: 12 }}>
           <Feather name="search" size={14} color={colors.mutedForeground} />
-          <TextInput accessibilityLabel="Search posts and clips" value={q} onChangeText={setQ} placeholder="Search posts and clips" placeholderTextColor={colors.mutedForeground} returnKeyType="search" style={{ flex: 1, minHeight: 36, color: colors.foreground, fontSize: 13 }} />
+          <TextInput accessibilityLabel="Search clips" value={q} onChangeText={setQ} placeholder="Search clips" placeholderTextColor={colors.mutedForeground} returnKeyType="search" style={{ flex: 1, minHeight: 36, color: colors.foreground, fontSize: 13 }} />
           {q ? <Pressable accessibilityLabel="Clear search" onPress={() => setQ("")}><Feather name="x" size={14} color={colors.foreground} /></Pressable> : null}
         </View>
       </View>
@@ -81,12 +75,11 @@ export default function VideosScreen() {
             : <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}>
                 <Feather name="film" size={34} color={colors.accent} />
                 <Text style={{ color: colors.foreground, fontSize: 20, fontWeight: "700", marginTop: 16 }}>{dq ? "Nothing matches" : "Your circle, in motion"}</Text>
-                <Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 8 }}>{dq ? `No posts or clips mention "${dq}".` : "Post a thought, ask a poll, or record a clip."}</Text>
+                <Text style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 8 }}>{dq ? `No clips mention "${dq}".` : "Record or upload a short clip to share with your circle."}</Text>
                 <Pressable accessibilityRole="button" onPress={create} style={{ marginTop: 18, backgroundColor: colors.primary, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 24 }}>
-                  <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Share something</Text>
+                  <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>Create a clip</Text>
                 </Pressable>
               </View>}
-      {posting ? <CreatePostSheet onClose={() => setPosting(false)} onPublished={() => { setPosting(false); clips.refresh(); }} /> : null}
     </View>
   );
 }

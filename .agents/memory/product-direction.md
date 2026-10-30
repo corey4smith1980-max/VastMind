@@ -51,17 +51,17 @@ Ordinary emoji should be free and static. VastMind-specific premium emoji should
 
 **How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.
 
-The navigation destination is labeled “Community,” but it remains a general social-post feed rather than a community-group feature.
+Community is a global public text/photo/poll discussion board, while Feed is a separate TikTok-style short-video destination. Neither is a community-group feature.
 
-**Why:** The user asked to rename Home to Community after explicitly removing community groups and creation.
+**Why:** The user renamed Home to Community, removed groups, and later explicitly separated Community posts from the TikTok-like Feed.
 
-**How to apply:** Keep general posts, photos, polls, reactions, and comments in the feed. Do not add community discovery, membership, opportunity listings, or group-scoped posts. Keep the current `/home` route for compatibility.
+**How to apply:** Keep text, photo, poll, reaction, and comment posts in Community; keep clips in Feed. Do not add group discovery, membership, opportunity listings, or group-scoped posts. Keep `/home` for compatibility.
 
-Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
+Posts created on a member profile belong only on that profile; they must not appear in Community or Feed.
 
-**Why:** The user explicitly prefers the original video design and wants one TikTok-like page for watching and enjoying both posts and clips.
+**Why:** When asked where profile posts should appear, the user chose “Only on the profile.”
 
-**How to apply:** Keep posts and clips in one vertical timeline, preserve existing social features and content, and redirect old Feed links instead of reintroducing a second feed destination.
+**How to apply:** Give each post one destination: Community, Feed, or Profile. Default ordinary text/photo/poll posts to Community, clips to Feed, and profile-created posts to Profile; do not cross-post them.
 
 Primary navigation should prioritize Chats, Feed, Shop and the Community post feed across web and mobile. Shop stays in the center of the five-item mobile bar, while Channels and other less-frequent tools go under More. Keep Channels separate from the Community feed and use a chat-style full-page layout for channel browsing and updates.
 

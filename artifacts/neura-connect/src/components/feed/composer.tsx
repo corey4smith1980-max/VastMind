@@ -13,7 +13,7 @@ import { useMe } from "@/lib/me";
 import { useInvalidate } from "@/lib/realtime";
 
 // ---------- Post / poll composer ----------
-export function Composer({ onPublished }: { onPublished?: () => void }) {
+export function Composer({ onPublished, surface = "community" }: { onPublished?: () => void; surface?: "community" | "profile" }) {
   const me = useMe();
   const { toast } = useToast();
   const invalidate = useInvalidate();
@@ -82,7 +82,7 @@ export function Composer({ onPublished }: { onPublished?: () => void }) {
           <span>Post anonymously</span>
         </label>
         <Button className="ml-auto rounded-full px-5" disabled={!canPost}
-          onClick={() => create.mutate({ data: { content: content.trim(), pollOptions: poll ? opts : undefined, mediaId: photo?.id, isAnonymous: anonymous } })} data-testid="button-publish-post">
+          onClick={() => create.mutate({ data: { content: content.trim(), surface, pollOptions: poll ? opts : undefined, mediaId: photo?.id, isAnonymous: anonymous } })} data-testid="button-publish-post">
           {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Post
         </Button>
       </div>

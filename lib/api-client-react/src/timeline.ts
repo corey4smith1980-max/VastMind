@@ -8,11 +8,10 @@ import type { GetVideosParams } from "./generated/api.schemas";
  * visible after paging on either client. Never mix regular/infinite cache data. */
 export function usePagedSocialTimeline(input: Omit<GetVideosParams, "before">, enabled = true) {
   const base = {
+    surface: input.surface ?? "feed",
     ...(input.feed ? { feed: input.feed } : {}),
     ...(input.creatorId ? { creatorId: input.creatorId } : {}),
-    ...(input.includePosts ? { includePosts: true } : {}),
     ...(input.q?.trim() ? { q: input.q.trim() } : {}),
-    ...(input.communityId ? { communityId: input.communityId } : {}),
   };
   const client = useQueryClient();
   const key = [...getGetVideosQueryKey(base), "infinite"];
@@ -25,7 +24,8 @@ export function usePagedSocialTimeline(input: Omit<GetVideosParams, "before">, e
   });
   const seen = new Set<string>();
   const items = (query.data?.pages.flatMap(page => page.items) ?? []).filter(post => {
-    if (seen.has(post.id) || (!base.includePosts && !post.media?.contentType.toLowerCase().startsWith("video/"))) return false;
+    const isClip = post.media?.contentType.toLowerCase().startsWith("video/") ?? false;
+    if (seen.has(post.id) || post.surface !== base.surface || (base.surface === "feed" && !isClip) || (base.surface !== "feed" && isClip)) return false;
     seen.add(post.id);
     return true;
   });

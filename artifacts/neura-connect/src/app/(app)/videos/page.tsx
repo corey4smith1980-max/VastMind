@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetVideosQueryKey, useResetVideoHistory, type GetVideosFeed } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CreateChoiceDialog, type CreateMode } from "@/components/videos/create-choice";
 import { ClipComposer } from "@/components/videos/clip-composer";
 import { ReelStack } from "@/components/videos/reel-stack";
 import { usePagedVideos } from "@/components/videos/video-kit";
@@ -16,12 +15,12 @@ import { cn } from "@/lib/utils";
 
 const FEEDS: { id: GetVideosFeed; label: string; why: string; empty: string }[] = [
   { id: "for-you", label: "For You", why: "Recommendations use follows and public viewing activity, never private chats.", empty: "Nothing to suggest yet. Follow a few people or watch some clips to shape your feed." },
-  { id: "following", label: "Following", why: "Posts and clips from people you follow, newest first.", empty: "People you follow haven't shared posts or clips yet." },
-  { id: "latest", label: "Latest", why: "Posts and clips you're allowed to see, newest first. No ranking.", empty: "No posts or clips have been shared yet." },
+  { id: "following", label: "Following", why: "Clips from people you follow, newest first.", empty: "People you follow haven't shared clips yet." },
+  { id: "latest", label: "Latest", why: "Clips you're allowed to see, newest first. No ranking.", empty: "No clips have been shared yet." },
 ];
 
 function Feed({ feed, onCreate, q }: { feed: GetVideosFeed; onCreate: () => void; q: string }) {
-  const videos = usePagedVideos({ feed, includePosts: true, q });
+  const videos = usePagedVideos({ surface: "feed", feed, q });
   const meta = FEEDS.find((f) => f.id === feed)!;
   if (videos.isLoading && videos.items.length === 0) return <div className="grid flex-1 place-items-center" aria-label="Loading clips"><div className="w-full max-w-[390px] px-8"><div className="aspect-[9/15] animate-pulse rounded-[2rem] bg-white/[.07]" /><div className="mt-4 h-4 w-2/3 animate-pulse rounded bg-white/10" /><div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-white/[.06]" /></div></div>;
   if (videos.isError && videos.items.length === 0) return <section role="alert" className="m-auto max-w-sm px-6 text-center text-white">
@@ -33,10 +32,10 @@ function Feed({ feed, onCreate, q }: { feed: GetVideosFeed; onCreate: () => void
     <span className="mx-auto grid h-16 w-16 place-items-center rounded-[1.4rem] border border-white/10 bg-white/[.06]"><Sparkles className="h-7 w-7 text-[hsl(42_90%_65%)]" /></span>
     <p className="mt-5 font-mono text-[10px] uppercase tracking-[.24em] text-white/50">{meta.label}</p>
     <h1 className="mt-2 font-display text-3xl">{q ? "Nothing matches." : "Your circle, in motion."}</h1>
-    <p className="mx-auto mt-3 max-w-[290px] text-sm leading-relaxed text-white/65">{q ? `No posts or clips mention “${q}”.` : meta.empty}</p>
-    <Button onClick={onCreate} className="mt-6 rounded-full px-5" data-testid="button-first-clip"><Plus className="mr-2 h-4 w-4" />Share something</Button>
+    <p className="mx-auto mt-3 max-w-[290px] text-sm leading-relaxed text-white/65">{q ? `No clips mention “${q}”.` : meta.empty}</p>
+    <Button onClick={onCreate} className="mt-6 rounded-full px-5" data-testid="button-first-clip"><Plus className="mr-2 h-4 w-4" />Create a clip</Button>
   </section>;
-  return <ReelStack items={videos.items} hasMore={videos.hasMore} loadingMore={videos.loadingMore} error={videos.isError} onLoadMore={videos.loadNext} onRetry={videos.retry} label="Clips and posts. Scroll to move between entries." />;
+  return <ReelStack items={videos.items} hasMore={videos.hasMore} loadingMore={videos.loadingMore} error={videos.isError} onLoadMore={videos.loadNext} onRetry={videos.retry} label="Clips. Scroll to move between videos." />;
 }
 
 export default function VideosPage() {
@@ -66,7 +65,6 @@ function VideosInner() {
     }, 300);
     return () => window.clearTimeout(t);
   }, [q]);
-  const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [feed, setFeed] = useState<GetVideosFeed>("for-you");
   const [generation, setGeneration] = useState(0);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -93,13 +91,13 @@ function VideosInner() {
       <div className="flex items-center gap-1.5">
         <Button onClick={() => setInfoOpen((o) => !o)} variant="ghost" size="icon" aria-label="Why am I seeing these clips?" aria-expanded={infoOpen} className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-feed-info"><Info className="h-4 w-4" /></Button>
         <Button onClick={reload} variant="ghost" size="icon" aria-label="Refresh clips" className="rounded-full text-white/75 hover:bg-white/10 hover:text-white" data-testid="button-refresh-videos"><RefreshCw className="h-4 w-4" /></Button>
-        <Button onClick={() => setCreateMode("choose")} size="sm" aria-haspopup="dialog" className="rounded-full px-4" data-testid="button-create-clip"><Plus className="mr-1.5 h-4 w-4" />Create</Button>
+        <Button onClick={() => setComposerOpen(true)} size="sm" aria-haspopup="dialog" className="rounded-full px-4" data-testid="button-create-clip"><Plus className="mr-1.5 h-4 w-4" />Create clip</Button>
       </div>
     </header>
     <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-[hsl(192_49%_12%)] px-4 pb-2.5 sm:px-7">
       <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
         <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
-        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search posts and clips" aria-label="Search posts and clips" className="h-8 rounded-full border-white/10 bg-white/[.07] pl-8 text-xs text-white placeholder:text-white/45" data-testid="input-search-feed" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search clips" aria-label="Search clips" className="h-8 rounded-full border-white/10 bg-white/[.07] pl-8 text-xs text-white placeholder:text-white/45" data-testid="input-search-feed" />
       </div>
     </div>
     {infoOpen ? <section className="absolute right-3 top-[70px] z-30 w-[min(360px,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-[hsl(192_46%_10%/.97)] p-5 text-white shadow-2xl backdrop-blur" aria-label="How this feed works">
@@ -113,9 +111,8 @@ function VideosInner() {
       </div>
     </section> : null}
     <div className="relative flex min-h-0 flex-1">
-      <Feed key={`${feed}-${generation}-${dq}`} feed={feed} q={dq} onCreate={() => setCreateMode("choose")} />
+      <Feed key={`${feed}-${generation}-${dq}`} feed={feed} q={dq} onCreate={() => setComposerOpen(true)} />
     </div>
-    <CreateChoiceDialog mode={createMode} onMode={setCreateMode} onClip={() => setComposerOpen(true)} onPublished={reload} />
     {composerOpen ? <ClipComposer onClose={(published) => { setComposerOpen(false); if (published) reload(); }} /> : null}
   </main>;
 }

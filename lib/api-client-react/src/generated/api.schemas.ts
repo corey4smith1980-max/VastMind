@@ -301,6 +301,15 @@ export const PostEffect = {
   soft: 'soft',
 } as const;
 
+export type PostSurface = typeof PostSurface[keyof typeof PostSurface];
+
+
+export const PostSurface = {
+  feed: 'feed',
+  community: 'community',
+  profile: 'profile',
+} as const;
+
 export interface PollOption {
   id: string;
   label: string;
@@ -335,6 +344,7 @@ export interface Post {
   communityId: string | null;
   /** @nullable */
   communityName: string | null;
+  surface: PostSurface;
   pollOptions: PollOption[];
   media: MediaAttachment | null;
   audioMedia: MediaAttachment | null;
@@ -380,8 +390,7 @@ export interface PostInput {
      * @maxLength 5000
      */
   content: string;
-  /** @nullable */
-  communityId?: string | null;
+  surface?: PostSurface;
   /**
      * @maxItems 6
      * @items.minLength 1
@@ -2126,7 +2135,6 @@ limit?: number;
 
 export type GetFeedParams = {
 q?: string;
-communityId?: string;
 before?: string;
 };
 
@@ -2141,17 +2149,13 @@ feed?: GetVideosFeed;
  */
 creatorId?: string;
 /**
- * Include text, photo and poll posts alongside clips in one timeline.
+ * Feed contains clips; Community and Profile contain only posts assigned to those destinations.
  */
-includePosts?: boolean;
+surface?: GetVideosSurface;
 /**
  * @maxLength 200
  */
 q?: string;
-/**
- * @maxLength 160
- */
-communityId?: string;
 };
 
 export type GetVideosFeed = typeof GetVideosFeed[keyof typeof GetVideosFeed];
@@ -2161,6 +2165,15 @@ export const GetVideosFeed = {
   'for-you': 'for-you',
   following: 'following',
   latest: 'latest',
+} as const;
+
+export type GetVideosSurface = typeof GetVideosSurface[keyof typeof GetVideosSurface];
+
+
+export const GetVideosSurface = {
+  feed: 'feed',
+  community: 'community',
+  profile: 'profile',
 } as const;
 
 export type RecordVideoEngagementBody = {

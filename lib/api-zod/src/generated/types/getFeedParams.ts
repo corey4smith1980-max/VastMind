@@ -8,6 +8,5 @@
 
 export type GetFeedParams = {
 q?: string;
-communityId?: string;
 before?: Date;
 };

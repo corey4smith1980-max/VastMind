@@ -5,7 +5,8 @@ import { assert, canDiscover, post, query, summary, uuid, type Query } from "./s
 const privacy = `NOT EXISTS(SELECT 1 FROM blocks b WHERE
     (b.user_id=$1 AND b.target_id=p.author_id) OR
     (b.target_id=$1 AND b.user_id=p.author_id))`;
-const visible = `p.community_id IS NULL AND m.ready=true AND m.content_type LIKE 'video/%' AND ${privacy}`;
+const visible = `p.community_id IS NULL AND m.ready=true AND m.content_type LIKE 'video/%'
+  AND p.surface IN ('feed','community') AND ${privacy}`;
 const joins = `FROM posts p JOIN media_uploads m ON m.id=p.media_id`;
 
 export async function creatorProfile(identifier: string, viewer: string, q: Query = query) {
@@ -38,18 +39,23 @@ const relevance = `
   + 8.0/(1+GREATEST(0,EXTRACT(EPOCH FROM (now()-p.created_at)))/86400.0)
   - CASE WHEN EXISTS(SELECT 1 FROM video_engagement WHERE user_id=$1 AND post_id=p.id AND watch_ms>=3000) THEN 18 ELSE 0 END`;
 
-export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; includePosts?: boolean; q?: string }, q: Query = query) {
+export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; surface?: string; q?: string }, q: Query = query) {
   const feed = input.feed || "for-you";
   assert(["for-you", "following", "latest"].includes(feed), 400, "Invalid feed");
+  const surface = input.surface || "feed";
+  assert(["feed", "community", "profile"].includes(surface), 400, "Invalid destination");
+  assert(surface !== "profile" || !!input.creatorId, 400, "A creator is required for profile posts");
   const creator = input.creatorId ? (await creatorProfile(input.creatorId, viewer, q)).user.id : null;
   const search = input.q?.trim() || null;
-  // Keep existing creator/clip requests unchanged. A combined timeline uses the
-  // same privacy checks, ranking and cursor pagination without duplicating posts.
-  const timelineJoins = input.includePosts
+  // Each destination is queried independently; one item cannot leak into another
+  // destination simply because a shared feed happens to display mixed post types.
+  const timelineJoins = surface !== "feed"
     ? joins.replace("JOIN media_uploads", "LEFT JOIN media_uploads") : joins;
-  const timelineVisible = input.includePosts
-    ? `p.community_id IS NULL AND (p.media_id IS NULL OR m.ready=true) AND ${privacy}` : visible;
-  const scope = `v2:${feed}:${createHash("sha256").update(JSON.stringify([!!input.includePosts, search])).digest("hex")}`;
+  const timelineVisible = surface === "feed"
+    ? visible
+    : `p.community_id IS NULL AND p.surface='${surface}'
+      AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%')) AND ${privacy}`;
+  const scope = `v3:${feed}:${createHash("sha256").update(JSON.stringify([surface, search])).digest("hex")}`;
   const searchLike = search ? `%${search.replace(/[%_\\]/g, "\\$&")}%` : null;
   let ids: string[], sessionId: string, offset = 0;
   if (input.before) {

@@ -5931,7 +5931,7 @@ export const getGetFeedUrl = (params?: GetFeedParams,) => {
 }
 
 /**
- * @summary Get the member feed
+ * @summary Get public community posts
  */
 export const getFeed = async (params?: GetFeedParams, options?: Parameters<typeof customFetch>[1]): Promise<PostList> => {
 
@@ -5978,7 +5978,7 @@ export type GetFeedQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get the member feed
+ * @summary Get public community posts
  */
 
 export function useGetFeed<TData = Awaited<ReturnType<typeof getFeed>>, TError = ErrorType<unknown>>(
@@ -6015,7 +6015,7 @@ export const getGetVideosUrl = (params?: GetVideosParams,) => {
 }
 
 /**
- * @summary List visible clips or the combined posts-and-clips timeline
+ * @summary List content from one social destination
  */
 export const getVideos = async (params?: GetVideosParams, options?: Parameters<typeof customFetch>[1]): Promise<VideoPage> => {
 
@@ -6062,7 +6062,7 @@ export type GetVideosQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List visible clips or the combined posts-and-clips timeline
+ * @summary List content from one social destination
  */
 
 export function useGetVideos<TData = Awaited<ReturnType<typeof getVideos>>, TError = ErrorType<unknown>>(

@@ -17,10 +17,10 @@ const FEEDS: { id: GetVideosFeed; label: string }[] = [
   { id: "following", label: "Following" },
 ];
 
-/** Facebook-style community post feed. Short videos remain in the dedicated Feed tab. */
+/** Community is a public, Facebook-style board; clips live only in Feed. */
 export default function HomeFeedPage() {
   const [feed, setFeed] = useState<GetVideosFeed>("latest");
-  const timeline = usePagedVideos({ feed, includePosts: true });
+  const timeline = usePagedVideos({ surface: "community", feed });
   // Hide legacy group-scoped posts while the old data is being retired.
   const posts = timeline.items.filter((post) => !post.communityId);
 

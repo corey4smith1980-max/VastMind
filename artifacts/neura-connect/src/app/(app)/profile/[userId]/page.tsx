@@ -35,8 +35,8 @@ export default function CreatorProfilePage() {
   const me = useMe();
   const creator = useGetCreator(userId, { query: { queryKey: getGetCreatorQueryKey(userId), enabled: !!userId } });
   const realId = creator.data?.user.id;
-  const clips = usePagedVideos({ creatorId: realId ?? "" }, !!realId);
-  const profileTimeline = usePagedVideos({ creatorId: realId ?? "", includePosts: true }, !!realId);
+  const clips = usePagedVideos({ surface: "feed", creatorId: realId ?? "" }, !!realId);
+  const profileTimeline = usePagedVideos({ surface: "profile", creatorId: realId ?? "" }, !!realId);
   const [playing, setPlaying] = useState<string | null>(null);
   const [section, setSection] = useState<"posts" | "clips">("posts");
   const follow = useToggleUserFollow({ mutation: {
@@ -57,7 +57,7 @@ export default function CreatorProfilePage() {
   }
   const { user, bio, followersCount, followingCount, clipsCount } = creator.data;
   const isMe = me?.id === user.id;
-  const profilePosts = profileTimeline.items.filter((post) => !post.communityId && !isClip(post));
+  const profilePosts = profileTimeline.items.filter((post) => post.surface === "profile" && !isClip(post));
 
   return <main className="h-full overflow-y-auto bg-background" data-testid="page-creator-profile">
     <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-5 sm:px-8">
@@ -82,7 +82,7 @@ export default function CreatorProfilePage() {
           data-testid={`tab-profile-${tab}`}>{tab === "posts" ? "Posts" : "Clips"}</button>)}
       </div>
       {section === "posts" ? <section className="mx-auto mt-5 max-w-2xl space-y-4" aria-label={`${user.name}'s posts`}>
-        {isMe ? <Composer onPublished={profileTimeline.refresh} /> : null}
+        {isMe ? <Composer surface="profile" onPublished={profileTimeline.refresh} /> : null}
         {profileTimeline.isLoading && profilePosts.length === 0 ? <div className="space-y-3" aria-label="Loading profile posts"><div className="h-48 animate-pulse rounded-2xl bg-muted" /><div className="h-48 animate-pulse rounded-2xl bg-muted" /></div> : null}
         {profileTimeline.isError && profilePosts.length === 0 ? <div role="alert" className="rounded-2xl border p-6 text-center text-sm">{errorStatus(profileTimeline.error) === 403 ? "Their posts are only visible to people they've chosen." : <>Couldn't load posts. <button onClick={profileTimeline.retry} className="underline">Try again</button></>}</div> : null}
         {!profileTimeline.isLoading && !profileTimeline.isError && profilePosts.length === 0 ? <div className="rounded-2xl border border-dashed p-10 text-center"><Newspaper className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 font-display text-xl">{isMe ? "Your profile starts here" : "No posts yet"}</p><p className="mt-1 text-sm text-muted-foreground">{isMe ? "Share a thought, photo, or poll with your followers." : "Their posts will appear here."}</p></div> : null}
