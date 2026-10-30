@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Feather } from "@expo/vector-icons";
 import { Alert, Animated, Modal, Pressable, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,8 +43,9 @@ function GradientFill({ style }: { style: StatusBackgroundStyle }) {
 
 export default function Stories() {
   const colors=useColors(),router=useRouter(),client=useQueryClient();
-  const params=useLocalSearchParams<{authorId?:string}>();
+  const params=useLocalSearchParams<{authorId?:string;friends?:string}>();
   const authorId=typeof params.authorId==="string"?params.authorId:undefined;
+  const friendsMode=params.friends==="1";
   const {profile}=useAppStore();
   const list=useActiveStatuses();
   const create=useCreateStatus();
@@ -53,31 +55,49 @@ export default function Stories() {
   const [notice,setNotice]=useState("");
   const [viewing,setViewing]=useState<{items:Status[];index:number}|null>(null);
   const openedAuthorId=useRef<string|null>(null);
+  const openedFriendsQueue=useRef(false);
   const progress=useRef(new Animated.Value(0)).current;
+  const storyFade=useRef(new Animated.Value(0)).current;
   const ownStatuses=useMemo(()=>list.active
     .filter(status=>status.author.id===profile?.id)
     .sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()),[list.active,profile?.id]);
   const nextStatus=useCallback(()=>{
     if(!viewing)return;
     if(viewing.index<viewing.items.length-1)setViewing({items:viewing.items,index:viewing.index+1});
-    else {setViewing(null);if(authorId)router.back();}
-  },[authorId,router,viewing]);
+    else {setViewing(null);if(friendsMode)router.replace('/(tabs)/chats');else if(authorId)router.back();}
+  },[authorId,friendsMode,router,viewing]);
   const previousStatus=useCallback(()=>{
     setViewing((current)=>current?{...current,index:Math.max(0,current.index-1)}:null);
   },[]);
   const closeViewer=useCallback(()=>{
     setViewing(null);
-    if(authorId)router.back();
-  },[authorId,router]);
+    if(friendsMode)router.replace('/(tabs)/chats');else if(authorId)router.back();
+  },[authorId,friendsMode,router]);
+
   useEffect(()=>{
-    if(!authorId||!profile?.id||openedAuthorId.current===authorId||(!list.data&&!list.isError))return;
+    if(!friendsMode||!profile?.id||!list.data||openedFriendsQueue.current)return;
+    openedFriendsQueue.current=true;
+    const byAuthor=new Map<string,Status[]>();
+    for(const status of list.active){
+      if(status.author.id===profile.id)continue;
+      byAuthor.set(status.author.id,[...(byAuthor.get(status.author.id)??[]),status]);
+    }
+    const queue=Array.from(byAuthor.values())
+      .map(items=>items.sort((a,b)=>new Date(a.createdAt).getTime()-new Date(b.createdAt).getTime()))
+      .sort((a,b)=>new Date(b[b.length-1].createdAt).getTime()-new Date(a[a.length-1].createdAt).getTime())
+      .flat();
+    if(queue.length)setViewing({items:queue,index:0});
+  },[friendsMode,profile?.id,list.data,list.active]);
+
+  useEffect(()=>{
+    if(friendsMode||!authorId||!profile?.id||openedAuthorId.current===authorId||(!list.data&&!list.isError))return;
     openedAuthorId.current=authorId;
     const items=list.active
       .filter(status=>status.author.id===authorId&&status.author.id!==profile.id)
       .sort((a,b)=>new Date(a.createdAt).getTime()-new Date(b.createdAt).getTime());
     if(items.length)setViewing({items,index:0});
     else {Alert.alert("Status unavailable","Only active statuses from mutual contacts can be viewed here.");router.back();}
-  },[authorId,list.active,list.data,list.isError,profile?.id,router]);
+  },[friendsMode,authorId,list.active,list.data,list.isError,profile?.id,router]);
   useEffect(()=>{
     if(!viewing){progress.setValue(0);return;}
     progress.setValue(0);
@@ -85,6 +105,10 @@ export default function Stories() {
     animation.start(({finished})=>{if(finished)nextStatus();});
     return()=>animation.stop();
   },[viewing?.index,viewing?.items,nextStatus,progress]);
+  useEffect(()=>{
+    storyFade.setValue(0);
+    Animated.timing(storyFade,{toValue:1,duration:240,useNativeDriver:true}).start();
+  },[viewing?.index,storyFade]);
   const activeStatus=viewing?.items[viewing.index];
 
   async function share() {
@@ -94,7 +118,8 @@ export default function Stories() {
       setContent("");setMedia(undefined);setBackgroundStyle("midnight");setNotice("Your status is live for the next 24 hours.");await client.invalidateQueries({queryKey:getListStatusesQueryKey()});
     }catch(e){Alert.alert("Couldn't post story",e instanceof Error?e.message:"Try again.");}
   }
-  return <PageFrame>
+  return <>
+    {!friendsMode?<PageFrame>
      <Pressable accessibilityLabel="Back" onPress={()=>router.back()} style={{paddingVertical:12}}><Text style={{color:colors.primary}}>Back</Text></Pressable>
      <Text style={{color:colors.foreground,fontSize:26,fontWeight:"700"}}>Your status</Text>
      <Text style={{color:colors.mutedForeground,marginVertical:8}}>Create and manage your own updates. Shared with mutual contacts for 24 hours.</Text>
@@ -137,7 +162,8 @@ export default function Stories() {
         <Text style={{color:colors.primary,fontSize:18,fontWeight:"700"}}>›</Text>
       </Pressable>;
     })}
-     <Modal visible={!!viewing} animationType="fade" onRequestClose={closeViewer} statusBarTranslucent>
+    </PageFrame>:null}
+      <Modal visible={!!viewing||friendsMode} animationType="fade" onRequestClose={closeViewer} statusBarTranslucent>
       {activeStatus&&viewing?<View style={{flex:1,backgroundColor:"#101321"}}>
         <StatusBar hidden/>
         <GradientFill style={activeStatus.backgroundStyle}/>
@@ -157,10 +183,10 @@ export default function Stories() {
             </Pressable>
           </View>
         </View>
-        <View style={{flex:1,alignItems:"center",justifyContent:"center",paddingHorizontal:20,paddingVertical:24}}>
+        <Animated.View style={{flex:1,alignItems:"center",justifyContent:"center",paddingHorizontal:20,paddingVertical:24,opacity:storyFade}}>
           {activeStatus.media?<MobileMediaPreview media={activeStatus.media} fullScreen/>:
             <Text accessibilityLabel={`Status text: ${activeStatus.content}`} style={{color:"#fff",fontSize:31,lineHeight:40,textAlign:"center",fontWeight:"700",paddingHorizontal:12}}>{activeStatus.content}</Text>}
-        </View>
+        </Animated.View>
         <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
           <View style={{flex:1,flexDirection:"row",paddingTop:100}}>
             <Pressable accessibilityRole="button" accessibilityLabel="Previous status" onPress={previousStatus} style={{width:"28%"}}/>
@@ -168,7 +194,14 @@ export default function Stories() {
             <Pressable accessibilityRole="button" accessibilityLabel="Next status" onPress={nextStatus} style={{width:"28%"}}/>
           </View>
         </View>
-      </View>:null}
+       </View>:friendsMode?<View style={{flex:1,backgroundColor:"#101321",alignItems:"center",justifyContent:"center",padding:28}}>
+         <StatusBar hidden/>
+         <Feather name="circle" size={38} color="rgba(255,255,255,0.72)"/>
+         <Text style={{color:"#fff",fontSize:21,fontWeight:"700",textAlign:"center",marginTop:18}}>No friends’ statuses right now</Text>
+         <Text style={{color:"rgba(255,255,255,0.68)",textAlign:"center",marginTop:8,lineHeight:21}}>Mutual contacts’ updates will play here one after another.</Text>
+         {list.isLoading?<Text style={{color:"rgba(255,255,255,0.7)",marginTop:18}}>Loading statuses…</Text>:null}
+         <Pressable accessibilityRole="button" accessibilityLabel="Back to Chats" onPress={closeViewer} style={{padding:14,marginTop:18}}><Text style={{color:"#66D9FF",fontWeight:"700"}}>Back to Chats</Text></Pressable>
+       </View>:null}
     </Modal>
-  </PageFrame>;
+   </>;
 }

@@ -60,8 +60,8 @@ export function MutualStatusStrip({ meId, compact = false }: { meId: string; com
     const quickLabel = first ? `View ${first.author.name}'s status` : "Open statuses";
     return (
     <div className="flex max-w-[116px] shrink-0 items-center gap-1 overflow-x-auto scrollbar-thin" aria-label="Friends' statuses" data-testid="mutual-status-strip">
-      <Link href={first ? `/statuses?authorId=${encodeURIComponent(first.author.id)}` : "/statuses"}
-        aria-label={quickLabel} title={quickLabel}
+      <Link href="/statuses?friends=1"
+        aria-label={first ? "Watch friends' statuses" : "Check friends' statuses"} title={quickLabel}
         className="h-9 w-9 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         data-testid="button-chat-friends-status">
         <StatusRing active={!!first} className="h-9 w-9">
@@ -72,7 +72,7 @@ export function MutualStatusStrip({ meId, compact = false }: { meId: string; com
       {contacts.slice(1, 3).map((items) => {
         const latest = items[0];
         return (
-          <Link key={latest.author.id} href={`/statuses?authorId=${encodeURIComponent(latest.author.id)}`}
+          <Link key={latest.author.id} href="/statuses?friends=1"
             aria-label={`View ${latest.author.name}'s ${items.length} status ${items.length === 1 ? "update" : "updates"}`}
             title={`${latest.author.name}'s status`}
             className="h-9 w-9 shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -592,12 +592,14 @@
 /* Status activity ring: real, unexpired statuses only */
 @keyframes vm-status-spin { to { transform: rotate(360deg); } }
 @keyframes vm-status-breathe { 0%,100% { opacity:.55; transform:scale(1); } 50% { opacity:1; transform:scale(1.06); } }
+@keyframes vm-status-enter { from { opacity:0; transform:translateY(8px) scale(.99); } to { opacity:1; transform:translateY(0) scale(1); } }
+.vm-status-enter { animation:vm-status-enter 260ms ease-out both; }
 .vm-status-ring { position:relative; display:inline-grid; place-items:center; border-radius:9999px; isolation:isolate; }
 .vm-status-ring::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:conic-gradient(from 0deg, hsl(188 92% 52%), hsl(214 90% 58%), hsl(262 80% 64%), hsl(188 92% 52%)); animation:vm-status-spin 3.2s linear infinite; }
 .vm-status-ring[data-state="idle"]::before { background:hsl(var(--muted-foreground) / .35); animation:none; }
 .vm-status-ring > .vm-status-inner { border-radius:9999px; }
 .vm-status-dot { animation:vm-status-breathe 2.2s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .vm-status-ring::before, .vm-status-dot { animation:none !important; } }
+@media (prefers-reduced-motion: reduce) { .vm-status-ring::before, .vm-status-dot, .vm-status-enter { animation:none !important; } }
 
 /* A brief center-screen heart makes a video double-tap feel immediate without adding a dislike control. */
 @keyframes vm-like-pop {

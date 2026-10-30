@@ -44,10 +44,8 @@ export default function ChatsScreen() {
         <View style={styles.headingRow}>
           <View style={styles.headingBrand}>
             <Pressable accessibilityRole="button"
-                accessibilityLabel={quickStatusAuthor ? `View ${quickStatusAuthor.name}'s status` : 'Open statuses'}
-                onPress={() => quickStatusAuthor
-                  ? router.push({ pathname: '/stories', params: { authorId: quickStatusAuthor.id } })
-                  : router.push('/stories')}
+                accessibilityLabel={quickStatusAuthor ? "Watch friends' statuses" : "Check friends' statuses"}
+                onPress={() => router.push({ pathname: '/stories', params: { friends: '1' } })}
                 style={styles.quickStatusButton} data-testid="button-chat-friends-status">
                 <StatusRing size={38} active={!!quickStatusAuthor} stroke={2.5}>
                   <View style={{ width: 30, height: 30, borderRadius: 15, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>
@@ -62,7 +60,7 @@ export default function ChatsScreen() {
                 const author = items[0].author;
                 return <Pressable key={author.id} accessibilityRole="button"
                   accessibilityLabel={`View ${author.name}'s ${items.length} active status ${items.length === 1 ? 'update' : 'updates'}`}
-                  onPress={() => router.push({ pathname: '/stories', params: { authorId: author.id } })}
+                  onPress={() => router.push({ pathname: '/stories', params: { friends: '1' } })}
                   style={styles.compactStatusButton}>
                   <StatusRing size={38} active stroke={2.5}>
                     <View style={{ width: 30, height: 30, borderRadius: 15, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card }}>

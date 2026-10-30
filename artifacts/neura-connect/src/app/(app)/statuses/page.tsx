@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CircleDashed, ChevronLeft, ChevronRight, Hourglass, Loader2, Plus, X } from "lucide-react";
 import { useCreateStatus, type Status, type MediaAttachment } from "@workspace/api-client-react";
 import { MediaPicker, MediaPreview } from "@/components/media-attachment";
@@ -16,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { errMessage, relTime } from "@/lib/format";
 import { useMe } from "@/lib/me";
 import { useInvalidate } from "@/lib/realtime";
+import { cn } from "@/lib/utils";
 
 const STORY_DURATION = 5000;
 
@@ -48,7 +50,21 @@ function lifePct(status: Status) {
   return total > 0 ? Math.max(0, Math.min(1, (new Date(status.expiresAt).getTime() - Date.now()) / total)) : 0;
 }
 
+/** Plays every active mutual-contact story in sequence, keeping each person's updates together. */
+function friendsStatusQueue(statuses: Status[], meId: string) {
+  const byAuthor = new Map<string, Status[]>();
+  for (const status of statuses) {
+    if (status.author.id === meId) continue;
+    byAuthor.set(status.author.id, [...(byAuthor.get(status.author.id) ?? []), status]);
+  }
+  return Array.from(byAuthor.values())
+    .map((items) => items.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()))
+    .sort((a, b) => new Date(b[b.length - 1].createdAt).getTime() - new Date(a[a.length - 1].createdAt).getTime())
+    .flat();
+}
+
 export default function StatusesPage() {
+  const router = useRouter();
   const me = useMe();
   const { toast } = useToast();
   const invalidate = useInvalidate();
@@ -56,8 +72,11 @@ export default function StatusesPage() {
   const [attachment, setAttachment] = useState<MediaAttachment>();
   const [backgroundStyle, setBackgroundStyle] = useState<BackgroundKey>("midnight");
   const [viewing, setViewing] = useState<Status[] | null>(null);
+  const [friendsMode, setFriendsMode] = useState(false);
+  const [routeModeReady, setRouteModeReady] = useState(false);
   const [requestedAuthorId, setRequestedAuthorId] = useState<string | null>(null);
   const openedAuthorId = useRef<string | null>(null);
+  const openedFriendsQueue = useRef(false);
   const [storyIndex, setStoryIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const list = useActiveStatuses();
@@ -87,12 +106,27 @@ export default function StatusesPage() {
   }
 
   useEffect(() => {
-    const authorId = new URLSearchParams(window.location.search).get("authorId");
+    const params = new URLSearchParams(window.location.search);
+    const friends = params.get("friends") === "1";
+    setFriendsMode(friends);
+    const authorId = params.get("authorId");
     if (authorId) setRequestedAuthorId(authorId);
+    setRouteModeReady(true);
   }, []);
 
   useEffect(() => {
-    if (!requestedAuthorId || !list.data || openedAuthorId.current === requestedAuthorId) return;
+    if (!friendsMode || !list.data || openedFriendsQueue.current) return;
+    openedFriendsQueue.current = true;
+    const queue = friendsStatusQueue(list.active, me.id);
+    if (queue.length) {
+      setViewing(queue);
+      setStoryIndex(0);
+      setElapsed(0);
+    }
+  }, [friendsMode, list.data, list.active, me.id]);
+
+  useEffect(() => {
+    if (friendsMode || !requestedAuthorId || !list.data || openedAuthorId.current === requestedAuthorId) return;
     openedAuthorId.current = requestedAuthorId;
     const contactStatuses = list.active
       .filter((status) => status.author.id === requestedAuthorId && status.author.id !== me.id)
@@ -108,9 +142,13 @@ export default function StatusesPage() {
       window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
     setRequestedAuthorId(null);
-  }, [requestedAuthorId, list.data, list.active, me.id, toast]);
+  }, [friendsMode, requestedAuthorId, list.data, list.active, me.id, toast]);
 
   function closeStories() {
+    if (friendsMode) {
+      router.replace("/chats");
+      return;
+    }
     setViewing(null);
     setStoryIndex(0);
     setElapsed(0);
@@ -179,7 +217,8 @@ export default function StatusesPage() {
   }
 
   return (
-    <PageScroll>
+    <>
+    {routeModeReady && !friendsMode ? <PageScroll>
       <PageHeader kicker="Your personal status space" title="Your status" sub="Create and manage your own updates. Shared with mutual contacts for 24 hours." />
 
       <section className="rise mt-6 overflow-hidden rounded-[1.7rem] border border-border/70 bg-card shadow-sm" aria-labelledby="status-compose-heading">
@@ -283,11 +322,15 @@ export default function StatusesPage() {
           })}
         </ul>
       </section>
+    </PageScroll> : null}
 
-      <Dialog open={!!viewing} onOpenChange={(open) => !open && closeStories()}>
-        <DialogContent aria-describedby="story-description" className="max-w-md overflow-hidden rounded-[1.7rem] border border-white/10 bg-[hsl(var(--ink))] p-0 text-white shadow-2xl [&>button]:hidden">
+      <Dialog open={routeModeReady && (friendsMode || !!viewing)} onOpenChange={(open) => !open && closeStories()}>
+        <DialogContent aria-describedby="story-description" className={cn(
+          "overflow-hidden border border-white/10 bg-[hsl(var(--ink))] p-0 text-white shadow-2xl [&>button]:hidden",
+          friendsMode ? "fixed inset-0 z-50 h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 rounded-none" : "max-w-md rounded-[1.7rem]",
+        )}>
           {current && viewing ? (
-            <div className="relative flex min-h-[min(78dvh,680px)] flex-col overflow-hidden" style={{ background: current.media ? "#14182a" : backgroundFor(current.backgroundStyle) }}>
+            <div key={current.id} className={`vm-status-enter relative flex ${friendsMode ? "h-full min-h-[100dvh]" : "min-h-[min(78dvh,680px)]"} flex-col overflow-hidden`} style={{ background: current.media ? "#14182a" : backgroundFor(current.backgroundStyle) }}>
               <DialogTitle className="sr-only">{current.author.id === me.id ? "Your status" : `${current.author.name}'s status`}</DialogTitle>
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(7,10,23,.45)_100%)]" aria-hidden="true" />
               <div className="relative z-10 space-y-1 px-4 pt-4" aria-label={`Status ${storyIndex + 1} of ${viewing.length}`}>
@@ -331,9 +374,17 @@ export default function StatusesPage() {
               </div>
               <span className="sr-only" aria-live="polite">{`Status ${storyIndex + 1} of ${viewing.length}`}</span>
             </div>
+          ) : friendsMode ? (
+            <div className="flex h-full min-h-[100dvh] flex-col items-center justify-center gap-4 bg-[hsl(var(--ink))] px-8 text-center">
+              <CircleDashed className="h-10 w-10 text-white/70" aria-hidden="true" />
+              <DialogTitle className="font-display text-2xl font-semibold">No friends’ statuses right now</DialogTitle>
+              <DialogDescription className="max-w-sm text-white/65">When your mutual contacts share an update, it will play here one after another.</DialogDescription>
+              {list.isLoading ? <Loader2 className="h-5 w-5 animate-spin text-white/65" aria-label="Loading friends' statuses" /> : null}
+              <Button variant="secondary" className="mt-2 rounded-full" onClick={closeStories}>Back to Chats</Button>
+            </div>
           ) : null}
         </DialogContent>
       </Dialog>
-    </PageScroll>
+    </>
   );
 }
