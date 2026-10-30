@@ -51,17 +51,11 @@ Ordinary emoji should be free and static. VastMind-specific premium emoji should
 
 **How to apply:** Keep the two libraries visibly distinct. Preview access must not imply a purchase, active subscription, or enforced paid entitlement.
 
-Communities should combine Nextdoor-style local conversation with opportunities for members to request help and offer their skills for extra income.
+The navigation destination is labeled “Community,” but it remains a general social-post feed rather than a community-group feature.
 
-**Why:** The user described community conversation, people who need help, and members who want to earn from their skills as one Communities product direction.
+**Why:** The user asked to rename Home to Community after explicitly removing community groups and creation.
 
-**How to apply:** Preserve group discussions and membership while adding community-scoped service listings and private introductions. Do not treat a rate note as checkout or a payout.
-
-VastMind no longer includes community groups or their opportunity marketplace. The former Communities destination is a Facebook-style Home feed for general posts, with no group-posting or group-creation controls.
-
-**Why:** The user explicitly asked to remove communities and creation, delete existing community data, and use a Facebook home-page post design instead.
-
-**How to apply:** Keep general posts, photos, polls, reactions, and comments in Home; do not add community discovery, membership, opportunity listings, or group-scoped post paths unless the user asks to restore them.
+**How to apply:** Keep general posts, photos, polls, reactions, and comments in the feed. Do not add community discovery, membership, opportunity listings, or group-scoped posts. Keep the current `/home` route for compatibility.
 
 Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
 
@@ -69,11 +63,11 @@ Feed and posted videos belong together on the Videos page across web and mobile.
 
 **How to apply:** Keep posts and clips in one vertical timeline, preserve existing social features and content, and redirect old Feed links instead of reintroducing a second feed destination.
 
-Primary navigation should prioritize Chats, Feed, Shop and Communities across web and mobile. Shop stays in the center of the five-item mobile bar, while Channels and other less-frequent tools go under More. Keep Channels separate from Communities and use a chat-style full-page layout for channel browsing and updates.
+Primary navigation should prioritize Chats, Feed, Shop and the Community post feed across web and mobile. Shop stays in the center of the five-item mobile bar, while Channels and other less-frequent tools go under More. Keep Channels separate from the Community feed and use a chat-style full-page layout for channel browsing and updates.
 
 **Why:** The user explicitly asked to prioritize daily-use destinations, move secondary items into More, keep Shop centered, and make Channels feel like chat without adding channel tools to Communities.
 
-**How to apply:** Use a More dropdown on desktop and the existing More destination/sheet on mobile. Preserve links to secondary tools, keep Channels accessible from More, and do not duplicate channel management inside Communities.
+**How to apply:** Use a More dropdown on desktop and the existing More destination/sheet on mobile. Preserve links to secondary tools, keep Channels accessible from More, and do not place channel management inside the Community post feed.
 
 Chat discovery should not suggest people; starting a new relationship requires searching an exact username. Status browsing belongs in the chat surface and is limited to mutual contacts, while the status page is for managing the signed-in user's own posts, listed one per card.
 

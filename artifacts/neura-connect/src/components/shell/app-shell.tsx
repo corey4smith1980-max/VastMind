@@ -24,7 +24,7 @@ const NAV = [
   { href: "/chats", label: "Chats", detail: "Messages and calls", icon: MessagesSquare },
   { href: "/videos", label: "Feed", detail: "Posts and short videos", icon: Newspaper },
   { href: "/statuses", label: "Status", detail: "Moments that expire", icon: CircleDashed },
-  { href: "/home", label: "Home", detail: "Posts and updates", icon: House },
+  { href: "/home", label: "Community", detail: "Posts and updates", icon: House },
   { href: "/channels", label: "Channels", detail: "Updates you follow", icon: Radio },
   { href: "/shop", label: "Shop", detail: "Discover products and sellers", icon: ShoppingBag },
   { href: "/business", label: "Business", detail: "Shop and customer tools", icon: Briefcase },
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-[100dvh] overflow-hidden bg-background">
         {/* ---------- Desktop navigation ---------- */}
         <nav aria-label="Main" className="hidden w-[248px] shrink-0 flex-col border-r bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
-          <Link href="/home" aria-label="VastMind home" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
+          <Link href="/home" aria-label="VastMind community feed" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
             <BrandMark className="h-9 w-9 shrink-0" />
             <span className="font-display text-lg font-semibold tracking-tight">VastMind</span>
           </Link>

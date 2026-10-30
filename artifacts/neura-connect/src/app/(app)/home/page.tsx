@@ -17,7 +17,7 @@ const FEEDS: { id: GetVideosFeed; label: string }[] = [
   { id: "following", label: "Following" },
 ];
 
-/** Facebook-style post home. Short videos remain in the dedicated Feed tab. */
+/** Facebook-style community post feed. Short videos remain in the dedicated Feed tab. */
 export default function HomeFeedPage() {
   const [feed, setFeed] = useState<GetVideosFeed>("latest");
   const timeline = usePagedVideos({ feed, includePosts: true });
@@ -29,7 +29,7 @@ export default function HomeFeedPage() {
       <header className="mb-5 flex items-center justify-between gap-4">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[.22em] text-primary">VastMind</p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Home</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Community</h1>
           <p className="mt-1 text-sm text-muted-foreground">See what people you follow are sharing.</p>
         </div>
         <Button type="button" variant="outline" size="icon" className="rounded-full" aria-label="Refresh posts" onClick={timeline.refresh} data-testid="button-refresh-home">
@@ -38,7 +38,7 @@ export default function HomeFeedPage() {
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[230px_minmax(0,680px)_260px] xl:justify-center">
-        <aside className="hidden xl:block" aria-label="Home shortcuts">
+        <aside className="hidden xl:block" aria-label="Community shortcuts">
           <section className="sticky top-4 rounded-2xl border bg-card p-3">
             <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Shortcuts</h2>
             <nav className="space-y-1">

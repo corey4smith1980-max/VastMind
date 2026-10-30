@@ -36,7 +36,7 @@ const LINES = [
   { icon: MessagesSquare, title: "Chats & groups", body: "Private conversations, group chats, voice notes, media sharing and the people you choose to connect with.", span: "md:col-span-2 md:row-span-2", tone: "bg-[hsl(var(--ink))] text-[#f4ece0]" },
   { icon: Video, title: "Feed", body: "Watch short videos and catch up on posts, polls and conversations in one scroll.", span: "", tone: "bg-card" },
   { icon: ShoppingBag, title: "Shop", body: "Discover products, follow shops and manage orders in the same place you connect.", span: "", tone: "bg-accent/40" },
-  { icon: Newspaper, title: "Home posts", body: "Share updates, photos and polls with the people you follow.", span: "", tone: "bg-card" },
+  { icon: Newspaper, title: "Community posts", body: "Share updates, photos and polls with the people you follow.", span: "", tone: "bg-card" },
   { icon: Radio, title: "Channels & status", body: "Follow updates from channels and share personal stories that expire after 24 hours.", span: "", tone: "bg-primary/15" },
 ];
 
@@ -94,7 +94,7 @@ export function Landing() {
       <div className="overflow-hidden border-y bg-[hsl(var(--ink))] py-4 text-[#f4ece0]">
         <div className="flex w-max animate-[marquee_28s_linear_infinite] gap-10 font-display text-2xl font-semibold">
           {Array.from({ length: 2 }).flatMap((_, k) =>
-            ["Private chats", "Short videos", "Home posts", "Creator shops", "Polls", "Stories", "Orders", "Channels"].map((t) => (
+            ["Private chats", "Short videos", "Community posts", "Creator shops", "Polls", "Stories", "Orders", "Channels"].map((t) => (
               <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="h-2 w-2 rounded-full bg-primary" /></span>
             )),
           )}
