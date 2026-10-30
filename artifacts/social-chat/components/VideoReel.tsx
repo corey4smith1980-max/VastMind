@@ -186,7 +186,6 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
       <Text style={s.caption} numberOfLines={4}>{post.content}</Text>
       <View style={[s.row, { flexWrap: 'wrap', marginTop: 8 }]}>
         <Text style={s.tag}>{post.effect === 'none' ? 'Original look' : `${post.effect} look`}</Text>
-        {post.communityName ? <Text style={s.tag}>{post.communityName}</Text> : null}
         <Text style={s.tag} numberOfLines={1}>{post.audioMedia ? `Creator's sound · ${post.audioMedia.name}` : 'Original sound'}</Text>
       </View>
       <ContentProducts postId={post.id} isAuthor={profile?.id === post.author.id} tone="dark" enabled={near} />

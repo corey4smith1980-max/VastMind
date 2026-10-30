@@ -1,10 +1,9 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Clapperboard, Info, Plus, RefreshCw, RotateCcw, Search, Sparkles, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { getGetVideosQueryKey, useResetVideoHistory, useListCommunities, getListCommunitiesQueryKey, type GetVideosFeed } from "@workspace/api-client-react";
+import { getGetVideosQueryKey, useResetVideoHistory, type GetVideosFeed } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreateChoiceDialog, type CreateMode } from "@/components/videos/create-choice";
@@ -16,13 +15,13 @@ import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const FEEDS: { id: GetVideosFeed; label: string; why: string; empty: string }[] = [
-  { id: "for-you", label: "For You", why: "Ordered using who you follow, the communities you share, and how you have watched clips here. It never uses your private chats.", empty: "Nothing to suggest yet. Follow a few people or join a community and this fills in." },
+  { id: "for-you", label: "For You", why: "Recommendations use follows and public viewing activity, never private chats.", empty: "Nothing to suggest yet. Follow a few people or watch some clips to shape your feed." },
   { id: "following", label: "Following", why: "Posts and clips from people you follow, newest first.", empty: "People you follow haven't shared posts or clips yet." },
   { id: "latest", label: "Latest", why: "Posts and clips you're allowed to see, newest first. No ranking.", empty: "No posts or clips have been shared yet." },
 ];
 
-function Feed({ feed, onCreate, q, communityId }: { feed: GetVideosFeed; onCreate: () => void; q: string; communityId?: string }) {
-  const videos = usePagedVideos({ feed, includePosts: true, q, communityId });
+function Feed({ feed, onCreate, q }: { feed: GetVideosFeed; onCreate: () => void; q: string }) {
+  const videos = usePagedVideos({ feed, includePosts: true, q });
   const meta = FEEDS.find((f) => f.id === feed)!;
   if (videos.isLoading && videos.items.length === 0) return <div className="grid flex-1 place-items-center" aria-label="Loading clips"><div className="w-full max-w-[390px] px-8"><div className="aspect-[9/15] animate-pulse rounded-[2rem] bg-white/[.07]" /><div className="mt-4 h-4 w-2/3 animate-pulse rounded bg-white/10" /><div className="mt-2 h-3 w-1/3 animate-pulse rounded bg-white/[.06]" /></div></div>;
   if (videos.isError && videos.items.length === 0) return <section role="alert" className="m-auto max-w-sm px-6 text-center text-white">
@@ -46,7 +45,6 @@ export default function VideosPage() {
 
 function VideosInner() {
   const sp = useSearchParams();
-  const communityId = sp.get("community") ?? undefined;
   const urlQ = sp.get("q") ?? "";
   const [q, setQ] = useState(urlQ);
   const [dq, setDq] = useState(urlQ.trim());
@@ -68,8 +66,6 @@ function VideosInner() {
     }, 300);
     return () => window.clearTimeout(t);
   }, [q]);
-  const communities = useListCommunities(undefined, { query: { queryKey: getListCommunitiesQueryKey(), staleTime: 60_000 } });
-  const community = communities.data?.find((c) => c.id === communityId);
   const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [feed, setFeed] = useState<GetVideosFeed>("for-you");
   const [generation, setGeneration] = useState(0);
@@ -80,7 +76,7 @@ function VideosInner() {
   const { toast } = useToast();
   const reload = () => { setGeneration((g) => g + 1); void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey() }); };
   const reset = useResetVideoHistory({ mutation: {
-    onSuccess: () => { setConfirmReset(false); setInfoOpen(false); reload(); toast({ title: "Viewing history cleared", description: "For You starts fresh from your follows and communities." }); },
+    onSuccess: () => { setConfirmReset(false); setInfoOpen(false); reload(); toast({ title: "Viewing history cleared", description: "For You starts fresh from your follows and viewing activity." }); },
     onError: (e) => toast({ title: "Couldn't clear history", description: errMessage(e), variant: "destructive" }),
   } });
   const meta = FEEDS.find((f) => f.id === feed)!;
@@ -105,7 +101,6 @@ function VideosInner() {
         <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search posts and clips" aria-label="Search posts and clips" className="h-8 rounded-full border-white/10 bg-white/[.07] pl-8 text-xs text-white placeholder:text-white/45" data-testid="input-search-feed" />
       </div>
-      {communityId ? <Link href="/videos" className="inline-flex items-center gap-1 rounded-full bg-[hsl(42_90%_65%/.15)] px-3 py-1 text-xs font-medium text-[hsl(42_90%_72%)] hover:bg-[hsl(42_90%_65%/.25)]" data-testid="link-clear-community"><X className="h-3 w-3" />{community ? community.name : "Community"} · clear</Link> : null}
     </div>
     {infoOpen ? <section className="absolute right-3 top-[70px] z-30 w-[min(360px,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-[hsl(192_46%_10%/.97)] p-5 text-white shadow-2xl backdrop-blur" aria-label="How this feed works">
       <div className="flex items-start justify-between gap-3"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[hsl(42_90%_65%)]">Why these clips</p><button onClick={() => { setInfoOpen(false); setConfirmReset(false); }} aria-label="Close" className="rounded-full p-1 text-white/60 hover:bg-white/10"><X className="h-4 w-4" /></button></div>
@@ -118,9 +113,9 @@ function VideosInner() {
       </div>
     </section> : null}
     <div className="relative flex min-h-0 flex-1">
-      <Feed key={`${feed}-${generation}-${dq}-${communityId ?? ""}`} feed={feed} q={dq} communityId={communityId} onCreate={() => setCreateMode("choose")} />
+      <Feed key={`${feed}-${generation}-${dq}`} feed={feed} q={dq} onCreate={() => setCreateMode("choose")} />
     </div>
-    <CreateChoiceDialog mode={createMode} onMode={setCreateMode} onClip={() => setComposerOpen(true)} communityId={community?.membership === "member" ? communityId : undefined} onPublished={reload} />
+    <CreateChoiceDialog mode={createMode} onMode={setCreateMode} onClip={() => setComposerOpen(true)} onPublished={reload} />
     {composerOpen ? <ClipComposer onClose={(published) => { setComposerOpen(false); if (published) reload(); }} /> : null}
   </main>;
 }

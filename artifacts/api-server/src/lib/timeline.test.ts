@@ -26,7 +26,7 @@ test("combined timeline pages mixed content once, binds filters, and rechecks vi
         const id = uuid(), media = i % 3 === 0 ? "video/mp4" : i % 3 === 1 ? "image/png" : null;
         const group = i === 24 ? privateGroup : i === 23 ? publicGroup : null;
         const ready = i !== 25;
-        if (i < 24) expected.push(id);
+        if (i < 23) expected.push(id);
         // Last fixture deliberately has an unready attachment.
         const contentType = i === 25 ? "image/png" : media;
         if (contentType) await q(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose,ready,attached)
@@ -41,8 +41,9 @@ test("combined timeline pages mixed content once, binds filters, and rechecks vi
       strict.ok(first.nextBefore);
       const second = await videoPage(viewer, { ...input, before: first.nextBefore! }, q);
       const combined = [...first.items, ...second.items];
-      strict.equal(combined.length, 24);
+      strict.equal(combined.length, 23);
       strict.deepEqual(new Set(combined.map(p => p.id)), new Set(expected));
+      strict.ok(combined.every(p => p.communityId === null), "retired community posts must stay out of the social feed");
       strict.ok(combined.some(p => p.media?.contentType === "video/mp4"));
       strict.ok(combined.some(p => p.media?.contentType === "image/png"));
       strict.ok(combined.some(p => !p.media));
@@ -55,9 +56,6 @@ test("combined timeline pages mixed content once, binds filters, and rechecks vi
       await strict.rejects(() => videoPage(viewer, { ...input, includePosts: false, before: first.nextBefore! }, q), HttpError);
       await strict.rejects(() => videoPage(viewer, { ...input, q: "changed", before: first.nextBefore! }, q), HttpError);
       await strict.rejects(() => videoPage(stranger, { ...input, before: first.nextBefore! }, q), HttpError);
-      await strict.rejects(() => videoPage(viewer, { ...input, communityId: privateGroup }, q), HttpError);
-      const community = await videoPage(viewer, { ...input, communityId: publicGroup }, q);
-      strict.equal(community.items.length, 1);
       const following = await videoPage(viewer, { ...input, feed: "following" }, q);
       strict.equal(following.items.length, 20);
       await q("DELETE FROM follows WHERE user_id=$1", [viewer]);

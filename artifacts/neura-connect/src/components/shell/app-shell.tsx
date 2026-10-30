@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/vastmind-auth";
 import {
-  Bell, Briefcase, CircleDashed, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, UsersRound, Fingerprint,
+  Bell, Briefcase, CircleDashed, House, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, Fingerprint,
 } from "lucide-react";
 import { useGetMyProfile, useListNotifications, useListChats, getGetMyProfileQueryKey, getListNotificationsQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { BrandMark } from "@/components/brand";
@@ -24,7 +24,7 @@ const NAV = [
   { href: "/chats", label: "Chats", detail: "Messages and calls", icon: MessagesSquare },
   { href: "/videos", label: "Feed", detail: "Posts and short videos", icon: Newspaper },
   { href: "/statuses", label: "Status", detail: "Moments that expire", icon: CircleDashed },
-  { href: "/communities", label: "Communities", detail: "Local groups and opportunities", icon: UsersRound },
+  { href: "/home", label: "Home", detail: "Posts and updates", icon: House },
   { href: "/channels", label: "Channels", detail: "Updates you follow", icon: Radio },
   { href: "/shop", label: "Shop", detail: "Discover products and sellers", icon: ShoppingBag },
   { href: "/business", label: "Business", detail: "Shop and customer tools", icon: Briefcase },
@@ -33,14 +33,13 @@ const NAV = [
   { href: "/settings", label: "Settings", detail: "Privacy and preferences", icon: Settings },
 ];
 const NAV_SECTIONS = [
-  { label: "Your space", hrefs: ["/chats", "/videos", "/statuses"] },
-  { label: "Discover", hrefs: ["/communities"] },
+  { label: "Your space", hrefs: ["/chats", "/videos", "/home", "/statuses"] },
   { label: "Channels", hrefs: ["/channels"] },
   { label: "Business", hrefs: ["/shop", "/business"] },
   { label: "Account", hrefs: ["/notifications", "/account-security", "/settings"] },
 ] as const;
 // Keep the mobile dock focused, with the Shop action in the center position.
-const MOBILE_PRIMARY_HREFS = ["/chats", "/videos", "/shop", "/communities"] as const;
+const MOBILE_PRIMARY_HREFS = ["/chats", "/videos", "/shop", "/home"] as const;
 const MOBILE_PRIMARY_SET = new Set<string>(MOBILE_PRIMARY_HREFS);
 
 function Badge({ n }: { n: number }) {
@@ -95,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-[100dvh] overflow-hidden bg-background">
         {/* ---------- Desktop navigation ---------- */}
         <nav aria-label="Main" className="hidden w-[248px] shrink-0 flex-col border-r bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
-          <Link href="/chats" aria-label="VastMind home" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
+          <Link href="/home" aria-label="VastMind home" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
             <BrandMark className="h-9 w-9 shrink-0" />
             <span className="font-display text-lg font-semibold tracking-tight">VastMind</span>
           </Link>

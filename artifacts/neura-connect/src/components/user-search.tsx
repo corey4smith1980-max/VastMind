@@ -50,7 +50,7 @@ export function UserSearch({ onPick, selectedIds = [], excludeIds = [], autoFocu
               <UserAvatar id={u.id} name={u.name} src={u.avatarUrl} online={u.online} size="sm" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">{u.name}</span>
-                <span className="block truncate text-xs text-muted-foreground">@{u.username}{u.mutualCommunities ? ` · ${u.mutualCommunities} shared communit${u.mutualCommunities === 1 ? "y" : "ies"}` : ""}</span>
+                <span className="block truncate text-xs text-muted-foreground">@{u.username}</span>
               </span>
               {on ? <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">Added</span> : null}
             </button>

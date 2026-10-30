@@ -13,7 +13,7 @@ const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export const metadata: Metadata = {
   title: "VastMind — All your socials. One mind.",
   applicationName: "VastMind",
-  description: "All your socials in one mind: chat, connect, manage a business, and grow with your communities on VastMind.",
+  description: "All your socials in one mind: chat, share posts, manage a business, and grow on VastMind.",
   manifest: `${base}/manifest.webmanifest`,
   appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "default" },
   icons: {

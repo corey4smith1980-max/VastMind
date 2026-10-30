@@ -2,13 +2,15 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, Film, Loader2, Lock, Play, UserX, X } from "lucide-react";
+import { ArrowLeft, Film, Loader2, Lock, Newspaper, Play, UserX, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetCreatorQueryKey, useGetCreator, useToggleUserFollow, type Post } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
+import { Composer } from "@/components/feed/composer";
+import { PostCard } from "@/components/feed/post-card";
 import { ReelStack } from "@/components/videos/reel-stack";
-import { errorStatus, usePagedVideos } from "@/components/videos/video-kit";
+import { errorStatus, isClip, usePagedVideos } from "@/components/videos/video-kit";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
 import { useMe } from "@/lib/me";
@@ -34,7 +36,9 @@ export default function CreatorProfilePage() {
   const creator = useGetCreator(userId, { query: { queryKey: getGetCreatorQueryKey(userId), enabled: !!userId } });
   const realId = creator.data?.user.id;
   const clips = usePagedVideos({ creatorId: realId ?? "" }, !!realId);
+  const profileTimeline = usePagedVideos({ creatorId: realId ?? "", includePosts: true }, !!realId);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [section, setSection] = useState<"posts" | "clips">("posts");
   const follow = useToggleUserFollow({ mutation: {
     onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getGetCreatorQueryKey(userId) }); },
     onError: (e) => toast({ title: "Follow didn't save", description: errMessage(e), variant: "destructive" }),
@@ -53,24 +57,38 @@ export default function CreatorProfilePage() {
   }
   const { user, bio, followersCount, followingCount, clipsCount } = creator.data;
   const isMe = me?.id === user.id;
+  const profilePosts = profileTimeline.items.filter((post) => !post.communityId && !isClip(post));
 
   return <main className="h-full overflow-y-auto bg-background" data-testid="page-creator-profile">
     <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-5 sm:px-8">
-      <Link href="/videos" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Feed</Link>
+      <Link href="/home" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Home</Link>
       <header className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end">
         <UserAvatar id={user.id} name={user.name} src={user.avatarUrl} size="xl" online={user.online} />
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] uppercase tracking-[.22em] text-primary">Creator</p>
+          <p className="font-mono text-[10px] uppercase tracking-[.22em] text-primary">Profile</p>
           <h1 className="mt-1 truncate font-display text-4xl" data-testid="text-creator-name">{user.name}</h1>
-          <p className="text-sm text-muted-foreground">@{user.username}{user.mutualCommunities > 0 ? ` · ${user.mutualCommunities} shared ${user.mutualCommunities === 1 ? "community" : "communities"}` : ""}</p>
+          <p className="text-sm text-muted-foreground">@{user.username}</p>
           {bio ? <p className="mt-3 max-w-xl whitespace-pre-wrap text-[15px] leading-relaxed">{bio}</p> : null}
         </div>
-        {!isMe ? <Button onClick={() => follow.mutate({ userId: user.id })} disabled={follow.isPending} variant={user.following ? "outline" : "default"} className="rounded-full px-6" data-testid="button-follow-creator">{follow.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : user.following ? "Following" : "Follow"}</Button> : null}
+        {isMe ? <Button asChild variant="outline" className="rounded-full px-6"><Link href="/settings">Edit profile</Link></Button>
+          : <Button onClick={() => follow.mutate({ userId: user.id })} disabled={follow.isPending} variant={user.following ? "outline" : "default"} className="rounded-full px-6" data-testid="button-follow-creator">{follow.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : user.following ? "Following" : "Follow"}</Button>}
       </header>
       <dl className="mt-7 flex gap-8 border-y py-4">
         {[["Clips", clipsCount], ["Followers", followersCount], ["Following", followingCount]].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="font-display text-2xl tabular-nums">{value}</dd></div>)}
       </dl>
-      <section className="mt-7" aria-label={`${user.name}'s clips`}>
+      <div className="mt-6 flex rounded-full border bg-card p-1" role="tablist" aria-label={`${user.name}'s profile sections`}>
+        {(["posts", "clips"] as const).map((tab) => <button key={tab} type="button" role="tab" aria-selected={section === tab} onClick={() => setSection(tab)}
+          className={`min-h-10 flex-1 rounded-full px-4 text-sm font-semibold transition-colors ${section === tab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          data-testid={`tab-profile-${tab}`}>{tab === "posts" ? "Posts" : "Clips"}</button>)}
+      </div>
+      {section === "posts" ? <section className="mx-auto mt-5 max-w-2xl space-y-4" aria-label={`${user.name}'s posts`}>
+        {isMe ? <Composer onPublished={profileTimeline.refresh} /> : null}
+        {profileTimeline.isLoading && profilePosts.length === 0 ? <div className="space-y-3" aria-label="Loading profile posts"><div className="h-48 animate-pulse rounded-2xl bg-muted" /><div className="h-48 animate-pulse rounded-2xl bg-muted" /></div> : null}
+        {profileTimeline.isError && profilePosts.length === 0 ? <div role="alert" className="rounded-2xl border p-6 text-center text-sm">{errorStatus(profileTimeline.error) === 403 ? "Their posts are only visible to people they've chosen." : <>Couldn't load posts. <button onClick={profileTimeline.retry} className="underline">Try again</button></>}</div> : null}
+        {!profileTimeline.isLoading && !profileTimeline.isError && profilePosts.length === 0 ? <div className="rounded-2xl border border-dashed p-10 text-center"><Newspaper className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 font-display text-xl">{isMe ? "Your profile starts here" : "No posts yet"}</p><p className="mt-1 text-sm text-muted-foreground">{isMe ? "Share a thought, photo, or poll with your followers." : "Their posts will appear here."}</p></div> : null}
+        <div className="space-y-4">{profilePosts.map((post, index) => <PostCard key={post.id} post={post} index={index} />)}</div>
+        {profileTimeline.hasMore ? <Button type="button" variant="outline" className="w-full rounded-full" disabled={profileTimeline.loadingMore} onClick={profileTimeline.loadNext} data-testid="button-load-more-profile-posts">{profileTimeline.loadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Show more posts</Button> : null}
+      </section> : <section className="mt-7" aria-label={`${user.name}'s clips`}>
         {clips.isLoading && clips.items.length === 0 ? <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <div key={i} className="aspect-[9/14] animate-pulse rounded-xl bg-muted" />)}</div> : null}
         {clips.isError && clips.items.length === 0 ? <div role="alert" className="rounded-2xl border p-6 text-center text-sm">{errorStatus(clips.error) === 403 ? "Their clips are only visible to people they've chosen." : <>Couldn't load clips. <button onClick={clips.retry} className="underline">Try again</button></>}</div> : null}
         {!clips.isLoading && !clips.isError && clips.items.length === 0 ? <div className="rounded-2xl border border-dashed p-10 text-center"><Film className="mx-auto h-7 w-7 text-muted-foreground" /><p className="mt-3 font-display text-xl">No clips you can see yet</p><p className="mt-1 text-sm text-muted-foreground">{isMe ? "Share one from the Clips tab." : "When they share one with you, it shows up here."}</p></div> : null}
@@ -79,6 +97,7 @@ export default function CreatorProfilePage() {
         </div> : null}
         {clips.items.length > 0 && clips.hasMore ? <div className="mt-6 text-center"><Button variant="outline" className="rounded-full" onClick={clips.loadNext} disabled={clips.isFetching}>{clips.isFetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Show more clips</Button></div> : null}
       </section>
+      }
     </div>
     {playing ? <div className="fixed inset-0 z-[70] flex flex-col bg-[hsl(192_52%_9%)]" role="dialog" aria-modal="true" aria-label={`${user.name}'s clips`}>
       <div className="flex h-14 shrink-0 items-center justify-between px-4 text-white"><p className="font-display text-lg">{user.name}</p><Button variant="ghost" size="icon" onClick={() => setPlaying(null)} className="rounded-full text-white hover:bg-white/10" aria-label="Close player"><X className="h-5 w-5" /></Button></div>

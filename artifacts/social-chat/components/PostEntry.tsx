@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  getListPostCommentsQueryKey, useAddPostComment, useCreatePost, useListCommunities, getListCommunitiesQueryKey,
+  getListPostCommentsQueryKey, useAddPostComment, useCreatePost,
   useListPostComments, useTogglePostReaction, useVoteOnPoll, type MediaAttachment, type Post,
 } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
@@ -50,7 +50,7 @@ export function PostEntry({ post, height, near, bottomInset }: { post: Post; hei
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.foreground, fontWeight: '700' }} numberOfLines={1}>{author}{p.isAnonymous ? '' : <Text style={{ color: colors.mutedForeground, fontWeight: '400' }}>  @{p.author.username}</Text>}</Text>
-            <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{ago(p.createdAt)}{p.communityName ? ` · in ${p.communityName}` : ''}</Text>
+            <Text style={{ color: colors.mutedForeground, fontSize: 11 }}>{ago(p.createdAt)}</Text>
           </View>
         </View>
         {p.content ? <Text style={{ color: colors.foreground, fontSize: 16, lineHeight: 23, marginTop: 14 }}>{p.content}</Text> : null}
@@ -101,14 +101,11 @@ export function CreatePostSheet({ onClose, onPublished }: { onClose: () => void;
   const [content, setContent] = useState('');
   const [anon, setAnon] = useState(false);
   const [poll, setPoll] = useState<string[] | null>(null);
-  const [community, setCommunity] = useState<string | null>(null);
   const [photo, setPhoto] = useState<MediaAttachment>();
   const [uploading, setUploading] = useState(false);
-  const communities = useListCommunities(undefined, { query: { queryKey: getListCommunitiesQueryKey(), staleTime: 60_000 } });
-  const mine = (communities.data ?? []).filter(c => c.membership === 'member');
   const create = useCreatePost({ mutation: { onSuccess: () => {
     void qc.invalidateQueries({ queryKey: ['/api/videos'] }); void qc.invalidateQueries({ queryKey: ['/api/feed'] });
-    setContent(''); setPoll(null); setAnon(false); setCommunity(null); setPhoto(undefined); onPublished();
+    setContent(''); setPoll(null); setAnon(false); setPhoto(undefined); onPublished();
   } } });
   const opts = (poll ?? []).map(o => o.trim()).filter(Boolean);
   const distinct = new Set(opts.map(o => o.toLowerCase())).size === opts.length;
@@ -131,14 +128,10 @@ export function CreatePostSheet({ onClose, onPublished }: { onClose: () => void;
           <View style={{ marginTop: 10 }}><MobileMediaPicker purpose="post" imagesOnly label={photo ? 'Replace photo' : 'Add a photo'} onChange={setPhoto} onUploadingChange={setUploading} disabled={create.isPending} /></View>
           <Pressable accessibilityRole="button" onPress={() => setPoll(pp => pp ? null : ['', ''])} style={[s.row, { marginTop: 14 }]}><Feather name="bar-chart-2" size={18} color={colors.primary} /><Text style={{ color: colors.primary, fontWeight: '700' }}>{poll ? 'Remove poll' : 'Add a poll'}</Text></Pressable>
           <View style={[s.row, { marginTop: 14 }]}><View style={{ flex: 1 }}><Text style={{ color: colors.foreground, fontWeight: '700' }}>Post anonymously</Text><Text style={{ color: colors.mutedForeground, fontSize: 11 }}>Your profile won't appear on the post.</Text></View><Switch accessibilityLabel="Post anonymously" value={anon} onValueChange={setAnon} /></View>
-          <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 14, marginBottom: 6 }}>POST TO</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {[{ id: null as string | null, name: 'Your followers' }, ...mine.map(c => ({ id: c.id as string | null, name: c.name }))].map(c => <Pressable key={c.id ?? 'none'} accessibilityRole="radio" accessibilityState={{ checked: community === c.id }} onPress={() => setCommunity(c.id)} style={[s.chip, { borderColor: community === c.id ? colors.primary : colors.border, backgroundColor: community === c.id ? colors.primary : 'transparent' }]}><Text style={{ color: community === c.id ? colors.primaryForeground : colors.foreground, fontSize: 12, fontWeight: '600' }}>{c.name}</Text></Pressable>)}
-          </ScrollView>
         </ScrollView>
         {create.isError ? <Text accessibilityRole="alert" style={{ color: colors.destructive, marginTop: 8 }}>{errorText(create.error)}</Text> : null}
         {hint ? <Text accessibilityLiveRegion="polite" style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 8 }}>{hint}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), communityId: community, isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Publish post" accessibilityState={{ disabled: !ok, busy: create.isPending }} disabled={!ok} onPress={() => create.mutate({ data: { content: content.trim(), isAnonymous: anon, pollOptions: poll ? opts : undefined, mediaId: photo?.id } })} style={[s.publish, { backgroundColor: colors.primary, opacity: ok ? 1 : 0.5 }]}>
           {create.isPending ? <ActivityIndicator color={colors.primaryForeground} /> : <Text style={{ color: colors.primaryForeground, fontWeight: '700' }}>Share</Text>}
         </Pressable>
       </View>
@@ -155,6 +148,5 @@ const s = StyleSheet.create({
   option: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 },
   input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, minHeight: 44 },
-  chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   publish: { marginTop: 14, borderRadius: 14, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
 });

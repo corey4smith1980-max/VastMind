@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import {
-  ArrowRight, BellRing, Briefcase, CheckCheck, CircleDashed, Lock, MessagesSquare, Newspaper, Radio, ShieldCheck, ShoppingBag, UsersRound, Video, Zap,
+  ArrowRight, BellRing, Briefcase, CheckCheck, CircleDashed, Lock, MessagesSquare, Newspaper, Radio, ShieldCheck, ShoppingBag, Video, Zap,
 } from "lucide-react";
 import { BrandMark, Wordmark } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ const LINES = [
   { icon: MessagesSquare, title: "Chats & groups", body: "Private conversations, group chats, voice notes, media sharing and the people you choose to connect with.", span: "md:col-span-2 md:row-span-2", tone: "bg-[hsl(var(--ink))] text-[#f4ece0]" },
   { icon: Video, title: "Feed", body: "Watch short videos and catch up on posts, polls and conversations in one scroll.", span: "", tone: "bg-card" },
   { icon: ShoppingBag, title: "Shop", body: "Discover products, follow shops and manage orders in the same place you connect.", span: "", tone: "bg-accent/40" },
-  { icon: UsersRound, title: "Communities", body: "Find local groups, ask for help or offer your skills to people nearby.", span: "", tone: "bg-card" },
+  { icon: Newspaper, title: "Home posts", body: "Share updates, photos and polls with the people you follow.", span: "", tone: "bg-card" },
   { icon: Radio, title: "Channels & status", body: "Follow updates from channels and share personal stories that expire after 24 hours.", span: "", tone: "bg-primary/15" },
 ];
 
@@ -72,7 +72,7 @@ export function Landing() {
             Your people.<br /><span className="brand-gradient-text">Your next move.</span>
           </h1>
           <p className="mt-6 max-w-lg text-lg text-muted-foreground">
-            Chat with friends, find your community, watch the Feed and discover independent shops—all from one VastMind ID.
+            Chat with friends, share posts, watch the Feed and discover independent shops—all from one VastMind ID.
           </p>
           <p className="mt-4 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Chat <span className="text-[#08cfe9]">•</span> Connect <span className="text-[#3568ff]">•</span> Manage <span className="text-[#823cff]">•</span> Grow
@@ -94,7 +94,7 @@ export function Landing() {
       <div className="overflow-hidden border-y bg-[hsl(var(--ink))] py-4 text-[#f4ece0]">
         <div className="flex w-max animate-[marquee_28s_linear_infinite] gap-10 font-display text-2xl font-semibold">
           {Array.from({ length: 2 }).flatMap((_, k) =>
-            ["Private chats", "Short videos", "Local communities", "Creator shops", "Polls", "Stories", "Orders", "Channels"].map((t) => (
+            ["Private chats", "Short videos", "Home posts", "Creator shops", "Polls", "Stories", "Orders", "Channels"].map((t) => (
               <span key={`${k}-${t}`} className="flex items-center gap-10">{t}<span className="h-2 w-2 rounded-full bg-primary" /></span>
             )),
           )}
@@ -125,7 +125,7 @@ export function Landing() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 md:grid-cols-2">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary">For makers, shops and creators</p>
-            <h2 className="font-display mt-3 text-4xl font-bold sm:text-5xl">Build your shop where your community already is.</h2>
+            <h2 className="font-display mt-3 text-4xl font-bold sm:text-5xl">Build your shop where your customers already are.</h2>
             <p className="mt-4 max-w-xl text-muted-foreground">Show what you make, share it in your Feed, and keep customer conversations and orders organized in one place.</p>
             <ul className="mt-8 space-y-4 text-muted-foreground">
               <li className="flex gap-3"><Briefcase className="h-5 w-5 shrink-0 text-primary" /> Add products, manage inventory and keep your storefront up to date.</li>
@@ -173,16 +173,16 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------- Community and marketplace ---------- */}
+      {/* ---------- Social posts and marketplace ---------- */}
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="overflow-hidden rounded-[2rem] bg-[hsl(var(--ink))] p-8 text-[#f4ece0] sm:p-12">
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
             <div>
-              <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary">Community-powered</p>
-              <h3 className="font-display mt-3 max-w-2xl text-3xl font-bold sm:text-4xl">Need a hand—or ready to share what you know?</h3>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Join local conversations, ask for help, and connect with people offering skills and services in their community.</p>
+              <p className="font-mono text-xs uppercase tracking-[0.28em] text-primary">Your network</p>
+              <h3 className="font-display mt-3 max-w-2xl text-3xl font-bold sm:text-4xl">Share a moment. Find your next favorite shop.</h3>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Post updates, photos and polls for people you follow, then explore products from independent sellers.</p>
             </div>
-            <Button asChild size="lg" className="h-12 rounded-full px-7 text-base"><Link href="/sign-up">Find your community <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
+            <Button asChild size="lg" className="h-12 rounded-full px-7 text-base"><Link href="/sign-up">Join VastMind <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
           </div>
         </div>
       </section>

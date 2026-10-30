@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useResetVideoHistory } from "@workspace/api-client-react";
 import { ReelPager } from "@/components/VideoReel";
@@ -18,8 +18,6 @@ const FEEDS = [
 export default function VideosScreen() {
   const colors = useColors();
   const router = useRouter();
-  const routeParams = useLocalSearchParams<{ communityId?: string }>();
-  const communityId = typeof routeParams.communityId === "string" ? routeParams.communityId : undefined;
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
   const [feed, setFeed] = useState<(typeof FEEDS)[number]["id"]>("for-you");
@@ -27,7 +25,7 @@ export default function VideosScreen() {
   const [dq, setDq] = useState("");
   useEffect(() => { const t = setTimeout(() => setDq(q.trim()), 300); return () => clearTimeout(t); }, [q]);
   const [posting, setPosting] = useState(false);
-  const clips = usePagedVideos({ feed, includePosts: true, q: dq, communityId });
+  const clips = usePagedVideos({ feed, includePosts: true, q: dq });
   const create = () => Alert.alert("Share something", "Pick what to add to Feed.", [
     { text: "Post, photo or poll", onPress: () => setPosting(true) },
     { text: "Clip", onPress: () => router.push("/video-studio") },
@@ -48,13 +46,10 @@ export default function VideosScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ minHeight: 98, paddingHorizontal: 15, paddingTop: 5, paddingBottom: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ color: colors.foreground, fontSize: 23, fontWeight: "800" }}>{communityId ? "Community posts" : "Your feed"}</Text>
+          <Text style={{ color: colors.foreground, fontSize: 23, fontWeight: "800" }}>Your feed</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <Pressable accessibilityRole="button" accessibilityLabel="Reset video viewing history" disabled={reset.isPending} onPress={confirmReset}>
               <Feather name="rotate-ccw" size={19} color={colors.foreground} />
-            </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Open communities and local opportunities" onPress={() => router.push("/communities")} hitSlop={6}>
-              <Feather name="users" size={19} color={colors.foreground} />
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Create a post, photo, poll, or clip" onPress={create}>
               <Feather name="plus-circle" size={24} color={colors.primary} />
@@ -74,13 +69,6 @@ export default function VideosScreen() {
           <TextInput accessibilityLabel="Search posts and clips" value={q} onChangeText={setQ} placeholder="Search posts and clips" placeholderTextColor={colors.mutedForeground} returnKeyType="search" style={{ flex: 1, minHeight: 36, color: colors.foreground, fontSize: 13 }} />
           {q ? <Pressable accessibilityLabel="Clear search" onPress={() => setQ("")}><Feather name="x" size={14} color={colors.foreground} /></Pressable> : null}
         </View>
-        {communityId ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Show all posts and clips" onPress={() => router.replace("/(tabs)/videos")}
-            style={{ alignSelf: "flex-start", marginTop: 8, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: colors.secondary, flexDirection: "row", alignItems: "center", gap: 5 }}>
-            <Feather name="users" size={12} color={colors.primary} />
-            <Text style={{ color: colors.foreground, fontSize: 10, fontWeight: "700" }}>Community posts · Show all</Text>
-          </Pressable>
-        ) : null}
       </View>
       {clips.isLoading && clips.items.length === 0
         ? <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}><ActivityIndicator color={colors.primary} /><Text style={{ marginTop: 12, color: colors.foreground }}>Finding clips for your circle…</Text></View>

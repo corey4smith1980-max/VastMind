@@ -22,7 +22,7 @@ const GROUPS = [
   {
     title: "Account",
     items: [
-      { label: "Alerts", detail: "Messages, reactions and community updates", icon: "bell", href: "/notifications" },
+      { label: "Alerts", detail: "Messages, reactions and account updates", icon: "bell", href: "/notifications" },
       { label: "VastMind ID", detail: "Passkeys and account security", icon: "lock", href: "/account-security" },
       { label: "Your profile", detail: "Name, bio and privacy", icon: "user", href: "/profile" },
     ],

@@ -102,11 +102,7 @@ router.get("/storage/media/:mediaId", async (req,res): Promise<void> => {
   } else if (m.attached && m.purpose === "post") {
     const [item]=await query("SELECT author_id,community_id FROM posts WHERE media_id=$1 OR audio_media_id=$1 LIMIT 1",[m.id]);
     assert(item && item.author_id===m.owner_id,404,"Post media unavailable");
-    if(item.community_id){
-      const [communityAccess]=await query(`SELECT c.is_private,coalesce(cm.state,'none') AS state FROM communities c
-        LEFT JOIN community_members cm ON cm.community_id=c.id AND cm.user_id=$2 WHERE c.id=$1`,[item.community_id,viewer]);
-      assert(communityAccess&&(!communityAccess.is_private||communityAccess.state==="member"),404,"Post media unavailable");
-    }
+    assert(!item.community_id,410,"Community media is no longer available");
   } else if (m.attached && m.purpose === "product") {
     const [allowed]=await query(`SELECT 1 FROM shop_products p LEFT JOIN shop_stores s ON s.id=p.shop_id
       WHERE (p.image_media_id=$1 OR EXISTS(SELECT 1 FROM commerce_photos WHERE product_id=p.id AND media_id=$1))

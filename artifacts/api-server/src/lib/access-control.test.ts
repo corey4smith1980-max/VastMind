@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import strict from "node:assert/strict";
 import { pool } from "@workspace/db";
-import { transaction, uuid, membership, canMessage, chatAllowed, postAccess, blocked, canDiscover, HttpError, community, conversation, post, channel, contacts, summary, toggleFollow, blockMember } from "./social";
-import { CreateChatBody, SendMessageBody, VoteOnPollBody, DecideCommunityRequestBody, CreateCommunityResponse, CreateChatResponse, CreatePostResponse, CreateChannelResponse } from "@workspace/api-zod";
+import { transaction, uuid, membership, canMessage, chatAllowed, postAccess, blocked, canDiscover, HttpError, conversation, channel, contacts, summary, toggleFollow, blockMember } from "./social";
+import { CreateChatBody, SendMessageBody, VoteOnPollBody, DecideCommunityRequestBody, CreateChatResponse, CreateChannelResponse } from "@workspace/api-zod";
 
 test("generated input contracts reject invalid content",()=>{
   strict.equal(SendMessageBody.safeParse({content:""}).success,false);
@@ -66,9 +66,7 @@ test("relational authorization and privacy are enforced",async()=>{
       await q("INSERT INTO posts (id,author_id,community_id,content) VALUES ($1,$2,$3,'Private post')",[p,a,co]);
       await strict.rejects(()=>postAccess(p,outsider,q),HttpError);
       await q("INSERT INTO community_members (community_id,user_id) VALUES ($1,$2)",[co,outsider]);
-      strict.equal((await postAccess(p,outsider,q)).id,p);
-      CreateCommunityResponse.parse(await community(co,outsider,q));
-      CreatePostResponse.parse(await post(p,outsider,q));
+      await strict.rejects(()=>postAccess(p,outsider,q),HttpError);
       const channelId=uuid();
       await q("INSERT INTO channels (id,owner_id,name,description) VALUES ($1,$2,'Test','Test')",[channelId,a]);
       CreateChannelResponse.parse(await channel(channelId,outsider,q));

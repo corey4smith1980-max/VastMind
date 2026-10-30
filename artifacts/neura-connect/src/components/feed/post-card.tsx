@@ -82,7 +82,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           : <UserAvatar id={post.author.id} name={post.author.name} src={post.author.avatarUrl} online={post.author.online} />}
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{post.isAnonymous ? "Anonymous member" : <>{post.author.name} <span className="font-normal text-muted-foreground">@{post.author.username}</span></>}</p>
-          <p className="text-xs text-muted-foreground">{post.isAnonymous ? "Posted anonymously · " : ""}{relTime(post.createdAt)}{post.communityName ? <> · in <span className="font-medium text-primary">{post.communityName}</span></> : null}</p>
+          <p className="text-xs text-muted-foreground">{post.isAnonymous ? "Posted anonymously · " : ""}{relTime(post.createdAt)}</p>
         </div>
       </header>
       <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed">{post.content}</p>

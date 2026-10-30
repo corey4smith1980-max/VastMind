@@ -157,11 +157,8 @@ export async function community(id:string,viewer:string,q:Query=query) {
 }
 export async function postAccess(id:string,viewer:string,q:Query=query) {
   const [p]=await q("SELECT * FROM posts WHERE id=$1",[id]); assert(p);
+  assert(!p.community_id,410,"Community posts are no longer available");
   assert(!await blocked(viewer,p.author_id,q),404);
-  if(p.community_id) {
-    const c=await community(p.community_id,viewer,q);
-    assert(!c.isPrivate || c.membership==="member",403,"Community membership required");
-  }
   return p;
 }
 export async function post(id:string,viewer:string,q:Query=query) {

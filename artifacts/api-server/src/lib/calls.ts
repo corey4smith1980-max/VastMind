@@ -15,8 +15,7 @@ async function access(scope: string, id: string, userId: string) {
     if(member.type==="private")for(const other of await query("SELECT user_id FROM chat_members WHERE chat_id=$1 AND user_id<>$2",[id,userId]))await canMessage(userId,other.user_id);
     return;
   }
-  const [member]=await query("SELECT 1 FROM community_members WHERE community_id=$1 AND user_id=$2 AND state='member'",[id,userId]);
-  assert(member,403,"Join the community before entering its voice room");
+  assert(false,410,"Community voice rooms are no longer available");
 }
 function leave(io: Server,socket: Socket) {
   const roomId=active.get(socket.id);if(!roomId)return;

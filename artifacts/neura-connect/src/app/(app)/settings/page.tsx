@@ -89,6 +89,9 @@ export default function SettingsPage() {
           <p className="text-sm text-[#f4ece0]/70">{me.username}@vastmind.com</p>
           {me.status ? <p className="mt-1 text-sm italic text-accent">“{me.status}”</p> : null}
         </div>
+        <Button asChild variant="outline" className="ml-auto shrink-0 rounded-full border-[#f4ece0]/30 bg-transparent text-[#f4ece0] hover:bg-white/10 hover:text-white">
+          <Link href={`/profile/${encodeURIComponent(me.id)}`}>View profile</Link>
+        </Button>
       </div>
 
       <div className="mt-6">

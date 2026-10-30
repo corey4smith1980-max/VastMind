@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, Heart, MessageCircle, MessagesSquare, Radio, UsersRound } from "lucide-react";
+import { Bell, CheckCheck, Heart, House, MessageCircle, MessagesSquare, Radio } from "lucide-react";
 import { useListNotifications, getListNotificationsQueryKey, useMarkNotificationRead, type NotificationType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
@@ -15,7 +15,7 @@ const META: Record<NotificationType, { icon: typeof Bell; href: string }> = {
   message: { icon: MessagesSquare, href: "/chats" },
   reaction: { icon: Heart, href: "/videos" },
   comment: { icon: MessageCircle, href: "/videos" },
-  community: { icon: UsersRound, href: "/communities" },
+  community: { icon: House, href: "/home" },
   channel: { icon: Radio, href: "/channels" },
 };
 
@@ -42,7 +42,7 @@ export default function NotificationsPage() {
       <div className="mt-6 overflow-hidden rounded-[1.6rem] border bg-card">
         {list.isLoading ? <RowSkeleton count={5} /> : null}
         {list.isError ? <ErrorState error={list.error} onRetry={() => list.refetch()} /> : null}
-        {list.data?.length === 0 ? <EmptyState icon={Bell} title="Nothing yet" body="Messages, reactions, comments and community news will land here." /> : null}
+        {list.data?.length === 0 ? <EmptyState icon={Bell} title="Nothing yet" body="Messages, reactions, comments and channel updates will land here." /> : null}
         <ul className="divide-y">
           {list.data?.map((n, i) => {
             const M = META[n.type] ?? { icon: Bell, href: "/chats" };

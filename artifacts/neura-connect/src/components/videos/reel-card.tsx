@@ -181,7 +181,6 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
       <p className="mt-4 line-clamp-4 max-w-xl whitespace-pre-wrap break-words text-[15px] font-medium leading-relaxed text-white [text-shadow:0_1px_8px_rgba(0,0,0,.7)]" data-testid={`text-video-caption-${post.id}`}>{post.content}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[.14em] text-white/80">
         <span className="rounded-full border border-white/30 bg-black/20 px-2.5 py-1">{post.effect === "none" ? "Original look" : `${post.effect} look`}</span>
-        {post.communityName ? <span className="rounded-full border border-white/30 bg-black/20 px-2.5 py-1">{post.communityName}</span> : null}
         {post.audioMedia ? <span className="inline-flex max-w-[210px] items-center gap-1 rounded-full border border-white/30 bg-black/20 px-2.5 py-1"><Music2 className="h-3 w-3 shrink-0" /><span className="truncate">Creator's sound · {post.audioMedia.name}</span></span> : <span className="rounded-full border border-white/30 bg-black/20 px-2.5 py-1">Original sound</span>}
       </div>
       <ShoppableProducts post={post} tone="dark" className="mt-3" />

@@ -57,11 +57,11 @@ Communities should combine Nextdoor-style local conversation with opportunities 
 
 **How to apply:** Preserve group discussions and membership while adding community-scoped service listings and private introductions. Do not treat a rate note as checkout or a payout.
 
-The Communities page should use a Facebook-inspired home feed, with public posts and comments as the discussion format. Do not offer community creation from that page.
+VastMind no longer includes community groups or their opportunity marketplace. The former Communities destination is a Facebook-style Home feed for general posts, with no group-posting or group-creation controls.
 
-**Why:** The user initially named Craigslist as a design reference, then superseded it with a Facebook home-page direction; they also asked to remove community creation from Communities and chose public posts/comments instead of a live group chat.
+**Why:** The user explicitly asked to remove communities and creation, delete existing community data, and use a Facebook home-page post design instead.
 
-**How to apply:** Lead with a friend-and-community post feed, retain member join/request controls and local skill/help opportunities, and link each joined community to its existing community-filtered discussion feed. Do not label that feed as a live chat.
+**How to apply:** Keep general posts, photos, polls, reactions, and comments in Home; do not add community discovery, membership, opportunity listings, or group-scoped post paths unless the user asks to restore them.
 
 Feed and posted videos belong together on the Videos page across web and mobile. Preserve the original video-page design and move the Feed's missing features into that single experience, not a separate Posts tab.
 

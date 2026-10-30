@@ -1,12 +1,11 @@
 "use client";
 import { useState } from "react";
 import { BarChart3, Loader2, Plus, Trash2, X } from "lucide-react";
-import { useCreatePost, useListCommunities, getListCommunitiesQueryKey, type MediaAttachment } from "@workspace/api-client-react";
+import { useCreatePost, type MediaAttachment } from "@workspace/api-client-react";
 import { MediaPicker } from "@/components/media-attachment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
@@ -14,18 +13,15 @@ import { useMe } from "@/lib/me";
 import { useInvalidate } from "@/lib/realtime";
 
 // ---------- Post / poll composer ----------
-export function Composer({ defaultCommunityId, onPublished }: { defaultCommunityId?: string; onPublished?: () => void }) {
+export function Composer({ onPublished }: { onPublished?: () => void }) {
   const me = useMe();
   const { toast } = useToast();
   const invalidate = useInvalidate();
   const [content, setContent] = useState("");
   const [anonymous, setAnonymous] = useState(false);
-  const [community, setCommunity] = useState<string>(defaultCommunityId ?? "none");
   const [poll, setPoll] = useState<string[] | null>(null);
   const [photo, setPhoto] = useState<MediaAttachment>();
   const [uploading, setUploading] = useState(false);
-  const communities = useListCommunities(undefined, { query: { queryKey: getListCommunitiesQueryKey(), staleTime: 60_000 } });
-  const mine = (communities.data ?? []).filter((c) => c.membership === "member");
 
   const create = useCreatePost({
     mutation: {
@@ -51,7 +47,7 @@ export function Composer({ defaultCommunityId, onPublished }: { defaultCommunity
       <div className="flex gap-3">
         <UserAvatar id={me.id} name={me.name} src={me.avatarUrl} size="md" />
         <Textarea value={content} onChange={(e) => setContent(e.target.value)} maxLength={5000} rows={3}
-          placeholder={poll ? "Ask a question…" : photo ? "Add a caption (optional)" : "What's happening on your street?"} aria-label="Post content"
+          placeholder={poll ? "Ask a question…" : photo ? "Add a caption (optional)" : "What's on your mind?"} aria-label="Post content"
           className="min-h-[72px] resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0" data-testid="input-post-content" />
       </div>
       {photo ? (
@@ -85,15 +81,8 @@ export function Composer({ defaultCommunityId, onPublished }: { defaultCommunity
           <input type="checkbox" checked={anonymous} onChange={(event) => setAnonymous(event.target.checked)} aria-label="Post anonymously" data-testid="toggle-anonymous-post" />
           <span>Post anonymously</span>
         </label>
-        <Select value={community} onValueChange={setCommunity}>
-          <SelectTrigger className="h-8 w-auto min-w-[150px] rounded-full text-xs" aria-label="Post to" data-testid="select-post-community"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Everyone who follows you</SelectItem>
-            {mine.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
         <Button className="ml-auto rounded-full px-5" disabled={!canPost}
-          onClick={() => create.mutate({ data: { content: content.trim(), communityId: community === "none" ? null : community, pollOptions: poll ? opts : undefined, mediaId: photo?.id, isAnonymous: anonymous } })} data-testid="button-publish-post">
+          onClick={() => create.mutate({ data: { content: content.trim(), pollOptions: poll ? opts : undefined, mediaId: photo?.id, isAnonymous: anonymous } })} data-testid="button-publish-post">
           {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Post
         </Button>
       </div>

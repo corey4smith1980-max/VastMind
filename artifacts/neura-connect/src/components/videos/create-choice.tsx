@@ -5,12 +5,12 @@ import { Composer } from "@/components/feed/composer";
 
 export type CreateMode = "choose" | "post" | null;
 
-export function CreateChoiceDialog({ mode, onMode, onClip, communityId, onPublished }: { mode: CreateMode; onMode: (m: CreateMode) => void; onClip: () => void; communityId?: string; onPublished: () => void }) {
+export function CreateChoiceDialog({ mode, onMode, onClip, onPublished }: { mode: CreateMode; onMode: (m: CreateMode) => void; onClip: () => void; onPublished: () => void }) {
   return <Dialog open={mode !== null} onOpenChange={(o) => { if (!o) onMode(null); }}>
     <DialogContent className="max-h-[92dvh] max-w-lg overflow-y-auto rounded-[1.6rem]">
       {mode === "post" ? <>
         <DialogHeader><DialogTitle className="font-display text-2xl">Post, photo or poll</DialogTitle><DialogDescription>Add a photo, a poll, or both. Shows up in Videos between clips for the people who can see it.</DialogDescription></DialogHeader>
-        <Composer key={communityId ?? "all"} defaultCommunityId={communityId} onPublished={() => { onMode(null); onPublished(); }} />
+        <Composer onPublished={() => { onMode(null); onPublished(); }} />
       </> : <>
         <DialogHeader><DialogTitle className="font-display text-2xl">What are you sharing?</DialogTitle><DialogDescription>Both land in the same stream.</DialogDescription></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr]">

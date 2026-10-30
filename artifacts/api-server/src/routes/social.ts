@@ -34,6 +34,14 @@ router.use((req,res,next)=>{
   }
   next();
 });
+// Retire public communities while preserving a predictable empty-list response for older clients.
+router.use((req,res,next)=>{
+  const path=req.path;
+  const isCommunityResource=path==="/communities"||path.startsWith("/communities/")||path==="/community-gigs"||path.startsWith("/community-gigs/");
+  if(!isCommunityResource){next();return;}
+  if(req.method==="GET"&&(path==="/communities"||path==="/community-gigs")){res.status(200).json([]);return;}
+  res.status(410).json({error:"Community features are no longer available."});
+});
 const writeLimit=rateLimit({windowMs:60_000,limit:60,keyGenerator:(_req,res)=>res.locals.user.id,standardHeaders:"draft-8",legacyHeaders:false});
 type Context={u:string,user:Row,p:Record<string,string>,b:any,s:any,q:Query,impact:Set<string>,entity:string,chatId?:string};
 const registry=schemas as unknown as Record<string,z.ZodType>;
@@ -278,15 +286,14 @@ route("post","/invites/:inviteCode/join","AcceptChatInvite",async c=>{
   await groupAddition(c,chat.id,c.u);await chatImpact(c,chat.id);return conversation(chat.id,c.u,c.q);
 });
 route("get","/feed","GetFeed",async c=>{
-  if(c.s.communityId){const x=await community(c.s.communityId,c.u,c.q);assert(!x.isPrivate||x.membership==="member",403,"Community membership required");}
-  const rows=await c.q(`SELECT p.id FROM posts p LEFT JOIN communities co ON co.id=p.community_id WHERE
-    ($2::text IS NULL OR p.community_id=$2) AND ($3::timestamptz IS NULL OR p.created_at<$3)
-    AND ($4::text IS NULL
-      OR to_tsvector('simple', p.content) @@ websearch_to_tsquery('simple', $4)
-      OR p.content ILIKE $5)
-    AND (co.id IS NULL OR co.is_private=false OR EXISTS(SELECT 1 FROM community_members WHERE community_id=co.id AND user_id=$1 AND state='member'))
-    AND NOT EXISTS(SELECT 1 FROM blocks WHERE (user_id=$1 AND target_id IN(p.author_id,co.owner_id)) OR (target_id=$1 AND user_id IN(p.author_id,co.owner_id)))
-    ORDER BY p.created_at DESC LIMIT 40`,[c.u,c.s.communityId??null,c.s.before??null,c.s.q??null,c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null]);
+  const rows=await c.q(`SELECT p.id FROM posts p WHERE p.community_id IS NULL
+    AND ($2::timestamptz IS NULL OR p.created_at<$2)
+    AND ($3::text IS NULL
+      OR to_tsvector('simple', p.content) @@ websearch_to_tsquery('simple', $3)
+      OR p.content ILIKE $4)
+    AND NOT EXISTS(SELECT 1 FROM blocks WHERE
+      (user_id=$1 AND target_id=p.author_id) OR (target_id=$1 AND user_id=p.author_id))
+    ORDER BY p.created_at DESC LIMIT 40`,[c.u,c.s.before??null,c.s.q??null,c.s.q?`%${c.s.q.replace(/[%_\\]/g,"\\$&")}%`:null]);
   return Promise.all(rows.map(r=>post(r.id,c.u,c.q)));
 });
 route("get","/videos","GetVideos",async c=>{
@@ -308,7 +315,7 @@ route("delete","/videos/history","ResetVideoHistory",async c=>{
   return {success:true};
 });
 route("post","/posts","CreatePost",async c=>{
-  if(c.b.communityId){const co=await community(c.b.communityId,c.u,c.q);assert(co.membership==="member",403,"Join the community before posting");}
+  assert(!c.b.communityId,410,"Community posts are no longer available.");
   assert(!c.b.pollOptions?.length || c.b.pollOptions.length>=2,400,"Polls require at least two options");
   if(c.b.pollOptions)assert(new Set(c.b.pollOptions.map((x:string)=>x.trim().toLowerCase())).size===c.b.pollOptions.length && c.b.pollOptions.every((x:string)=>x.trim()),400,"Poll options must be distinct and nonempty");
   const main=await claimMedia(c.b.mediaId,c.u,"post",null,c.q);

@@ -1,15 +1,12 @@
 import { createHash } from "node:crypto";
-import { assert, canDiscover, community, post, query, summary, uuid, type Query } from "./social";
+import { assert, canDiscover, post, query, summary, uuid, type Query } from "./social";
 
 // Shared visibility predicate is repeated on every page, not trusted from the cursor.
-const privacy = `(co.id IS NULL OR co.is_private=false OR EXISTS(
-    SELECT 1 FROM community_members cm WHERE cm.community_id=co.id AND cm.user_id=$1 AND cm.state='member'))
-  AND NOT EXISTS(SELECT 1 FROM blocks b WHERE
-    (b.user_id=$1 AND b.target_id IN(p.author_id,co.owner_id)) OR
-    (b.target_id=$1 AND b.user_id IN(p.author_id,co.owner_id)))`;
-const visible = `m.ready=true AND m.content_type LIKE 'video/%' AND ${privacy}`;
-const joins = `FROM posts p JOIN media_uploads m ON m.id=p.media_id
-  LEFT JOIN communities co ON co.id=p.community_id`;
+const privacy = `NOT EXISTS(SELECT 1 FROM blocks b WHERE
+    (b.user_id=$1 AND b.target_id=p.author_id) OR
+    (b.target_id=$1 AND b.user_id=p.author_id))`;
+const visible = `p.community_id IS NULL AND m.ready=true AND m.content_type LIKE 'video/%' AND ${privacy}`;
+const joins = `FROM posts p JOIN media_uploads m ON m.id=p.media_id`;
 
 export async function creatorProfile(identifier: string, viewer: string, q: Query = query) {
   const [creator] = await q("SELECT * FROM users WHERE id=$1 OR lower(username)=lower($1) LIMIT 1", [identifier]);
@@ -30,39 +27,29 @@ export function parseVideoCursor(cursor: string) {
   return { id: match[1], offset };
 }
 
-// Explainable ranking: follows, shared communities, likes/completions, freshness,
+// Explainable ranking: follows, likes/completions, freshness,
 // and a penalty for already-watched clips. No external tracking or fake AI score.
 const relevance = `
   CASE WHEN EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id) THEN 12 ELSE 0 END
-  + CASE WHEN EXISTS(SELECT 1 FROM community_members WHERE user_id=$1 AND community_id=p.community_id AND state='member') THEN 6 ELSE 0 END
   + LEAST(6, (SELECT count(*) FROM reactions r JOIN posts liked ON liked.id=r.post_id
       WHERE r.user_id=$1 AND liked.author_id=p.author_id)) * 2
   + LEAST(4, (SELECT count(*) FROM video_engagement e JOIN posts watched ON watched.id=e.post_id
       WHERE e.user_id=$1 AND e.completed=true AND watched.author_id=p.author_id))
-  + CASE WHEN co.category IS NOT NULL AND EXISTS(SELECT 1 FROM reactions r
-      JOIN posts liked ON liked.id=r.post_id JOIN communities interest ON interest.id=liked.community_id
-      WHERE r.user_id=$1 AND interest.category=co.category) THEN 6 ELSE 0 END
   + 8.0/(1+GREATEST(0,EXTRACT(EPOCH FROM (now()-p.created_at)))/86400.0)
   - CASE WHEN EXISTS(SELECT 1 FROM video_engagement WHERE user_id=$1 AND post_id=p.id AND watch_ms>=3000) THEN 18 ELSE 0 END`;
 
-export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; includePosts?: boolean; q?: string; communityId?: string }, q: Query = query) {
+export async function videoPage(viewer: string, input: { before?: string; feed?: string; creatorId?: string; includePosts?: boolean; q?: string }, q: Query = query) {
   const feed = input.feed || "for-you";
   assert(["for-you", "following", "latest"].includes(feed), 400, "Invalid feed");
   const creator = input.creatorId ? (await creatorProfile(input.creatorId, viewer, q)).user.id : null;
   const search = input.q?.trim() || null;
-  const communityId = input.communityId || null;
-  if (communityId) {
-    const selected = await community(communityId, viewer, q);
-    assert(!selected.isPrivate || selected.membership === "member", 403, "Community membership required");
-  }
   // Keep existing creator/clip requests unchanged. A combined timeline uses the
   // same privacy checks, ranking and cursor pagination without duplicating posts.
   const timelineJoins = input.includePosts
     ? joins.replace("JOIN media_uploads", "LEFT JOIN media_uploads") : joins;
   const timelineVisible = input.includePosts
-    ? `(p.media_id IS NULL OR m.ready=true) AND ${privacy}` : visible;
-  const scope = input.includePosts || search || communityId
-    ? `${feed}:${createHash("sha256").update(JSON.stringify([!!input.includePosts, search, communityId])).digest("hex")}` : feed;
+    ? `p.community_id IS NULL AND (p.media_id IS NULL OR m.ready=true) AND ${privacy}` : visible;
+  const scope = `v2:${feed}:${createHash("sha256").update(JSON.stringify([!!input.includePosts, search])).digest("hex")}`;
   const searchLike = search ? `%${search.replace(/[%_\\]/g, "\\$&")}%` : null;
   let ids: string[], sessionId: string, offset = 0;
   if (input.before) {
@@ -84,9 +71,9 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
     const rows = await q(`SELECT p.id,(${rank}) AS rank ${timelineJoins} WHERE ${timelineVisible}
       AND ($2::text IS NULL OR p.author_id=$2)
       AND ($3::text<>'following' OR EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id))
-      AND ($4::text IS NULL OR p.community_id=$4)
-      AND ($5::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$5) OR p.content ILIKE $6)
-      ORDER BY rank DESC,p.created_at DESC,p.id DESC LIMIT 300`, [viewer, creator, feed, communityId, search, searchLike]);
+      AND p.community_id IS NULL
+      AND ($4::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$4) OR p.content ILIKE $5)
+      ORDER BY rank DESC,p.created_at DESC,p.id DESC LIMIT 300`, [viewer, creator, feed, search, searchLike]);
     ids = rows.map(row => row.id);
     sessionId = uuid();
     if (ids.length) await q(`INSERT INTO video_feed_sessions (id,user_id,feed,creator_id,post_ids,expires_at)
@@ -97,9 +84,9 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
   const rows = pageIds.length ? await q(`SELECT p.id ${timelineJoins} WHERE ${timelineVisible}
     AND p.id=ANY($2::text[])
     AND ($3::text<>'following' OR EXISTS(SELECT 1 FROM follows WHERE user_id=$1 AND target_id=p.author_id))
-     AND ($4::text IS NULL OR p.community_id=$4)
-     AND ($5::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$5) OR p.content ILIKE $6)
-     ORDER BY array_position($2::text[],p.id)`, [viewer, pageIds, feed, communityId, search, searchLike]) : [];
+    AND p.community_id IS NULL
+    AND ($4::text IS NULL OR to_tsvector('simple',p.content) @@ websearch_to_tsquery('simple',$4) OR p.content ILIKE $5)
+    ORDER BY array_position($2::text[],p.id)`, [viewer, pageIds, feed, search, searchLike]) : [];
   // Preserve serial use of transaction-bound query clients and avoid sharing one
   // PostgreSQL client across concurrent post-mapping queries.
   const items = [];

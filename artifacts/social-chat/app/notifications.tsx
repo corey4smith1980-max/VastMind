@@ -29,7 +29,7 @@ export default function NotificationsScreen() {
     if (!item.read) markRead.mutate({ notificationId: item.id });
     switch (item.type) {
       case "message": router.push("/(tabs)/chats"); break;
-      case "community": router.push("/communities"); break;
+      case "community": router.push("/videos"); break;
       case "channel": router.push("/(tabs)/channels"); break;
       default: router.push("/(tabs)/videos"); break;
     }
@@ -41,7 +41,7 @@ export default function NotificationsScreen() {
       <StorageNotice />
       <Text style={{ color: colors.foreground, fontSize: 29, fontWeight: "800", letterSpacing: -0.7 }}>Alerts</Text>
       <Text style={{ color: colors.mutedForeground, fontSize: 13, marginTop: 5, marginBottom: 18 }}>
-        Your messages, reactions and community updates.
+        Your messages, reactions and account updates.
       </Text>
       {notifications.isLoading ? (
         <View style={{ padding: 30, alignItems: "center" }}><ActivityIndicator color={colors.primary} accessibilityLabel="Loading alerts" /></View>
