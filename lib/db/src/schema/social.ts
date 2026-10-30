@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   showOnlineStatus: boolean("show_online_status").notNull().default(true),
   showLastSeen: boolean("show_last_seen").notNull().default(true),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  verifiedBadge: boolean("verified_badge").notNull().default(false),
   isOpen: boolean("is_open").notNull().default(true), createdAt: created(),
 }, t => [uniqueIndex("users_username_ci").on(sql`lower(${t.username})`)]);
 const uid = (name: string) => text(name).notNull().references(() => users.id, { onDelete: "cascade" });

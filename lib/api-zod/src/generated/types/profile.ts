@@ -20,5 +20,6 @@ export interface Profile {
   /** @nullable */
   status: string | null;
   online: boolean;
+  verifiedBadge?: boolean;
   privacy: PrivacySettings;
 }

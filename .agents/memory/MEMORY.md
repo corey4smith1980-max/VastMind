@@ -1,5 +1,5 @@
 - [Product direction](product-direction.md) — VastMind extends Gather across web and mobile; preserve shared accounts and user-approved infrastructure choices.
-- [Generated API exports](generated-api-exports.md) — Orval appends wildcard barrel exports; resolve schema/type name collisions explicitly.
+- [Generated API exports](generated-api-exports.md) — Orval rewrites generated folders; finish codegen before restarting clients, and avoid schema/type name collisions.
 - [Shared client React alignment](react-peer-alignment.md) — Web, Expo, and shared React Query hooks must resolve the same compatible React context.
 - [Publish path checks](publish-path-checks.md) — Path-mounted apps can build successfully but fail startup when proxy and framework URL canonicalization disagree.
 - [Expo native build port](expo-native-build-port.md) — Probe the configured Metro port and verify its status response; port 8081 is used by the component preview here.

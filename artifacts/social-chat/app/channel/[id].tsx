@@ -35,7 +35,7 @@ export default function ChannelDetailScreen() {
           <Text numberOfLines={1} style={[styles.memberCount, { color: colors.mutedForeground }]}>{channel.followers} followers · {channel.category}</Text>
         </View>
         {owned
-          ? <Feather name="radio" size={19} color={colors.primary} />
+          ? <Pressable accessibilityRole="button" accessibilityLabel="Save a promotion draft for this channel" onPress={() => router.push({ pathname: '/(tabs)/business', params: { targetType: 'channel', targetId: id, name: channel.name } } as never)} style={styles.backButton}><Feather name="trending-up" size={19} color={colors.primary} /></Pressable>
           : <Pressable accessibilityRole="button" accessibilityState={{ selected: channel.followed }} accessibilityLabel={channel.followed ? 'Unfollow channel' : 'Follow channel'} onPress={() => void toggleChannelFollow(channel.id)} style={[styles.followButton, { borderColor: colors.border }]}>
             <Feather name={channel.followed ? 'check' : 'plus'} size={16} color={colors.primary} />
             <Text style={[styles.followText, { color: colors.primary }]}>{channel.followed ? 'Following' : 'Follow'}</Text>

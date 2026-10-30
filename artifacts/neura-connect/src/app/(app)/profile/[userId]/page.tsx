@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, Film, Loader2, Lock, Newspaper, Play, UserX, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Film, Loader2, Lock, Newspaper, Play, UserX, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetCreatorQueryKey, useGetCreator, useToggleUserFollow, type Post } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/user-avatar";
@@ -66,7 +66,7 @@ export default function CreatorProfilePage() {
         <UserAvatar id={user.id} name={user.name} src={user.avatarUrl} size="xl" online={user.online} />
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] uppercase tracking-[.22em] text-primary">Profile</p>
-          <h1 className="mt-1 truncate font-display text-4xl" data-testid="text-creator-name">{user.name}</h1>
+          <h1 className="mt-1 flex items-center gap-2 truncate font-display text-4xl" data-testid="text-creator-name">{user.name}{user.verifiedBadge ? <BadgeCheck className="h-6 w-6 shrink-0 text-primary" aria-label="Verified account" /> : null}</h1>
           <p className="text-sm text-muted-foreground">@{user.username}</p>
           {bio ? <p className="mt-3 max-w-xl whitespace-pre-wrap text-[15px] leading-relaxed">{bio}</p> : null}
         </div>

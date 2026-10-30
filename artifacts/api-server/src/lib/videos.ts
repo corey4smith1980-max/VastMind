@@ -6,7 +6,7 @@ const privacy = `NOT EXISTS(SELECT 1 FROM blocks b WHERE
     (b.user_id=$1 AND b.target_id=p.author_id) OR
     (b.target_id=$1 AND b.user_id=p.author_id))`;
 const visible = `p.community_id IS NULL AND m.ready=true AND m.content_type LIKE 'video/%'
-  AND p.surface IN ('feed','community') AND ${privacy}`;
+  AND p.surface='feed' AND ${privacy}`;
 const joins = `FROM posts p JOIN media_uploads m ON m.id=p.media_id`;
 
 export async function creatorProfile(identifier: string, viewer: string, q: Query = query) {
@@ -61,7 +61,7 @@ export async function videoPage(viewer: string, input: { before?: string; feed?:
     : `p.community_id IS NULL AND p.surface='${surface}'
       ${communityTopicGuard}
       AND (p.media_id IS NULL OR (m.ready=true AND m.content_type NOT LIKE 'video/%')) AND ${privacy}`;
-  const scope = `v4:${feed}:${createHash("sha256").update(JSON.stringify([surface, search, topic])).digest("hex")}`;
+  const scope = `v5:${feed}:${createHash("sha256").update(JSON.stringify([surface, search, topic])).digest("hex")}`;
   const searchLike = search ? `%${search.replace(/[%_\\]/g, "\\$&")}%` : null;
   let ids: string[], sessionId: string, offset = 0;
   if (input.before) {

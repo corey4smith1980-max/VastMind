@@ -2,7 +2,7 @@ import { after, test } from "node:test";
 import strict from "node:assert/strict";
 import { pool } from "@workspace/db";
 import { GetVideosResponse } from "@workspace/api-zod";
-import { HttpError, transaction, uuid } from "./social";
+import { HttpError, post, transaction, uuid } from "./social";
 import { videoPage } from "./videos";
 
 after(() => pool.end());
@@ -39,6 +39,13 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
       await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,$3,'profile')", [profilePost, author, `${needle} profile only post`]);
       const unclassifiedPost = uuid();
       await q("INSERT INTO posts(id,author_id,content,surface) VALUES($1,$2,$3,'community')", [unclassifiedPost, author, `${needle} unclassified legacy post`]);
+      const mislabeledVideo = uuid();
+      await q(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose,ready,attached)
+        VALUES($1,$2,'/objects/test-only','legacy community clip','video/mp4','12','post',true,true)`, [mislabeledVideo, author]);
+      await q(`INSERT INTO posts(id,author_id,media_id,content,surface)
+        VALUES($1,$2,$3,$4,'community')`, [mislabeledVideo, author, mislabeledVideo, `${needle} legacy community video`]);
+      const preservedDestination = await post(mislabeledVideo, viewer, q);
+      strict.equal(preservedDestination.surface, "community", "serialization must not move a Community post into Feed");
       const input = { surface: "community", feed: "latest", q: needle };
       const first = await videoPage(viewer, input, q);
       GetVideosResponse.parse(JSON.parse(JSON.stringify(first)));
@@ -64,6 +71,7 @@ test("community, profile, and clip destinations stay isolated and recheck visibi
       const clips = await videoPage(viewer, { surface: "feed", feed: "latest", q: needle }, q);
       strict.equal(clips.items.length, 18);
       strict.ok(clips.items.every(p => p.surface === "feed" && p.media?.contentType === "video/mp4"));
+      strict.ok(!clips.items.some(p => p.id === mislabeledVideo), "community videos must never leak into Feed");
       const profile = await videoPage(viewer, { surface: "profile", creatorId: author }, q);
       strict.deepEqual(profile.items.map(p => p.id), [profilePost]);
       await strict.rejects(() => videoPage(viewer, { ...input, surface: "profile", before: first.nextBefore! }, q), HttpError);

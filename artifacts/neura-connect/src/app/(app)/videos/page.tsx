@@ -39,7 +39,7 @@ function Feed({ feed, onCreate, q }: { feed: GetVideosFeed; onCreate: () => void
 }
 
 export default function VideosPage() {
-  return <Suspense fallback={<main className="h-full bg-[hsl(192_45%_12%)]" />}><VideosInner /></Suspense>;
+  return <Suspense fallback={<main className="h-full bg-black" />}><VideosInner /></Suspense>;
 }
 
 function VideosInner() {
@@ -72,15 +72,15 @@ function VideosInner() {
   const [confirmReset, setConfirmReset] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const reload = () => { setGeneration((g) => g + 1); void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey() }); };
+  const reload = () => { setGeneration((g) => g + 1); void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface: "feed" }) }); };
   const reset = useResetVideoHistory({ mutation: {
     onSuccess: () => { setConfirmReset(false); setInfoOpen(false); reload(); toast({ title: "Viewing history cleared", description: "For You starts fresh from your follows and viewing activity." }); },
     onError: (e) => toast({ title: "Couldn't clear history", description: errMessage(e), variant: "destructive" }),
   } });
   const meta = FEEDS.find((f) => f.id === feed)!;
 
-  return <main className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[hsl(192_45%_12%)]" data-testid="page-videos">
-    <header className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-[hsl(192_49%_12%)] px-4 py-2.5 text-white sm:px-7">
+  return <main className="relative flex h-full min-h-0 flex-col overflow-hidden bg-black text-white" data-testid="page-videos">
+    <header className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-white/10 bg-black px-4 py-2.5 text-white sm:px-7">
       <div className="flex min-w-0 items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[hsl(12_82%_52%)] text-white"><Clapperboard className="h-[18px] w-[18px]" /></span>
         <p className="hidden font-display text-lg leading-tight md:block">Feed · everyday, in motion</p>
@@ -94,13 +94,13 @@ function VideosInner() {
         <Button onClick={() => setComposerOpen(true)} size="sm" aria-haspopup="dialog" className="rounded-full px-4" data-testid="button-create-clip"><Plus className="mr-1.5 h-4 w-4" />Create clip</Button>
       </div>
     </header>
-    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-[hsl(192_49%_12%)] px-4 pb-2.5 sm:px-7">
+    <div className="relative z-10 flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black px-4 pb-2.5 sm:px-7">
       <div className="relative min-w-[200px] flex-1 sm:max-w-sm">
         <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search clips" aria-label="Search clips" className="h-8 rounded-full border-white/10 bg-white/[.07] pl-8 text-xs text-white placeholder:text-white/45" data-testid="input-search-feed" />
       </div>
     </div>
-    {infoOpen ? <section className="absolute right-3 top-[70px] z-30 w-[min(360px,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-[hsl(192_46%_10%/.97)] p-5 text-white shadow-2xl backdrop-blur" aria-label="How this feed works">
+    {infoOpen ? <section className="absolute right-3 top-[70px] z-30 w-[min(360px,calc(100%-1.5rem))] rounded-2xl border border-white/10 bg-[#101014] p-5 text-white shadow-2xl backdrop-blur" aria-label="How this feed works">
       <div className="flex items-start justify-between gap-3"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-[hsl(42_90%_65%)]">Why these clips</p><button onClick={() => { setInfoOpen(false); setConfirmReset(false); }} aria-label="Close" className="rounded-full p-1 text-white/60 hover:bg-white/10"><X className="h-4 w-4" /></button></div>
       <p className="mt-2 text-sm leading-relaxed text-white/85"><span className="font-semibold">{meta.label}.</span> {meta.why}</p>
       <div className="mt-4 border-t border-white/10 pt-4">

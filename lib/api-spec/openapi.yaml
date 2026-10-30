@@ -73,6 +73,18 @@ paths:
     $ref: "./commerce.yaml#/paths/~1commerce~1content~1{postId}~1products"
   /commerce/events:
     $ref: "./commerce.yaml#/paths/~1commerce~1events"
+  /commerce/growth/overview:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1overview"
+  /commerce/growth/promotions:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1promotions"
+  /commerce/growth/promotions/{promotionId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1promotions~1{promotionId}"
+  /commerce/growth/verification:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1verification"
+  /commerce/growth/review-queue:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1review-queue"
+  /commerce/growth/verification/{applicationId}:
+    $ref: "./commerce.yaml#/paths/~1commerce~1growth~1verification~1{applicationId}"
   /healthz:
     get:
       operationId: healthCheck
@@ -1142,23 +1154,26 @@ paths:
     get:
       operationId: ListCommunityGigs
       tags: [community-gigs]
-      summary: Browse skill offers and help requests in communities
+      summary: Browse local skill offers and help requests
       parameters:
         - in: query
           name: q
           schema: { type: string, maxLength: 120 }
         - in: query
           name: communityId
-          schema: { type: string }
+          schema: { type: string, description: Optional legacy group scope }
         - in: query
           name: kind
           schema: { type: string, enum: [offer, request] }
         - in: query
           name: category
-          schema: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+          schema: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, jobs, other] }
+        - in: query
+          name: location
+          schema: { type: string, maxLength: 120 }
         - in: query
           name: scope
-          schema: { type: string, enum: [community, mine], default: community }
+          schema: { type: string, enum: [community, mine], default: community, description: Public standalone listings by default; mine includes your listings and responses }
       responses:
         "200":
           description: Gigs visible to the signed-in member
@@ -1169,7 +1184,7 @@ paths:
     post:
       operationId: CreateCommunityGig
       tags: [community-gigs]
-      summary: Offer a skill or request help in a community
+      summary: Publish a local skill offer or help request
       requestBody:
         required: true
         content:
@@ -1927,6 +1942,7 @@ components:
         bio: { type: ["string", "null"] }
         status: { type: ["string", "null"] }
         online: { type: boolean }
+        verifiedBadge: { type: boolean }
         privacy:
           $ref: "#/components/schemas/PrivacySettings"
     ProfileUpdate:
@@ -1965,6 +1981,7 @@ components:
         mutualCommunities: { type: integer }
         following: { type: boolean }
         lastSeenAt: { type: ["string", "null"], format: date-time }
+        verifiedBadge: { type: boolean }
     UserFollowResult:
       type: object
       required: [following]
@@ -2265,18 +2282,20 @@ components:
         isPrivate: { type: boolean }
     CommunityGig:
       type: object
-      required: [id, communityId, communityName, author, kind, title, description, category, rateNote, state, responseCount, myResponseId, myResponseState, createdAt]
+      required: [id, communityId, communityName, author, kind, title, description, category, rateNote, locationLabel, dueDate, state, responseCount, myResponseId, myResponseState, createdAt]
       properties:
         id: { type: string }
-        communityId: { type: string }
-        communityName: { type: string }
+        communityId: { type: ["string", "null"] }
+        communityName: { type: ["string", "null"] }
         author:
           $ref: "#/components/schemas/UserSummary"
         kind: { type: string, enum: [offer, request] }
         title: { type: string }
         description: { type: string }
-        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, jobs, other] }
         rateNote: { type: string }
+        locationLabel: { type: string }
+        dueDate: { type: ["string", "null"], format: date }
         state: { type: string, enum: [open, matched, completed, closed] }
         responseCount: { type: integer }
         myResponseId: { type: ["string", "null"] }
@@ -2288,14 +2307,16 @@ components:
         $ref: "#/components/schemas/CommunityGig"
     CommunityGigCreate:
       type: object
-      required: [communityId, kind, title, description, category]
+      required: [kind, title, description, category]
       properties:
-        communityId: { type: string, minLength: 1 }
+        communityId: { type: string, minLength: 1, description: Optional legacy group scope }
         kind: { type: string, enum: [offer, request] }
         title: { type: string, minLength: 3, maxLength: 100 }
         description: { type: string, minLength: 3, maxLength: 2000 }
-        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, other] }
+        category: { type: string, enum: [home-repairs, learning, creative, technology, personal-care, food-events, transport, errands, childcare, jobs, other] }
         rateNote: { type: string, maxLength: 120, default: "" }
+        locationLabel: { type: string, maxLength: 120, default: "" }
+        dueDate: { type: string, format: date }
     CommunityGigResponse:
       type: object
       required: [id, gigId, author, message, state, createdAt]

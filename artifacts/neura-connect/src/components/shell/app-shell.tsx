@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/vastmind-auth";
 import {
-  Bell, Briefcase, CircleDashed, House, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, Fingerprint,
+  Bell, Briefcase, CircleDashed, House, MessagesSquare, Menu, Newspaper, Radio, Settings, ShoppingBag, Fingerprint, Wallet,
 } from "lucide-react";
 import { useGetMyProfile, useListNotifications, useListChats, getGetMyProfileQueryKey, getListNotificationsQueryKey, getListChatsQueryKey } from "@workspace/api-client-react";
 import { BrandMark } from "@/components/brand";
@@ -29,6 +29,7 @@ const NAV = [
   { href: "/shop", label: "Shop", detail: "Discover products and sellers", icon: ShoppingBag },
   { href: "/business", label: "Business", detail: "Shop and customer tools", icon: Briefcase },
   { href: "/notifications", label: "Alerts", detail: "Important activity", icon: Bell },
+  { href: "/wallet", label: "VastMind Coin", detail: "Sepolia testnet wallet", icon: Wallet },
   { href: "/account-security", label: "VastMind ID", detail: "Sign-in and recovery", icon: Fingerprint },
   { href: "/settings", label: "Settings", detail: "Privacy and preferences", icon: Settings },
 ];
@@ -36,6 +37,7 @@ const NAV_SECTIONS = [
   { label: "Your space", hrefs: ["/chats", "/videos", "/home", "/statuses"] },
   { label: "Channels", hrefs: ["/channels"] },
   { label: "Business", hrefs: ["/shop", "/business"] },
+  { label: "Wallet", hrefs: ["/wallet"] },
   { label: "Account", hrefs: ["/notifications", "/account-security", "/settings"] },
 ] as const;
 // Keep the mobile dock focused, with the Shop action in the center position.

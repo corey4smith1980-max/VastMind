@@ -44,7 +44,7 @@ test("creator privacy and stable personalized pages enforce ownership and curren
         if (i !== 25) expectedPublicPosts.push(id);
         await q(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose,ready,attached)
           VALUES($1,$2,'/objects/test-only','test.mp4','video/mp4','12','post',true,true)`, [id, author]);
-        await q("INSERT INTO posts(id,author_id,media_id,content,community_id) VALUES($1,$2,$1,'Video test',$3)", [id, author, i === 25 ? co : null]);
+        await q("INSERT INTO posts(id,author_id,media_id,content,community_id,surface) VALUES($1,$2,$1,'Video test',$3,$4)", [id, author, i === 25 ? co : null, i === 25 ? "community" : "feed"]);
       }
       const profile = await creatorProfile(creator, viewer, q);
       GetCreatorResponse.parse(JSON.parse(JSON.stringify(profile)));

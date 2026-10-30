@@ -17,4 +17,5 @@ export interface UserSummary {
   following: boolean;
   /** @nullable */
   lastSeenAt?: Date | null;
+  verifiedBadge?: boolean;
 }

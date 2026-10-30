@@ -47,6 +47,7 @@ export interface Profile {
   /** @nullable */
   status: string | null;
   online: boolean;
+  verifiedBadge?: boolean;
   privacy: PrivacySettings;
 }
 
@@ -112,6 +113,7 @@ export interface UserSummary {
   following: boolean;
   /** @nullable */
   lastSeenAt?: string | null;
+  verifiedBadge?: boolean;
 }
 
 export interface UserFollowResult {
@@ -517,6 +519,7 @@ export const CommunityGigCategory = {
   transport: 'transport',
   errands: 'errands',
   childcare: 'childcare',
+  jobs: 'jobs',
   other: 'other',
 } as const;
 
@@ -544,14 +547,19 @@ export const CommunityGigMyResponseState = {
 
 export interface CommunityGig {
   id: string;
-  communityId: string;
-  communityName: string;
+  /** @nullable */
+  communityId: string | null;
+  /** @nullable */
+  communityName: string | null;
   author: UserSummary;
   kind: CommunityGigKind;
   title: string;
   description: string;
   category: CommunityGigCategory;
   rateNote: string;
+  locationLabel: string;
+  /** @nullable */
+  dueDate: string | null;
   state: CommunityGigState;
   responseCount: number;
   /** @nullable */
@@ -584,12 +592,16 @@ export const CommunityGigCreateCategory = {
   transport: 'transport',
   errands: 'errands',
   childcare: 'childcare',
+  jobs: 'jobs',
   other: 'other',
 } as const;
 
 export interface CommunityGigCreate {
-  /** @minLength 1 */
-  communityId: string;
+  /**
+     * Optional legacy group scope
+     * @minLength 1
+     */
+  communityId?: string;
   kind: CommunityGigCreateKind;
   /**
      * @minLength 3
@@ -604,6 +616,9 @@ export interface CommunityGigCreate {
   category: CommunityGigCreateCategory;
   /** @maxLength 120 */
   rateNote?: string;
+  /** @maxLength 120 */
+  locationLabel?: string;
+  dueDate?: string;
 }
 
 export type CommunityGigResponseState = typeof CommunityGigResponseState[keyof typeof CommunityGigResponseState];
@@ -2013,6 +2028,212 @@ export interface CommerceEventInput {
   kind: CommerceEventInputKind;
 }
 
+export type GrowthOverviewCurrentPlan = typeof GrowthOverviewCurrentPlan[keyof typeof GrowthOverviewCurrentPlan];
+
+
+export const GrowthOverviewCurrentPlan = {
+  free: 'free',
+  creator: 'creator',
+  business: 'business',
+} as const;
+
+export type GrowthOverviewSubscriptionStatus = typeof GrowthOverviewSubscriptionStatus[keyof typeof GrowthOverviewSubscriptionStatus];
+
+
+export const GrowthOverviewSubscriptionStatus = {
+  free: 'free',
+  active: 'active',
+  pending: 'pending',
+  past_due: 'past_due',
+  cancelled: 'cancelled',
+} as const;
+
+export type GrowthPlanId = typeof GrowthPlanId[keyof typeof GrowthPlanId];
+
+
+export const GrowthPlanId = {
+  free: 'free',
+  creator: 'creator',
+  business: 'business',
+} as const;
+
+export interface GrowthPlan {
+  id: GrowthPlanId;
+  name: string;
+  features: string[];
+}
+
+export type GrowthPromotionTargetType = typeof GrowthPromotionTargetType[keyof typeof GrowthPromotionTargetType];
+
+
+export const GrowthPromotionTargetType = {
+  post: 'post',
+  channel: 'channel',
+  product: 'product',
+} as const;
+
+export type GrowthPromotionObjective = typeof GrowthPromotionObjective[keyof typeof GrowthPromotionObjective];
+
+
+export const GrowthPromotionObjective = {
+  reach: 'reach',
+  engagement: 'engagement',
+  product_clicks: 'product_clicks',
+} as const;
+
+export type GrowthPromotionState = typeof GrowthPromotionState[keyof typeof GrowthPromotionState];
+
+
+export const GrowthPromotionState = {
+  draft: 'draft',
+  cancelled: 'cancelled',
+} as const;
+
+export interface GrowthPromotion {
+  id: string;
+  targetType: GrowthPromotionTargetType;
+  targetId: string;
+  name: string;
+  objective: GrowthPromotionObjective;
+  /** @nullable */
+  desiredDailyBudgetMinor?: number | null;
+  /** @nullable */
+  currency?: string | null;
+  durationDays: number;
+  state: GrowthPromotionState;
+  createdAt: string;
+}
+
+export type GrowthVerificationState = typeof GrowthVerificationState[keyof typeof GrowthVerificationState];
+
+
+export const GrowthVerificationState = {
+  not_submitted: 'not_submitted',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface GrowthVerification {
+  /** @nullable */
+  applicationId: string | null;
+  state: GrowthVerificationState;
+  businessName: string;
+  website: string;
+  reason: string;
+  reviewNote: string;
+  eligibleForBadge: boolean;
+}
+
+export interface GrowthOverview {
+  billingEnabled: boolean;
+  currentPlan: GrowthOverviewCurrentPlan;
+  subscriptionStatus: GrowthOverviewSubscriptionStatus;
+  isPlatformReviewer: boolean;
+  plans: GrowthPlan[];
+  promotions: GrowthPromotion[];
+  verification: GrowthVerification;
+}
+
+export type GrowthPromotionInputTargetType = typeof GrowthPromotionInputTargetType[keyof typeof GrowthPromotionInputTargetType];
+
+
+export const GrowthPromotionInputTargetType = {
+  post: 'post',
+  channel: 'channel',
+  product: 'product',
+} as const;
+
+export type GrowthPromotionInputObjective = typeof GrowthPromotionInputObjective[keyof typeof GrowthPromotionInputObjective];
+
+
+export const GrowthPromotionInputObjective = {
+  reach: 'reach',
+  engagement: 'engagement',
+  product_clicks: 'product_clicks',
+} as const;
+
+export interface GrowthPromotionInput {
+  targetType: GrowthPromotionInputTargetType;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  targetId: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  objective: GrowthPromotionInputObjective;
+  /**
+     * @minimum 0
+     * @maximum 100000000
+     */
+  desiredDailyBudgetMinor?: number;
+  /**
+     * @minLength 3
+     * @maxLength 3
+     */
+  currency?: string;
+  /**
+     * @minimum 1
+     * @maximum 90
+     */
+  durationDays: number;
+}
+
+export type GrowthPromotionStateInputState = typeof GrowthPromotionStateInputState[keyof typeof GrowthPromotionStateInputState];
+
+
+export const GrowthPromotionStateInputState = {
+  cancelled: 'cancelled',
+} as const;
+
+export interface GrowthPromotionStateInput {
+  state: GrowthPromotionStateInputState;
+}
+
+export interface GrowthVerificationInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  businessName: string;
+  /** @maxLength 300 */
+  website: string;
+  /**
+     * @minLength 20
+     * @maxLength 1500
+     */
+  reason: string;
+}
+
+export type GrowthVerificationReviewInputDecision = typeof GrowthVerificationReviewInputDecision[keyof typeof GrowthVerificationReviewInputDecision];
+
+
+export const GrowthVerificationReviewInputDecision = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface GrowthVerificationReviewInput {
+  decision: GrowthVerificationReviewInputDecision;
+  /** @maxLength 1000 */
+  reviewNote: string;
+}
+
+export interface GrowthReviewQueueItem {
+  applicationId: string;
+  userId: string;
+  name: string;
+  username: string;
+  businessName: string;
+  website: string;
+  reason: string;
+  createdAt: string;
+}
+
 export type CommerceListShopsParams = {
 scope?: CommerceListShopsScope;
 /**
@@ -2300,9 +2521,19 @@ export type ListCommunityGigsParams = {
  * @maxLength 120
  */
 q?: string;
+/**
+ * Optional legacy group scope
+ */
 communityId?: string;
 kind?: ListCommunityGigsKind;
 category?: ListCommunityGigsCategory;
+/**
+ * @maxLength 120
+ */
+location?: string;
+/**
+ * Public standalone listings by default; mine includes your listings and responses
+ */
 scope?: ListCommunityGigsScope;
 };
 
@@ -2327,6 +2558,7 @@ export const ListCommunityGigsCategory = {
   transport: 'transport',
   errands: 'errands',
   childcare: 'childcare',
+  jobs: 'jobs',
   other: 'other',
 } as const;
 

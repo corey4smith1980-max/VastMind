@@ -34,6 +34,19 @@ export function invalidatePrefixes(qc: QueryClient, prefixes: string[]) {
   });
 }
 
+/** Revalidate only the destination whose post changed. The endpoint is shared,
+ * so match its surface parameter instead of invalidating every timeline. */
+function invalidateTimelineSurface(qc: QueryClient, surface: string) {
+  void qc.invalidateQueries({
+    predicate: (query) => {
+      const [path, params] = query.queryKey;
+      return path === "/api/videos" && typeof params === "object" && params !== null &&
+        (params as { surface?: string }).surface === surface;
+    },
+  });
+  if (surface === "community") void invalidatePrefixes(qc, ["/api/feed"]);
+}
+
 export function useInvalidate() {
   const qc = useQueryClient();
   return useCallback((...prefixes: string[]) => invalidatePrefixes(qc, prefixes), [qc]);
@@ -55,6 +68,7 @@ const ENTITY_MAP: Record<string, string[]> = {
   reaction: ["/api/videos", "/api/feed", "/api/notifications"],
   poll: ["/api/videos", "/api/feed"],
   community: ["/api/videos", "/api/communities", "/api/feed"],
+  "community-gigs": ["/api/community-gigs", "/api/notifications"],
   channel: ["/api/channels"],
   status: ["/api/statuses"],
   notification: ["/api/notifications"],
@@ -110,6 +124,17 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
 
     socket.on("data:changed", (p: { entity?: string; chatId?: string }) => {
       if (p?.entity === "profile" || p?.entity === "users") setPresence({});
+      if (p?.entity === "videos") {
+        invalidateTimelineSurface(qc, "feed");
+        return;
+      }
+      if (p?.entity?.startsWith("post-")) {
+        const surface = p.entity.slice("post-".length);
+        if (surface === "feed" || surface === "community" || surface === "profile") {
+          invalidateTimelineSurface(qc, surface);
+          return;
+        }
+      }
       const prefixes = (p?.entity && ENTITY_MAP[p.entity]) || null;
       if (prefixes) invalidatePrefixes(qc, prefixes);
       else qc.invalidateQueries();

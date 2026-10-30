@@ -52,7 +52,8 @@
           "microphonePermission": "Allow VastMind to record sound with your video clips.",
           "photosPermission": "Choose videos from your library to create VastMind clips and stories."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

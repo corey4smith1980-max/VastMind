@@ -13,14 +13,19 @@ import type { UserSummary } from './userSummary';
 
 export interface CommunityGig {
   id: string;
-  communityId: string;
-  communityName: string;
+  /** @nullable */
+  communityId: string | null;
+  /** @nullable */
+  communityName: string | null;
   author: UserSummary;
   kind: CommunityGigKind;
   title: string;
   description: string;
   category: CommunityGigCategory;
   rateNote: string;
+  locationLabel: string;
+  /** @nullable */
+  dueDate: Date | null;
   state: CommunityGigState;
   responseCount: number;
   /** @nullable */

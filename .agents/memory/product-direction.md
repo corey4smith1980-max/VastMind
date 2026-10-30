@@ -21,11 +21,11 @@ Use Replit Postgres and Replit App Storage. Replit-managed Clerk must remain a m
 
 **How to apply:** Keep accounts and shared social data aligned across clients. Do not re-request Supabase credentials or introduce an external database without a new user decision. Media upload deferral does not mean unrelated requested features were rejected.
 
-Commerce belongs inside the VastMind web and native apps. The initial commerce scope is catalog, inventory, cart, and order management; payments are deferred until a provider is explicitly selected.
+Commerce belongs inside the VastMind web and native apps. Build seller tools, subscription tiers, promotion planning, and business verification now; keep billing and paid delivery disabled until a provider is explicitly selected. A verified badge requires paid eligibility and human review.
 
-**Why:** The user asked for the shop to be built inside both apps, selected catalog/orders first, chose to add billing later, and continued without connecting a payment integration.
+**Why:** The user asked for the shop and business infrastructure in both apps, then chose to build subscription tiers now and add billing later.
 
-**How to apply:** Use the shared API and database for buyer and seller workflows. Keep payment status explicitly manual until a real processor is connected; never collect card details in a fake checkout.
+**How to apply:** Use the shared API and database for buyer and seller workflows. Until billing is real, label promotion records as drafts only; do not claim spend, reach, delivery, or performance. Never collect card details in a fake checkout, and never self-award a verification badge.
 
 VastMind identity is for account creation, login and profile identification only, not sending email or providing an inbox. An internal `username@vastmind.com` identifier is not a public email mailbox.
 
@@ -82,3 +82,9 @@ In chat, place mutual-status rings inline before the VastMind inbox title. Keep 
 **Why:** The user requested the status indicator before the chat title and the new-chat control lowered toward the menu.
 
 **How to apply:** Keep status circles tappable and limited to mutual contacts. Do not move the alerts control away from its top-right header position.
+
+VastMind Coin is intended as a blockchain token with transferable balances, use across VastMind including the Shop, and eventual fiat cash-out. The current phase is a Sepolia-only testnet prototype with no real-money purchases, withdrawals, or mainnet deployment.
+
+**Why:** The user clarified that VastMind Coin is company-owned crypto rather than closed-loop app credits, then chose a testnet prototype only.
+
+**How to apply:** Keep testnet faucets and addresses isolated from production. Do not enable card purchases, cash-outs, or mainnet deployment without a separately approved provider, security review, and compliance plan. Never collect wallet private keys or recovery phrases.

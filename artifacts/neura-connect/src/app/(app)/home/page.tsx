@@ -10,6 +10,7 @@ import { CardSkeleton, ErrorState } from "@/components/states";
 import { PageScroll } from "@/components/page-scroll";
 import { Composer } from "@/components/feed/composer";
 import { PostCard } from "@/components/feed/post-card";
+import { CommunityMarketplace } from "@/components/community/community-marketplace";
 import { usePagedVideos } from "@/components/videos/video-kit";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ const FEEDS: { id: GetVideosFeed; label: string }[] = [
 
 /** Community is a public, Facebook-style board; clips live only in Feed. */
 export default function HomeFeedPage() {
+  const [view, setView] = useState<"posts" | "opportunities">("posts");
   const [feed, setFeed] = useState<GetVideosFeed>("latest");
   const [topic, setTopic] = useState<CommunityPostTopic | "all">("all");
   const [search, setSearch] = useState("");
@@ -45,7 +47,16 @@ export default function HomeFeedPage() {
         </Button>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[230px_minmax(0,680px)_260px] xl:justify-center">
+      <div className="mb-5 flex max-w-[440px] rounded-full border bg-card p-1" role="tablist" aria-label="Community sections">
+        {([["posts", "Community posts"], ["opportunities", "Help & skills"]] as const).map(([value, label]) => (
+          <button key={value} type="button" role="tab" aria-selected={view === value} onClick={() => setView(value)}
+            className={`min-h-10 flex-1 rounded-full px-4 text-sm font-semibold transition-colors ${view === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "opportunities" ? <CommunityMarketplace /> : <div className="grid gap-6 xl:grid-cols-[230px_minmax(0,680px)_260px] xl:justify-center">
         <aside className="hidden xl:block" aria-label="Community shortcuts">
           <section className="sticky top-4 rounded-2xl border bg-card p-3">
             <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Shortcuts</h2>
@@ -117,7 +128,7 @@ export default function HomeFeedPage() {
             </div>
           </section>
         </aside>
-      </div>
+      </div>}
     </PageScroll>
   );
 }

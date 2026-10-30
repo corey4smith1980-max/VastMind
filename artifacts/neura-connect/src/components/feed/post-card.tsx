@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { EyeOff, Heart, HandHeart, Laugh, Loader2, MessageCircle, PartyPopper, Share2, SendHorizontal, ThumbsUp, Check } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  communityTopicLabel, useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
+  communityTopicLabel, getGetVideosQueryKey, useTogglePostReaction, useAddPostComment, useListPostComments, getListPostCommentsQueryKey, useVoteOnPoll,
   type Post, type ReactionInputReaction,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -25,14 +26,19 @@ const REACTIONS: { key: ReactionInputReaction; icon: typeof Heart; label: string
 ];
 
 // ---------- Persistent comment thread ----------
-function Comments({ postId }: { postId: string }) {
+function Comments({ postId, surface }: { postId: string; surface: Post["surface"] }) {
   const { toast } = useToast();
   const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const list = useListPostComments(postId, { query: { queryKey: getListPostCommentsQueryKey(postId) } });
   const add = useAddPostComment({
     mutation: {
-      onSuccess: () => { setText(""); invalidate(`/api/posts/${postId}/comments`, "/api/feed", "/api/videos"); },
+      onSuccess: () => {
+        setText("");
+        invalidate(`/api/posts/${postId}/comments`);
+        void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface }) });
+      },
       onError: (e) => toast({ title: "Comment failed", description: errMessage(e), variant: "destructive" }),
     },
   });
@@ -63,14 +69,15 @@ function Comments({ postId }: { postId: string }) {
 // ---------- Post card ----------
 export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const { toast } = useToast();
-  const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
+  const timelineKey = getGetVideosQueryKey({ surface: post.surface });
   const [open, setOpen] = useState(false);
   const [pickOpen, setPickOpen] = useState(false);
   const react = useTogglePostReaction({
-    mutation: { onSuccess: () => invalidate("/api/feed", "/api/videos"), onError: (e) => toast({ title: "Reaction failed", description: errMessage(e), variant: "destructive" }) },
+    mutation: { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: timelineKey }); }, onError: (e) => toast({ title: "Reaction failed", description: errMessage(e), variant: "destructive" }) },
   });
   const vote = useVoteOnPoll({
-    mutation: { onSuccess: () => invalidate("/api/feed", "/api/videos"), onError: (e) => toast({ title: "Vote failed", description: errMessage(e), variant: "destructive" }) },
+    mutation: { onSuccess: () => { void queryClient.invalidateQueries({ queryKey: timelineKey }); }, onError: (e) => toast({ title: "Vote failed", description: errMessage(e), variant: "destructive" }) },
   });
   const totalVotes = post.pollOptions.reduce((s, o) => s + o.votes, 0);
   const voted = post.pollOptions.some((o) => o.votedByMe);
@@ -153,7 +160,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           try { if (navigator.share) await navigator.share({ text: post.content.slice(0, 140), url }); else { await navigator.clipboard.writeText(url); toast({ title: "Link copied" }); } } catch { /* share dismissed */ }
         }}><Share2 className="h-4 w-4" /></Button>
       </footer>
-      {open ? <Comments postId={post.id} /> : null}
+      {open ? <Comments postId={post.id} surface={post.surface} /> : null}
     </article>
   );
 }

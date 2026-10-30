@@ -34,10 +34,10 @@ router.use((req,res,next)=>{
   }
   next();
 });
-// Retire public communities while preserving a predictable empty-list response for older clients.
+// Retire user-created communities while preserving a predictable empty-list response for older clients.
 router.use((req,res,next)=>{
   const path=req.path;
-  const isCommunityResource=path==="/communities"||path.startsWith("/communities/")||path==="/community-gigs"||path.startsWith("/community-gigs/");
+  const isCommunityResource=path==="/communities"||path.startsWith("/communities/");
   if(!isCommunityResource){next();return;}
   if(req.method==="GET"&&(path==="/communities"||path==="/community-gigs")){res.status(200).json([]);return;}
   res.status(410).json({error:"Community features are no longer available."});
@@ -80,7 +80,7 @@ function route(method:"get"|"post"|"patch"|"put"|"delete",path:string,operation:
       if(method!=="get"){
         if(c.entity==="posts" && c.p.postId){
           const p=await postAccess(c.p.postId,c.u,q);
-          await feedImpact(c,p.community_id);
+          await feedImpact(c,p.community_id,p.surface);
         }else if(["communities","channels","statuses","me"].includes(c.entity)){
           for(const id of onlineUsers.keys())if(!await blocked(c.u,id,q))c.impact.add(id);
           if(c.entity==="me")c.entity="profile";
@@ -340,10 +340,10 @@ route("post","/posts","CreatePost",async c=>{
   validatePostComposition(c.b.content,main?.content_type,c.b.pollOptions);
   const id=uuid();await c.q("INSERT INTO posts (id,author_id,community_id,surface,community_topic,content,media_id,audio_media_id,effect,captions,is_anonymous) VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10)",[id,c.u,surface,communityTopic,c.b.content,main?.id??null,soundtrack?.id??null,c.b.effect??"none",JSON.stringify(captions),c.b.isAnonymous??false]);
   for(const label of c.b.pollOptions??[])await c.q("INSERT INTO poll_options (id,post_id,label) VALUES ($1,$2,$3)",[uuid(),id,label]);
-  await feedImpact(c,null);return post(id,c.u,c.q);
+  await feedImpact(c,null,surface);return post(id,c.u,c.q);
 },201);
-async function feedImpact(c:Context,communityId:string|null) {
-  c.entity="feed";
+async function feedImpact(c:Context,communityId:string|null,surface?:string) {
+  c.entity=surface?`post-${surface}`:"posts";
   const rows=communityId?await c.q("SELECT user_id AS id FROM community_members WHERE community_id=$1 AND state='member'",[communityId]):[...onlineUsers.keys()].map(id=>({id}));
   for(const r of rows)if(!await blocked(c.u,r.id,c.q))c.impact.add(r.id);
 }
@@ -393,45 +393,49 @@ route("post","/communities/:communityId/requests/:userId","DecideCommunityReques
   return {membership:body.approve?"member":"none",memberCount:(await community(c.p.communityId,c.u,c.q)).memberCount};
 });
 
-async function communityGigImpact(c:Context,communityId:string) {
-  c.entity="communities";
+async function communityGigImpact(c:Context,communityId?:string|null) {
+  c.entity="community-gigs";
+  if(!communityId){for(const id of onlineUsers.keys())c.impact.add(id);return;}
   for(const member of await c.q("SELECT user_id FROM community_members WHERE community_id=$1 AND state='member'",[communityId]))c.impact.add(member.user_id);
 }
 route("get","/community-gigs","ListCommunityGigs",async c=>{
   const search=c.s.q?.trim();
   const pattern=search?`%${search.replace(/[%_\\]/g,"\\$&")}%`:null;
+  const location=c.s.location?.trim();
+  const locationPattern=location?`%${location.replace(/[%_\\]/g,"\\$&")}%`:null;
   const rows=await c.q(`SELECT g.* FROM community_gigs g
-    JOIN communities co ON co.id=g.community_id
-    WHERE ($2::text IS NULL OR g.community_id=$2)
+    LEFT JOIN communities co ON co.id=g.community_id
+    WHERE (($2::text IS NULL AND g.community_id IS NULL) OR g.community_id=$2)
       AND ($3::text IS NULL OR g.kind=$3)
       AND ($4::text IS NULL OR g.category=$4)
       AND ($5::text='mine' OR g.state IN('open','matched'))
       AND ($5::text<>'mine' OR g.author_id=$1 OR EXISTS(SELECT 1 FROM community_gig_responses mine WHERE mine.gig_id=g.id AND mine.user_id=$1))
-      AND (co.is_private=false OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=co.id AND m.user_id=$1 AND m.state='member'))
+      AND (g.community_id IS NULL OR co.is_private=false OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=co.id AND m.user_id=$1 AND m.state='member'))
       AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$1 AND b.target_id=g.author_id) OR (b.target_id=$1 AND b.user_id=g.author_id))
-      AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$1 AND b.target_id=co.owner_id) OR (b.target_id=$1 AND b.user_id=co.owner_id))
+      AND (co.owner_id IS NULL OR NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$1 AND b.target_id=co.owner_id) OR (b.target_id=$1 AND b.user_id=co.owner_id)))
       AND ($6::text IS NULL OR g.title ILIKE $6 OR g.description ILIKE $6 OR g.category ILIKE $6 OR co.name ILIKE $6)
+      AND ($7::text IS NULL OR g.location_label ILIKE $7)
     ORDER BY CASE WHEN g.state='open' THEN 0 ELSE 1 END,g.created_at DESC LIMIT 100`,
-    [c.u,c.s.communityId??null,c.s.kind??null,c.s.category??null,c.s.scope??"community",pattern]);
+    [c.u,c.s.communityId??null,c.s.kind??null,c.s.category??null,c.s.scope??"community",pattern,locationPattern]);
   return Promise.all(rows.map(row=>shapeCommunityGig(row,c.u,c.q)));
 });
 route("post","/community-gigs","CreateCommunityGig",async c=>{
-  const group=await community(c.b.communityId,c.u,c.q);
-  assert(group.membership==="member",403,"Join the community before publishing a listing");
+  const group=c.b.communityId ? await community(c.b.communityId,c.u,c.q) : null;
+  assert(!group || group.membership==="member",403,"Join the community before publishing a listing");
   assert(c.b.title.trim().length>=3 && c.b.description.trim().length>=3,400,"Add a clear title and description");
   assert(["offer","request"].includes(c.b.kind),400,"Choose an offer or a help request");
-  const category=["home-repairs","learning","creative","technology","personal-care","food-events","transport","errands","childcare","other"];
+  const category=["home-repairs","learning","creative","technology","personal-care","food-events","transport","errands","childcare","jobs","other"];
   assert(category.includes(c.b.category),400,"Choose a skill category");
   const [gig]=await c.q(`INSERT INTO community_gigs
-    (id,community_id,author_id,kind,title,description,category,rate_note)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-    [uuid(),group.id,c.u,c.b.kind,c.b.title.trim(),c.b.description.trim(),c.b.category,(c.b.rateNote??"").trim()]);
-  await communityGigImpact(c,group.id);
+    (id,community_id,author_id,kind,title,description,category,rate_note,location_label,due_date)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    [uuid(),group?.id??null,c.u,c.b.kind,c.b.title.trim(),c.b.description.trim(),c.b.category,(c.b.rateNote??"").trim(),(c.b.locationLabel??"").trim(),c.b.dueDate??null]);
+  await communityGigImpact(c,group?.id);
   return shapeCommunityGig(gig,c.u,c.q);
 },201);
 route("post","/community-gigs/:gigId/responses","CreateCommunityGigResponse",async c=>{
   const {gig,group}=await loadVisibleCommunityGig(c.p.gigId,c.u,c.q);
-  assert(group.membership==="member",403,"Join the community before responding");
+  assert(!group || group.membership==="member",403,"Join the community before responding");
   const [open]=await c.q("SELECT id FROM community_gigs WHERE id=$1 AND state='open' FOR UPDATE",[gig.id]);
   assert(open,409,"This listing is no longer accepting responses");
   assert(gig.author_id!==c.u,400,"You cannot respond to your own listing");
@@ -442,7 +446,7 @@ route("post","/community-gigs/:gigId/responses","CreateCommunityGigResponse",asy
     VALUES($1,$2,$3,$4) RETURNING *`,[uuid(),gig.id,c.u,c.b.message.trim()]);
   await notify(c.q,gig.author_id,c.u,"community","New community opportunity","A member responded to your listing.");
   c.impact.add(gig.author_id);
-  await communityGigImpact(c,group.id);
+  await communityGigImpact(c,group?.id);
   return shapeCommunityGigResponse(response,c.u,c.q);
 },201);
 route("get","/community-gigs/:gigId/responses","ListCommunityGigResponses",async c=>{
@@ -450,7 +454,7 @@ route("get","/community-gigs/:gigId/responses","ListCommunityGigResponses",async
 });
 route("post","/community-gigs/:gigId/responses/:responseId","DecideCommunityGigResponse",async c=>{
   const {gig,group}=await loadVisibleCommunityGig(c.p.gigId,c.u,c.q);
-  assert(group.membership==="member",403,"Join the community to manage responses");
+  assert(!group || group.membership==="member",403,"Join the community to manage responses");
   assert(gig.author_id===c.u,403,"Only the listing author can choose a response");
   const [response]=await c.q("SELECT * FROM community_gig_responses WHERE id=$1 AND gig_id=$2",[c.p.responseId,gig.id]);
   assert(response?.state==="pending",404,"Response not found");
@@ -469,28 +473,28 @@ route("post","/community-gigs/:gigId/responses/:responseId","DecideCommunityGigR
     await notify(c.q,response.user_id,c.u,"community","Your response was reviewed","The community member reviewed your response.");
   }
   c.impact.add(response.user_id);
-  await communityGigImpact(c,group.id);
+  await communityGigImpact(c,group?.id);
   const [updated]=await c.q("SELECT * FROM community_gig_responses WHERE id=$1",[response.id]);
   return shapeCommunityGigResponse(updated,c.u,c.q);
 });
 route("post","/community-gigs/:gigId/complete","CompleteCommunityGig",async c=>{
   const {gig,group}=await loadVisibleCommunityGig(c.p.gigId,c.u,c.q);
-  assert(group.membership==="member",403,"Join the community to update this opportunity");
+  assert(!group || group.membership==="member",403,"Join the community to update this opportunity");
   assert(gig.state==="matched",409,"Only a matched opportunity can be marked complete");
   const [updated]=await c.q(`UPDATE community_gigs SET state='completed' WHERE id=$1 AND state='matched'
     AND (author_id=$2 OR EXISTS(SELECT 1 FROM community_gig_responses r WHERE r.gig_id=$1 AND r.user_id=$2 AND r.state='accepted'))
     RETURNING *`,[gig.id,c.u]);
   assert(updated,403,"Only a participant can mark this opportunity complete");
-  await communityGigImpact(c,group.id);
+  await communityGigImpact(c,group?.id);
   return shapeCommunityGig(updated,c.u,c.q);
 });
 route("post","/community-gigs/:gigId/close","CloseCommunityGig",async c=>{
   const {gig,group}=await loadVisibleCommunityGig(c.p.gigId,c.u,c.q);
-  assert(group.membership==="member",403,"Join the community to update this opportunity");
+  assert(!group || group.membership==="member",403,"Join the community to update this opportunity");
   assert(gig.author_id===c.u,403,"Only the listing author can close it");
   const [closed]=await c.q("UPDATE community_gigs SET state='closed' WHERE id=$1 AND state='open' RETURNING *",[gig.id]);
   assert(closed,409,"Only an open listing can be closed");
-  await communityGigImpact(c,group.id);
+  await communityGigImpact(c,group?.id);
   return shapeCommunityGig(closed,c.u,c.q);
 });
 route("get","/channels","ListChannels",async c=>{

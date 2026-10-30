@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Loader2, Package, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2, Package, Pencil, Plus, Search, Trash2, X, Megaphone } from "lucide-react";
 import {
   useCommerceListProducts, getCommerceListProductsQueryKey, useCommerceCreateProduct, useCommerceUpdateProduct,
   type CommerceMedia, type CommerceProduct, type CommerceProductInput, type CommerceShop,
@@ -134,6 +135,7 @@ export function Catalog({ shop }: { shop: CommerceShop }) {
         <span className={cn("hidden text-sm tabular-nums md:block", st === 0 ? "text-destructive" : st <= 5 ? "text-[hsl(var(--brand-magenta))]" : "")}>{st}</span>
         <span className="hidden md:block"><span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", p.isPublished ? "bg-online/12 text-online" : "bg-muted text-muted-foreground")}>{p.isPublished ? "Live" : "Draft"}</span></span>
         <div className="flex justify-end gap-1">
+          {p.isPublished ? <Button asChild size="icon" variant="ghost" aria-label={`Save promotion draft for ${p.title}`} title="Save promotion draft"><Link href={`/business/growth?targetType=product&targetId=${encodeURIComponent(p.id)}&name=${encodeURIComponent(p.title)}`}><Megaphone className="h-4 w-4" /></Link></Button> : null}
           {p.shopId ? <Button size="icon" variant="ghost" aria-label={p.isPublished ? `Unpublish ${p.title}` : `Publish ${p.title}`} disabled={toggle.isPending} onClick={() => toggle.mutate({ productId: p.id, data: { ...toInput(p, p.shopId!), isPublished: !p.isPublished } })}>{p.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button> : null}
           <Button size="icon" variant="ghost" aria-label={`Edit ${p.title}`} onClick={() => setEditing(p)} data-testid={`button-edit-product-${p.id}`}><Pencil className="h-4 w-4" /></Button>
         </div>

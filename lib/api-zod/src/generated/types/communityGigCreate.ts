@@ -9,8 +9,11 @@ import type { CommunityGigCreateCategory } from './communityGigCreateCategory';
 import type { CommunityGigCreateKind } from './communityGigCreateKind';
 
 export interface CommunityGigCreate {
-  /** @minLength 1 */
-  communityId: string;
+  /**
+     * Optional legacy group scope
+     * @minLength 1
+     */
+  communityId?: string;
   kind: CommunityGigCreateKind;
   /**
      * @minLength 3
@@ -25,4 +28,7 @@ export interface CommunityGigCreate {
   category: CommunityGigCreateCategory;
   /** @maxLength 120 */
   rateNote?: string;
+  /** @maxLength 120 */
+  locationLabel?: string;
+  dueDate?: Date;
 }

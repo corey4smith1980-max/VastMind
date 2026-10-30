@@ -53,7 +53,7 @@ export default function VideoStudioScreen() {
   const canRender = !!caps.data?.rendering;
   const canTranscribe = !!caps.data?.transcription;
   const range = useMemo(() => ({ start: Number(start), end: Number(end) }), [start, end]);
-  const invalidate = () => void cache.invalidateQueries({ queryKey: getGetVideosQueryKey() });
+  const invalidate = () => void cache.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface: "feed" }) });
 
   async function capture(camera: boolean) {
     setError("");

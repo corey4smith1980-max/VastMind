@@ -20,6 +20,12 @@ const GROUPS = [
     ],
   },
   {
+    title: "Wallet",
+    items: [
+      { label: "VastMind Coin", detail: "Sepolia testnet token prototype", icon: "credit-card", href: "/(tabs)/wallet" },
+    ],
+  },
+  {
     title: "Account",
     items: [
       { label: "Alerts", detail: "Messages, reactions and account updates", icon: "bell", href: "/notifications" },

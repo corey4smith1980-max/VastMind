@@ -1,8 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, Bell, BellOff, Loader2, Pin, PinOff, Radio, SendHorizontal } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, Loader2, Pin, PinOff, Radio, SendHorizontal, Megaphone } from "lucide-react";
 import {
   getListChannelUpdatesQueryKey,
   getListChannelsQueryKey,
@@ -82,7 +83,7 @@ export function ChannelFullPage() {
             <h1 className="truncate font-display text-base font-semibold">{channel.name}</h1>
             <p className="truncate text-xs text-muted-foreground">{channel.subscriberCount} follower{channel.subscriberCount === 1 ? "" : "s"} · {channel.owner.name}</p>
           </div>
-          {owner ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Your channel</span> :
+          {owner ? <div className="flex items-center gap-2"><span className="hidden rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary sm:inline-flex">Your channel</span><Button asChild variant="outline" size="sm" className="rounded-full"><Link href={`/business/growth?targetType=channel&targetId=${encodeURIComponent(channel.id)}&name=${encodeURIComponent(channel.name)}`}><Megaphone className="mr-1.5 h-3.5 w-3.5" />Promote</Link></Button></div> :
             <Button size="sm" className="rounded-full" disabled={follow.isPending} onClick={() => follow.mutate({ channelId: channel.id })} data-testid={`button-follow-${channel.id}`}>
               {follow.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : channel.followed ? <BellOff className="mr-1 h-4 w-4" /> : <Bell className="mr-1 h-4 w-4" />}
               {channel.followed ? "Following" : "Follow"}

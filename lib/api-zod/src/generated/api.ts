@@ -1587,6 +1587,175 @@ export const CommerceRecordEventResponse = zod.object({
 })
 
 
+export const GetGrowthOverviewResponse = zod.object({
+  "billingEnabled": zod.boolean(),
+  "currentPlan": zod.enum(['free', 'creator', 'business']),
+  "subscriptionStatus": zod.enum(['free', 'active', 'pending', 'past_due', 'cancelled']),
+  "isPlatformReviewer": zod.boolean(),
+  "plans": zod.array(zod.object({
+  "id": zod.enum(['free', 'creator', 'business']),
+  "name": zod.string(),
+  "features": zod.array(zod.string())
+})),
+  "promotions": zod.array(zod.object({
+  "id": zod.string(),
+  "targetType": zod.enum(['post', 'channel', 'product']),
+  "targetId": zod.string(),
+  "name": zod.string(),
+  "objective": zod.enum(['reach', 'engagement', 'product_clicks']),
+  "desiredDailyBudgetMinor": zod.number().int().nullish(),
+  "currency": zod.string().nullish(),
+  "durationDays": zod.number().int(),
+  "state": zod.enum(['draft', 'cancelled']),
+  "createdAt": zod.coerce.date()
+})),
+  "verification": zod.object({
+  "applicationId": zod.string().nullable(),
+  "state": zod.enum(['not_submitted', 'pending', 'approved', 'rejected']),
+  "businessName": zod.string(),
+  "website": zod.string(),
+  "reason": zod.string(),
+  "reviewNote": zod.string(),
+  "eligibleForBadge": zod.boolean()
+})
+})
+
+
+export const createGrowthPromotionBodyTargetIdMax = 160;
+
+export const createGrowthPromotionBodyNameMax = 120;
+
+export const createGrowthPromotionBodyDesiredDailyBudgetMinorMin = 0;
+export const createGrowthPromotionBodyDesiredDailyBudgetMinorMax = 100000000;
+
+export const createGrowthPromotionBodyCurrencyMin = 3;
+export const createGrowthPromotionBodyCurrencyMax = 3;
+
+export const createGrowthPromotionBodyDurationDaysMax = 90;
+
+
+
+export const CreateGrowthPromotionBody = zod.object({
+  "targetType": zod.enum(['post', 'channel', 'product']),
+  "targetId": zod.string().min(1).max(createGrowthPromotionBodyTargetIdMax),
+  "name": zod.string().min(1).max(createGrowthPromotionBodyNameMax),
+  "objective": zod.enum(['reach', 'engagement', 'product_clicks']),
+  "desiredDailyBudgetMinor": zod.number().int().min(createGrowthPromotionBodyDesiredDailyBudgetMinorMin).max(createGrowthPromotionBodyDesiredDailyBudgetMinorMax).optional(),
+  "currency": zod.string().min(createGrowthPromotionBodyCurrencyMin).max(createGrowthPromotionBodyCurrencyMax).optional(),
+  "durationDays": zod.number().int().min(1).max(createGrowthPromotionBodyDurationDaysMax)
+})
+
+export const CreateGrowthPromotionResponse = zod.object({
+  "id": zod.string(),
+  "targetType": zod.enum(['post', 'channel', 'product']),
+  "targetId": zod.string(),
+  "name": zod.string(),
+  "objective": zod.enum(['reach', 'engagement', 'product_clicks']),
+  "desiredDailyBudgetMinor": zod.number().int().nullish(),
+  "currency": zod.string().nullish(),
+  "durationDays": zod.number().int(),
+  "state": zod.enum(['draft', 'cancelled']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const UpdateGrowthPromotionParams = zod.object({
+  "promotionId": zod.coerce.string()
+})
+
+export const UpdateGrowthPromotionBody = zod.object({
+  "state": zod.enum(['cancelled'])
+})
+
+export const UpdateGrowthPromotionResponse = zod.object({
+  "id": zod.string(),
+  "targetType": zod.enum(['post', 'channel', 'product']),
+  "targetId": zod.string(),
+  "name": zod.string(),
+  "objective": zod.enum(['reach', 'engagement', 'product_clicks']),
+  "desiredDailyBudgetMinor": zod.number().int().nullish(),
+  "currency": zod.string().nullish(),
+  "durationDays": zod.number().int(),
+  "state": zod.enum(['draft', 'cancelled']),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const GetGrowthVerificationResponse = zod.object({
+  "applicationId": zod.string().nullable(),
+  "state": zod.enum(['not_submitted', 'pending', 'approved', 'rejected']),
+  "businessName": zod.string(),
+  "website": zod.string(),
+  "reason": zod.string(),
+  "reviewNote": zod.string(),
+  "eligibleForBadge": zod.boolean()
+})
+
+
+export const submitGrowthVerificationBodyBusinessNameMin = 2;
+export const submitGrowthVerificationBodyBusinessNameMax = 120;
+
+export const submitGrowthVerificationBodyWebsiteMax = 300;
+
+export const submitGrowthVerificationBodyReasonMin = 20;
+export const submitGrowthVerificationBodyReasonMax = 1500;
+
+
+
+export const SubmitGrowthVerificationBody = zod.object({
+  "businessName": zod.string().min(submitGrowthVerificationBodyBusinessNameMin).max(submitGrowthVerificationBodyBusinessNameMax),
+  "website": zod.string().max(submitGrowthVerificationBodyWebsiteMax),
+  "reason": zod.string().min(submitGrowthVerificationBodyReasonMin).max(submitGrowthVerificationBodyReasonMax)
+})
+
+export const SubmitGrowthVerificationResponse = zod.object({
+  "applicationId": zod.string().nullable(),
+  "state": zod.enum(['not_submitted', 'pending', 'approved', 'rejected']),
+  "businessName": zod.string(),
+  "website": zod.string(),
+  "reason": zod.string(),
+  "reviewNote": zod.string(),
+  "eligibleForBadge": zod.boolean()
+})
+
+
+export const GetGrowthReviewQueueResponseItem = zod.object({
+  "applicationId": zod.string(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "username": zod.string(),
+  "businessName": zod.string(),
+  "website": zod.string(),
+  "reason": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const GetGrowthReviewQueueResponse = zod.array(GetGrowthReviewQueueResponseItem)
+
+
+export const ReviewGrowthVerificationParams = zod.object({
+  "applicationId": zod.coerce.string()
+})
+
+export const reviewGrowthVerificationBodyReviewNoteMax = 1000;
+
+
+
+export const ReviewGrowthVerificationBody = zod.object({
+  "decision": zod.enum(['approved', 'rejected']),
+  "reviewNote": zod.string().max(reviewGrowthVerificationBodyReviewNoteMax)
+})
+
+export const ReviewGrowthVerificationResponse = zod.object({
+  "applicationId": zod.string().nullable(),
+  "state": zod.enum(['not_submitted', 'pending', 'approved', 'rejected']),
+  "businessName": zod.string(),
+  "website": zod.string(),
+  "reason": zod.string(),
+  "reviewNote": zod.string(),
+  "eligibleForBadge": zod.boolean()
+})
+
+
 /**
  * Returns server health status
  * @summary Health check
@@ -1952,6 +2121,7 @@ export const GetMyProfileResponse = zod.object({
   "bio": zod.string().nullable(),
   "status": zod.string().nullable(),
   "online": zod.boolean(),
+  "verifiedBadge": zod.boolean().optional(),
   "privacy": zod.object({
   "allowMessagesFrom": zod.enum(['everyone', 'contacts', 'nobody']),
   "profileVisibility": zod.enum(['everyone', 'contacts', 'nobody']),
@@ -1994,6 +2164,7 @@ export const UpdateMyProfileResponse = zod.object({
   "bio": zod.string().nullable(),
   "status": zod.string().nullable(),
   "online": zod.boolean(),
+  "verifiedBadge": zod.boolean().optional(),
   "privacy": zod.object({
   "allowMessagesFrom": zod.enum(['everyone', 'contacts', 'nobody']),
   "profileVisibility": zod.enum(['everyone', 'contacts', 'nobody']),
@@ -2039,7 +2210,8 @@ export const SearchUsersResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
 
@@ -2073,7 +2245,8 @@ export const ListBlockedUsersResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 })
 export const ListBlockedUsersResponse = zod.array(ListBlockedUsersResponseItem)
 
@@ -2089,7 +2262,8 @@ export const GetSuggestedPeopleResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 })
 export const GetSuggestedPeopleResponse = zod.array(GetSuggestedPeopleResponseItem)
 
@@ -2149,7 +2323,8 @@ export const ListChatsResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -2193,7 +2368,8 @@ export const CreateChatResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -2358,7 +2534,8 @@ export const AddChatMemberResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -2394,7 +2571,8 @@ export const RemoveChatMemberResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -2451,7 +2629,8 @@ export const AcceptChatInviteResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "role": zod.enum(['owner', 'admin', 'member']),
   "joinedAt": zod.coerce.date()
@@ -2493,7 +2672,8 @@ export const GetFeedResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2576,7 +2756,8 @@ export const GetVideosResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2632,7 +2813,8 @@ export const GetCreatorResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "bio": zod.string(),
   "followersCount": zod.number().int(),
@@ -2808,7 +2990,8 @@ export const CreatePostResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -2881,7 +3064,8 @@ export const ListPostCommentsResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date()
@@ -2915,7 +3099,8 @@ export const AddPostCommentResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date()
@@ -2950,7 +3135,8 @@ export const VoteOnPollResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -3072,7 +3258,8 @@ export const ListCommunityRequestsResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 })
 export const ListCommunityRequestsResponse = zod.array(ListCommunityRequestsResponseItem)
 
@@ -3093,9 +3280,11 @@ export const DecideCommunityRequestResponse = zod.object({
 
 
 /**
- * @summary Browse skill offers and help requests in communities
+ * @summary Browse local skill offers and help requests
  */
 export const listCommunityGigsQueryQMax = 120;
+
+export const listCommunityGigsQueryLocationMax = 120;
 
 export const listCommunityGigsQueryScopeDefault = `community`;
 
@@ -3103,14 +3292,15 @@ export const ListCommunityGigsQueryParams = zod.object({
   "q": zod.coerce.string().max(listCommunityGigsQueryQMax).optional(),
   "communityId": zod.coerce.string().optional(),
   "kind": zod.enum(['offer', 'request']).optional(),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']).optional(),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']).optional(),
+  "location": zod.coerce.string().max(listCommunityGigsQueryLocationMax).optional(),
   "scope": zod.enum(['community', 'mine']).default(listCommunityGigsQueryScopeDefault)
 })
 
 export const ListCommunityGigsResponseItem = zod.object({
   "id": zod.string(),
-  "communityId": zod.string(),
-  "communityName": zod.string(),
+  "communityId": zod.string().nullable(),
+  "communityName": zod.string().nullable(),
   "author": zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -3119,13 +3309,16 @@ export const ListCommunityGigsResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "kind": zod.enum(['offer', 'request']),
   "title": zod.string(),
   "description": zod.string(),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']),
   "rateNote": zod.string(),
+  "locationLabel": zod.string(),
+  "dueDate": zod.coerce.date().nullable(),
   "state": zod.enum(['open', 'matched', 'completed', 'closed']),
   "responseCount": zod.number().int(),
   "myResponseId": zod.string().nullable(),
@@ -3136,7 +3329,7 @@ export const ListCommunityGigsResponse = zod.array(ListCommunityGigsResponseItem
 
 
 /**
- * @summary Offer a skill or request help in a community
+ * @summary Publish a local skill offer or help request
  */
 
 export const createCommunityGigBodyTitleMin = 3;
@@ -3148,21 +3341,26 @@ export const createCommunityGigBodyDescriptionMax = 2000;
 export const createCommunityGigBodyRateNoteDefault = ``;
 export const createCommunityGigBodyRateNoteMax = 120;
 
+export const createCommunityGigBodyLocationLabelDefault = ``;
+export const createCommunityGigBodyLocationLabelMax = 120;
+
 
 
 export const CreateCommunityGigBody = zod.object({
-  "communityId": zod.string().min(1),
+  "communityId": zod.string().min(1).optional().describe('Optional legacy group scope'),
   "kind": zod.enum(['offer', 'request']),
   "title": zod.string().min(createCommunityGigBodyTitleMin).max(createCommunityGigBodyTitleMax),
   "description": zod.string().min(createCommunityGigBodyDescriptionMin).max(createCommunityGigBodyDescriptionMax),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
-  "rateNote": zod.string().max(createCommunityGigBodyRateNoteMax).default(createCommunityGigBodyRateNoteDefault)
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']),
+  "rateNote": zod.string().max(createCommunityGigBodyRateNoteMax).default(createCommunityGigBodyRateNoteDefault),
+  "locationLabel": zod.string().max(createCommunityGigBodyLocationLabelMax).default(createCommunityGigBodyLocationLabelDefault),
+  "dueDate": zod.coerce.date().optional()
 })
 
 export const CreateCommunityGigResponse = zod.object({
   "id": zod.string(),
-  "communityId": zod.string(),
-  "communityName": zod.string(),
+  "communityId": zod.string().nullable(),
+  "communityName": zod.string().nullable(),
   "author": zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -3171,13 +3369,16 @@ export const CreateCommunityGigResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "kind": zod.enum(['offer', 'request']),
   "title": zod.string(),
   "description": zod.string(),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']),
   "rateNote": zod.string(),
+  "locationLabel": zod.string(),
+  "dueDate": zod.coerce.date().nullable(),
   "state": zod.enum(['open', 'matched', 'completed', 'closed']),
   "responseCount": zod.number().int(),
   "myResponseId": zod.string().nullable(),
@@ -3204,7 +3405,8 @@ export const ListCommunityGigResponsesResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "message": zod.string(),
   "state": zod.enum(['pending', 'accepted', 'declined']),
@@ -3240,7 +3442,8 @@ export const CreateCommunityGigResponseResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "message": zod.string(),
   "state": zod.enum(['pending', 'accepted', 'declined']),
@@ -3271,7 +3474,8 @@ export const DecideCommunityGigResponseResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "message": zod.string(),
   "state": zod.enum(['pending', 'accepted', 'declined']),
@@ -3288,8 +3492,8 @@ export const CompleteCommunityGigParams = zod.object({
 
 export const CompleteCommunityGigResponse = zod.object({
   "id": zod.string(),
-  "communityId": zod.string(),
-  "communityName": zod.string(),
+  "communityId": zod.string().nullable(),
+  "communityName": zod.string().nullable(),
   "author": zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -3298,13 +3502,16 @@ export const CompleteCommunityGigResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "kind": zod.enum(['offer', 'request']),
   "title": zod.string(),
   "description": zod.string(),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']),
   "rateNote": zod.string(),
+  "locationLabel": zod.string(),
+  "dueDate": zod.coerce.date().nullable(),
   "state": zod.enum(['open', 'matched', 'completed', 'closed']),
   "responseCount": zod.number().int(),
   "myResponseId": zod.string().nullable(),
@@ -3322,8 +3529,8 @@ export const CloseCommunityGigParams = zod.object({
 
 export const CloseCommunityGigResponse = zod.object({
   "id": zod.string(),
-  "communityId": zod.string(),
-  "communityName": zod.string(),
+  "communityId": zod.string().nullable(),
+  "communityName": zod.string().nullable(),
   "author": zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -3332,13 +3539,16 @@ export const CloseCommunityGigResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "kind": zod.enum(['offer', 'request']),
   "title": zod.string(),
   "description": zod.string(),
-  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'other']),
+  "category": zod.enum(['home-repairs', 'learning', 'creative', 'technology', 'personal-care', 'food-events', 'transport', 'errands', 'childcare', 'jobs', 'other']),
   "rateNote": zod.string(),
+  "locationLabel": zod.string(),
+  "dueDate": zod.coerce.date().nullable(),
   "state": zod.enum(['open', 'matched', 'completed', 'closed']),
   "responseCount": zod.number().int(),
   "myResponseId": zod.string().nullable(),
@@ -3366,7 +3576,8 @@ export const ListChannelsResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "subscriberCount": zod.number().int(),
   "followed": zod.boolean(),
@@ -3417,7 +3628,8 @@ export const CreateChannelResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "subscriberCount": zod.number().int(),
   "followed": zod.boolean(),
@@ -3615,7 +3827,8 @@ export const ListStatusesResponseItem = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "backgroundStyle": zod.enum(['midnight', 'sunset', 'berry', 'ocean', 'aurora', 'coral', 'forest', 'plum']),
@@ -3655,7 +3868,8 @@ export const CreateStatusResponse = zod.object({
   "online": zod.boolean(),
   "mutualCommunities": zod.number().int(),
   "following": zod.boolean(),
-  "lastSeenAt": zod.coerce.date().nullish()
+  "lastSeenAt": zod.coerce.date().nullish(),
+  "verifiedBadge": zod.boolean().optional()
 }),
   "content": zod.string(),
   "backgroundStyle": zod.enum(['midnight', 'sunset', 'berry', 'ocean', 'aurora', 'coral', 'forest', 'plum']),

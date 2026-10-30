@@ -108,10 +108,12 @@ export async function summary(id:string,viewer:string,q:Query=query) {
     mutualCommunities: hidden ? 0 : mutual.n,
     following,
     lastSeenAt: !hidden && u.show_last_seen ? u.last_seen_at : null,
+    verifiedBadge: !hidden && Boolean(u.verified_badge),
   };
 }
 export function profile(u:Row) {
   return {id:u.id,name:u.name,username:u.username??"",email:u.email,avatarUrl:u.avatar_url,bio:u.bio,status:u.status,online:onlineUsers.has(u.id),
+    verifiedBadge:Boolean(u.verified_badge),
     privacy:{allowMessagesFrom:u.allow_messages_from,profileVisibility:u.profile_visibility,showOnlineStatus:u.show_online_status,showLastSeen:u.show_last_seen}};
 }
 export async function membership(chatId:string,userId:string,q:Query=query,admin=false) {
@@ -173,8 +175,7 @@ export async function post(id:string,viewer:string,q:Query=query) {
   const mediaId=p.media_id?mediaRows.find(m=>m.id===p.media_id):null;
   const audioId=p.audio_media_id?mediaRows.find(m=>m.id===p.audio_media_id):null;
   const author=p.is_anonymous?{id:"anonymous",name:"Anonymous member",username:"",avatarUrl:null,online:false,mutualCommunities:0,following:false,lastSeenAt:null}:await summary(p.author_id,viewer,q);
-  const surface=p.surface==="community"&&mediaId?.content_type?.startsWith("video/")?"feed":p.surface;
-  return {id,author,content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,surface,communityTopic:p.community_topic??null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none",captions:p.captions||[],isAnonymous:Boolean(p.is_anonymous)};
+  return {id,author,content:p.content,createdAt:p.created_at,reactionsCount:counts.reactions,reacted:counts.reacted,commentsCount:counts.comments,communityId:p.community_id,communityName:p.community_id?(await community(p.community_id,viewer,q)).name:null,surface:p.surface,communityTopic:p.community_topic??null,pollOptions:options,media:shape(mediaId),audioMedia:shape(audioId),effect:p.effect||"none",captions:p.captions||[],isAnonymous:Boolean(p.is_anonymous)};
 }
 export function updateShape(u:Row) {return {id:u.id,channelId:u.channel_id,content:u.content,pinned:u.pinned,createdAt:u.created_at};}
 export async function channelAccess(id:string,viewer:string,q:Query=query,owner=false) {

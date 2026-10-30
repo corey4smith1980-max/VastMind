@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { BarChart3, Loader2, Plus, Trash2, X } from "lucide-react";
-import { COMMUNITY_POST_TOPICS, useCreatePost, type CommunityPostTopic, type MediaAttachment } from "@workspace/api-client-react";
+import { COMMUNITY_POST_TOPICS, getGetVideosQueryKey, useCreatePost, type CommunityPostTopic, type MediaAttachment } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { MediaPicker } from "@/components/media-attachment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,12 @@ import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { errMessage } from "@/lib/format";
 import { useMe } from "@/lib/me";
-import { useInvalidate } from "@/lib/realtime";
 
 // ---------- Post / poll composer ----------
 export function Composer({ onPublished, surface = "community", initialCommunityTopic }: { onPublished?: () => void; surface?: "community" | "profile"; initialCommunityTopic?: CommunityPostTopic }) {
   const me = useMe();
   const { toast } = useToast();
-  const invalidate = useInvalidate();
+  const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const [communityTopic, setCommunityTopic] = useState<CommunityPostTopic | null>(initialCommunityTopic ?? null);
   const [anonymous, setAnonymous] = useState(false);
@@ -28,7 +28,7 @@ export function Composer({ onPublished, surface = "community", initialCommunityT
   const create = useCreatePost({
     mutation: {
       onSuccess: () => {
-        invalidate("/api/feed", "/api/videos");
+        void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface }) });
         onPublished?.();
         setContent(""); setCommunityTopic(initialCommunityTopic ?? null); setPoll(null); setAnonymous(false); setPhoto(undefined);
         toast({ title: "Posted" });

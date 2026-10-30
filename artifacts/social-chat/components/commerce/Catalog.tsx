@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   useCommerceCreateProduct, useCommerceListProducts, useCommerceUpdateProduct,
   type CommerceProduct, type CommerceProductInput, type CommerceShop,
@@ -14,6 +15,7 @@ type VariantDraft = { id?: string; label: string; sku: string; price: string; in
 
 export function Catalog({ shop }: { shop: CommerceShop }) {
   const c = useColors();
+  const router = useRouter();
   const [filter, setFilter] = useState<'all' | 'live' | 'draft' | 'low' | 'legacy'>('all');
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState<CommerceProduct | 'new' | null>(null);
@@ -31,8 +33,8 @@ export function Catalog({ shop }: { shop: CommerceShop }) {
     {list.isLoading ? <Skeleton rows={3} /> : null}
     {list.isError ? <ErrorRetry message={errText(list.error)} onRetry={() => void list.refetch()} /> : null}
     {list.data && !items.length ? <Empty icon="package" title={filter === 'all' ? 'Your catalog is empty' : 'Nothing in this view'} body="Add photos, options and stock, then publish when ready." /> : null}
-    {items.map(p => <Pressable key={p.id} accessibilityRole="button" accessibilityLabel={`Edit ${p.title}`} onPress={() => setEditing(p)}>
-      <Card accent={p.isPublished ? c.lime : c.gold}>
+    {items.map(p => <Card key={p.id} accent={p.isPublished ? c.lime : c.gold}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${p.title}`} onPress={() => setEditing(p)}>
         <View style={s.between}>
           <Text style={{ color: c.foreground, fontWeight: '800', flex: 1 }} numberOfLines={1}>{p.title}</Text>
           <Text style={{ color: c.foreground, fontWeight: '800' }}>{money(p.priceMinor, p.currency)}</Text>
@@ -44,8 +46,11 @@ export function Catalog({ shop }: { shop: CommerceShop }) {
           {p.gallery.length ? <Tag label={`${p.gallery.length} photos`} /> : null}
           {!p.shopId ? <Tag label="Legacy listing" tone="magenta" /> : null}
         </View>
-      </Card>
-    </Pressable>)}
+      </Pressable>
+      {p.isPublished ? <Pressable accessibilityRole="button" accessibilityLabel={`Save a promotion draft for ${p.title}`} onPress={() => router.push({ pathname: '/(tabs)/business', params: { targetType: 'product', targetId: p.id, name: p.title } } as never)} style={{ flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: 11 }}>
+        <Feather name="trending-up" size={15} color={c.primary} /><Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>Plan a promotion</Text>
+      </Pressable> : null}
+    </Card>)}
     <Pager hasPrev={cur.hasPrev} next={list.data?.nextCursor} onPrev={cur.prev} onNext={() => cur.next(list.data?.nextCursor)} />
   </View>;
 }

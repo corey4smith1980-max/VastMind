@@ -184,6 +184,48 @@ paths:
         - { name: to, in: query, schema: { type: string, format: date } }
       responses:
         "200": { description: Currency-separated real business metrics, content: { application/json: { schema: { $ref: "#/components/schemas/CommerceDashboard" } } } }
+  /commerce/growth/overview:
+    get:
+      operationId: getGrowthOverview
+      responses:
+        "200": { description: Subscription entitlements and saved promotion drafts, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthOverview" } } } }
+  /commerce/growth/promotions:
+    post:
+      operationId: createGrowthPromotion
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthPromotionInput" } } } }
+      responses:
+        "201": { description: Saved promotion draft; no money is collected or reach promised, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthPromotion" } } } }
+  /commerce/growth/promotions/{promotionId}:
+    parameters:
+      - { name: promotionId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateGrowthPromotion
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthPromotionStateInput" } } } }
+      responses:
+        "200": { description: Promotion draft state, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthPromotion" } } } }
+  /commerce/growth/verification:
+    get:
+      operationId: getGrowthVerification
+      responses:
+        "200": { description: Current verification application, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthVerification" } } } }
+    post:
+      operationId: submitGrowthVerification
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthVerificationInput" } } } }
+      responses:
+        "200": { description: Verification request saved for human review, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthVerification" } } } }
+  /commerce/growth/review-queue:
+    get:
+      operationId: getGrowthReviewQueue
+      responses:
+        "200": { description: Pending verification requests for configured reviewers, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/GrowthReviewQueueItem" } } } } }
+  /commerce/growth/verification/{applicationId}:
+    parameters:
+      - { name: applicationId, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: reviewGrowthVerification
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthVerificationReviewInput" } } } }
+      responses:
+        "200": { description: Human review decision, content: { application/json: { schema: { $ref: "#/components/schemas/GrowthVerification" } } } }
   /commerce/shops/{shopId}/customers:
     parameters:
       - { name: shopId, in: path, required: true, schema: { type: string } }
@@ -607,3 +649,87 @@ components:
         productId: { type: string }
         campaignId: { type: string }
         kind: { type: string, enum: [view, product_click, add_to_cart, campaign_click] }
+    GrowthOverview:
+      type: object
+      required: [billingEnabled, currentPlan, subscriptionStatus, isPlatformReviewer, plans, promotions, verification]
+      properties:
+        billingEnabled: { type: boolean }
+        currentPlan: { type: string, enum: [free, creator, business] }
+        subscriptionStatus: { type: string, enum: [free, active, pending, past_due, cancelled] }
+        isPlatformReviewer: { type: boolean }
+        plans: { type: array, items: { $ref: "#/components/schemas/GrowthPlan" } }
+        promotions: { type: array, items: { $ref: "#/components/schemas/GrowthPromotion" } }
+        verification: { $ref: "#/components/schemas/GrowthVerification" }
+    GrowthPlan:
+      type: object
+      required: [id, name, features]
+      properties:
+        id: { type: string, enum: [free, creator, business] }
+        name: { type: string }
+        features: { type: array, items: { type: string } }
+    GrowthPromotionInput:
+      type: object
+      required: [targetType, targetId, name, objective, durationDays]
+      properties:
+        targetType: { type: string, enum: [post, channel, product] }
+        targetId: { type: string, minLength: 1, maxLength: 160 }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        objective: { type: string, enum: [reach, engagement, product_clicks] }
+        desiredDailyBudgetMinor: { type: integer, minimum: 0, maximum: 100000000 }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        durationDays: { type: integer, minimum: 1, maximum: 90 }
+    GrowthPromotionStateInput:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [cancelled] }
+    GrowthPromotion:
+      type: object
+      required: [id, targetType, targetId, name, objective, durationDays, state, createdAt]
+      properties:
+        id: { type: string }
+        targetType: { type: string, enum: [post, channel, product] }
+        targetId: { type: string }
+        name: { type: string }
+        objective: { type: string, enum: [reach, engagement, product_clicks] }
+        desiredDailyBudgetMinor: { type: ["integer", "null"] }
+        currency: { type: ["string", "null"] }
+        durationDays: { type: integer }
+        state: { type: string, enum: [draft, cancelled] }
+        createdAt: { type: string, format: date-time }
+    GrowthVerificationInput:
+      type: object
+      required: [businessName, website, reason]
+      properties:
+        businessName: { type: string, minLength: 2, maxLength: 120 }
+        website: { type: string, maxLength: 300 }
+        reason: { type: string, minLength: 20, maxLength: 1500 }
+    GrowthVerificationReviewInput:
+      type: object
+      required: [decision, reviewNote]
+      properties:
+        decision: { type: string, enum: [approved, rejected] }
+        reviewNote: { type: string, maxLength: 1000 }
+    GrowthVerification:
+      type: object
+      required: [applicationId, state, businessName, website, reason, reviewNote, eligibleForBadge]
+      properties:
+        applicationId: { type: ["string", "null"] }
+        state: { type: string, enum: [not_submitted, pending, approved, rejected] }
+        businessName: { type: string }
+        website: { type: string }
+        reason: { type: string }
+        reviewNote: { type: string }
+        eligibleForBadge: { type: boolean }
+    GrowthReviewQueueItem:
+      type: object
+      required: [applicationId, userId, name, username, businessName, website, reason, createdAt]
+      properties:
+        applicationId: { type: string }
+        userId: { type: string }
+        name: { type: string }
+        username: { type: string }
+        businessName: { type: string }
+        website: { type: string }
+        reason: { type: string }
+        createdAt: { type: string, format: date-time }

@@ -19,5 +19,6 @@ export const ListCommunityGigsCategory = {
   transport: 'transport',
   errands: 'errands',
   childcare: 'childcare',
+  jobs: 'jobs',
   other: 'other',
 } as const;

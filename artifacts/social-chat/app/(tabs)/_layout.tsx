@@ -18,6 +18,7 @@ function NativeTabLayout() {
       <NativeTabs.Trigger name="community"><NativeTabs.Trigger.Icon sf={{ default: 'text.bubble', selected: 'text.bubble.fill' }} /><NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="more"><NativeTabs.Trigger.Icon sf={{ default: 'ellipsis', selected: 'ellipsis' }} /><NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="channels" hidden><NativeTabs.Trigger.Icon sf={{ default: 'dot.radiowaves.left.and.right', selected: 'dot.radiowaves.left.and.right' }} /><NativeTabs.Trigger.Label>Channels</NativeTabs.Trigger.Label></NativeTabs.Trigger>
+      <NativeTabs.Trigger name="wallet" hidden><NativeTabs.Trigger.Icon sf={{ default: 'creditcard', selected: 'creditcard' }} /><NativeTabs.Trigger.Label>VastMind Coin</NativeTabs.Trigger.Label></NativeTabs.Trigger>
     </NativeTabs>
   );
 }
@@ -53,6 +54,7 @@ function ClassicTabLayout() {
       <Tabs.Screen name="channels" options={{ href: null }} />
       <Tabs.Screen name="mail" options={{ href: null }} />
       <Tabs.Screen name="business" options={{ href: null }} />
+      <Tabs.Screen name="wallet" options={{ href: null }} />
     </Tabs>
   );
 }

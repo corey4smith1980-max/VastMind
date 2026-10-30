@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, date, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { communities, users } from "./social";
 
 const created = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -7,13 +7,16 @@ const created = () => timestamp("created_at", { withTimezone: true }).notNull().
 /** Community skill offers and requests. Rates are descriptive only; this does not process payments. */
 export const communityGigs = pgTable("community_gigs", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  communityId: text("community_id").notNull().references(() => communities.id, { onDelete: "cascade" }),
+  // Nullable for the standalone Community marketplace; legacy group listings remain readable.
+  communityId: text("community_id").references(() => communities.id, { onDelete: "cascade" }),
   authorId: text("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   kind: text("kind").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   category: text("category").notNull(),
   rateNote: text("rate_note").notNull().default(""),
+  locationLabel: text("location_label").notNull().default(""),
+  dueDate: date("due_date", { mode: "string" }),
   state: text("state").notNull().default("open"),
   createdAt: created(),
 }, (t) => [

@@ -13,7 +13,7 @@ test("post composition supports photo posts and photo polls without weakening qu
     strict.doesNotThrow(() => validatePostComposition("", type));
     strict.doesNotThrow(() => validatePostComposition("Choose a photo", type, ["A", "B"]));
   }
-  strict.doesNotThrow(() => CreatePostBody.parse({ content: "", mediaId: uuid() }));
+  strict.doesNotThrow(() => CreatePostBody.parse({ content: "", mediaId: uuid(), surface: "feed" }));
   strict.doesNotThrow(() => validatePostComposition("A thought"));
   strict.doesNotThrow(() => validatePostComposition("Caption", "video/mp4"));
   strict.doesNotThrow(() => validatePostComposition("Question", undefined, ["A", "B"]));

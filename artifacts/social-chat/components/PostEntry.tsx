@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  COMMUNITY_POST_TOPICS, communityTopicLabel, getListPostCommentsQueryKey, useAddPostComment, useCreatePost,
+  COMMUNITY_POST_TOPICS, communityTopicLabel, getGetVideosQueryKey, getListPostCommentsQueryKey, useAddPostComment, useCreatePost,
   useListPostComments, useTogglePostReaction, useVoteOnPoll, type MediaAttachment, type Post,
   type CommunityPostTopic,
 } from '@workspace/api-client-react';
@@ -30,8 +30,8 @@ export function PostEntry({ post, height, near, bottomInset, variant = 'reel' }:
   const isImage = !!p.media?.contentType.startsWith('image/');
   const { source } = useAuthedMedia(isImage ? p.media : null, near && isImage);
   const comments = useListPostComments(p.id, { query: { queryKey: getListPostCommentsQueryKey(p.id), enabled: open, refetchInterval: open ? 10000 : false } });
-  const react = useTogglePostReaction({ mutation: { onSuccess: r => { setP(x => ({ ...x, reacted: r.reacted, reactionsCount: r.reactionsCount })); void qc.invalidateQueries({ queryKey: ['/api/feed'] }); }, onError: e => setNote(errorText(e)) } });
-  const vote = useVoteOnPoll({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: ['/api/videos'] }); void qc.invalidateQueries({ queryKey: ['/api/feed'] }); }, onError: e => setNote(errorText(e)) } });
+  const react = useTogglePostReaction({ mutation: { onSuccess: r => { setP(x => ({ ...x, reacted: r.reacted, reactionsCount: r.reactionsCount })); void qc.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface: p.surface }) }); }, onError: e => setNote(errorText(e)) } });
+  const vote = useVoteOnPoll({ mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface: p.surface }) }); }, onError: e => setNote(errorText(e)) } });
   const add = useAddPostComment({ mutation: { onSuccess: c => { setText(''); setP(x => ({ ...x, commentsCount: x.commentsCount + 1 })); qc.setQueryData(getListPostCommentsQueryKey(p.id), (old: typeof comments.data) => old ? [...old, c] : [c]); }, onError: e => setNote(errorText(e)) } });
   const total = p.pollOptions.reduce((n, o) => n + o.votes, 0);
   const voted = p.pollOptions.some(o => o.votedByMe);
@@ -109,7 +109,7 @@ export function CreatePostSheet({ onClose, onPublished, surface = 'community', i
   const [photo, setPhoto] = useState<MediaAttachment>();
   const [uploading, setUploading] = useState(false);
   const create = useCreatePost({ mutation: { onSuccess: () => {
-    void qc.invalidateQueries({ queryKey: ['/api/videos'] }); void qc.invalidateQueries({ queryKey: ['/api/feed'] });
+    void qc.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface }) });
     setContent(''); setCommunityTopic(initialCommunityTopic ?? null); setPoll(null); setAnon(false); setPhoto(undefined); onPublished();
   } } });
   const opts = (poll ?? []).map(o => o.trim()).filter(Boolean);

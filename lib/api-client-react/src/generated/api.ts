@@ -84,6 +84,14 @@ import type {
   GetFeedParams,
   GetVideoCapabilities200,
   GetVideosParams,
+  GrowthOverview,
+  GrowthPromotion,
+  GrowthPromotionInput,
+  GrowthPromotionStateInput,
+  GrowthReviewQueueItem,
+  GrowthVerification,
+  GrowthVerificationInput,
+  GrowthVerificationReviewInput,
   HealthStatus,
   IdentityDeviceLinkComplete,
   IdentityDeviceLinkCompleteInput,
@@ -2679,6 +2687,549 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCommerceRecordEventMutationOptions(options));
+    }
+
+export const getGetGrowthOverviewUrl = () => {
+
+
+
+
+  return `/api/commerce/growth/overview`
+}
+
+export const getGrowthOverview = async ( options?: Parameters<typeof customFetch>[1]): Promise<GrowthOverview> => {
+
+  return customFetch<GrowthOverview>(getGetGrowthOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGrowthOverviewQueryKey = () => {
+    return [
+    `/api/commerce/growth/overview`
+    ] as const;
+    }
+
+
+export const getGetGrowthOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getGrowthOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGrowthOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGrowthOverview>>> = ({ signal }) => getGrowthOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGrowthOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGrowthOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getGrowthOverview>>>
+export type GetGrowthOverviewQueryError = ErrorType<unknown>
+
+
+
+export function useGetGrowthOverview<TData = Awaited<ReturnType<typeof getGrowthOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGrowthOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateGrowthPromotionUrl = () => {
+
+
+
+
+  return `/api/commerce/growth/promotions`
+}
+
+export const createGrowthPromotion = async (growthPromotionInput: GrowthPromotionInput, options?: Parameters<typeof customFetch>[1]): Promise<GrowthPromotion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GrowthPromotion>(getCreateGrowthPromotionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(growthPromotionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateGrowthPromotionMutationKey = () => ['createGrowthPromotion'] as const;
+
+export const getCreateGrowthPromotionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrowthPromotion>>, TError,CreateGrowthPromotionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createGrowthPromotion>>, TError,CreateGrowthPromotionMutationVariables, TContext> => {
+
+const mutationKey = getCreateGrowthPromotionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGrowthPromotion>>, CreateGrowthPromotionMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  createGrowthPromotion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateGrowthPromotionMutationResult = NonNullable<Awaited<ReturnType<typeof createGrowthPromotion>>>
+    export type CreateGrowthPromotionMutationBody = BodyType<GrowthPromotionInput>
+    export type CreateGrowthPromotionMutationError = ErrorType<unknown>
+    export type CreateGrowthPromotionMutationVariables = {data: BodyType<GrowthPromotionInput>}
+
+    export const useCreateGrowthPromotion = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGrowthPromotion>>, TError,CreateGrowthPromotionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createGrowthPromotion>>,
+        TError,
+        CreateGrowthPromotionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateGrowthPromotionMutationOptions(options));
+    }
+
+export const getUpdateGrowthPromotionUrl = (promotionId: string,) => {
+
+
+
+
+  return `/api/commerce/growth/promotions/${promotionId}`
+}
+
+export const updateGrowthPromotion = async (promotionId: string,
+    growthPromotionStateInput: GrowthPromotionStateInput, options?: Parameters<typeof customFetch>[1]): Promise<GrowthPromotion> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GrowthPromotion>(getUpdateGrowthPromotionUrl(promotionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(growthPromotionStateInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateGrowthPromotionMutationKey = () => ['updateGrowthPromotion'] as const;
+
+export const getUpdateGrowthPromotionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrowthPromotion>>, TError,UpdateGrowthPromotionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateGrowthPromotion>>, TError,UpdateGrowthPromotionMutationVariables, TContext> => {
+
+const mutationKey = getUpdateGrowthPromotionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGrowthPromotion>>, UpdateGrowthPromotionMutationVariables> = (props) => {
+          const {promotionId,data} = props ?? {};
+
+          return  updateGrowthPromotion(promotionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateGrowthPromotionMutationResult = NonNullable<Awaited<ReturnType<typeof updateGrowthPromotion>>>
+    export type UpdateGrowthPromotionMutationBody = BodyType<GrowthPromotionStateInput>
+    export type UpdateGrowthPromotionMutationError = ErrorType<unknown>
+    export type UpdateGrowthPromotionMutationVariables = {promotionId: string;data: BodyType<GrowthPromotionStateInput>}
+
+    export const useUpdateGrowthPromotion = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGrowthPromotion>>, TError,UpdateGrowthPromotionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateGrowthPromotion>>,
+        TError,
+        UpdateGrowthPromotionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateGrowthPromotionMutationOptions(options));
+    }
+
+export const getGetGrowthVerificationUrl = () => {
+
+
+
+
+  return `/api/commerce/growth/verification`
+}
+
+export const getGrowthVerification = async ( options?: Parameters<typeof customFetch>[1]): Promise<GrowthVerification> => {
+
+  return customFetch<GrowthVerification>(getGetGrowthVerificationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGrowthVerificationQueryKey = () => {
+    return [
+    `/api/commerce/growth/verification`
+    ] as const;
+    }
+
+
+export const getGetGrowthVerificationQueryOptions = <TData = Awaited<ReturnType<typeof getGrowthVerification>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthVerification>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGrowthVerificationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGrowthVerification>>> = ({ signal }) => getGrowthVerification({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGrowthVerification>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGrowthVerificationQueryResult = NonNullable<Awaited<ReturnType<typeof getGrowthVerification>>>
+export type GetGrowthVerificationQueryError = ErrorType<unknown>
+
+
+
+export function useGetGrowthVerification<TData = Awaited<ReturnType<typeof getGrowthVerification>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthVerification>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGrowthVerificationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSubmitGrowthVerificationUrl = () => {
+
+
+
+
+  return `/api/commerce/growth/verification`
+}
+
+export const submitGrowthVerification = async (growthVerificationInput: GrowthVerificationInput, options?: Parameters<typeof customFetch>[1]): Promise<GrowthVerification> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GrowthVerification>(getSubmitGrowthVerificationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(growthVerificationInput)
+  }
+);}
+
+
+
+
+
+export const getSubmitGrowthVerificationMutationKey = () => ['submitGrowthVerification'] as const;
+
+export const getSubmitGrowthVerificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitGrowthVerification>>, TError,SubmitGrowthVerificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitGrowthVerification>>, TError,SubmitGrowthVerificationMutationVariables, TContext> => {
+
+const mutationKey = getSubmitGrowthVerificationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitGrowthVerification>>, SubmitGrowthVerificationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitGrowthVerification(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitGrowthVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof submitGrowthVerification>>>
+    export type SubmitGrowthVerificationMutationBody = BodyType<GrowthVerificationInput>
+    export type SubmitGrowthVerificationMutationError = ErrorType<unknown>
+    export type SubmitGrowthVerificationMutationVariables = {data: BodyType<GrowthVerificationInput>}
+
+    export const useSubmitGrowthVerification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitGrowthVerification>>, TError,SubmitGrowthVerificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitGrowthVerification>>,
+        TError,
+        SubmitGrowthVerificationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSubmitGrowthVerificationMutationOptions(options));
+    }
+
+export const getGetGrowthReviewQueueUrl = () => {
+
+
+
+
+  return `/api/commerce/growth/review-queue`
+}
+
+export const getGrowthReviewQueue = async ( options?: Parameters<typeof customFetch>[1]): Promise<GrowthReviewQueueItem[]> => {
+
+  return customFetch<GrowthReviewQueueItem[]>(getGetGrowthReviewQueueUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGrowthReviewQueueQueryKey = () => {
+    return [
+    `/api/commerce/growth/review-queue`
+    ] as const;
+    }
+
+
+export const getGetGrowthReviewQueueQueryOptions = <TData = Awaited<ReturnType<typeof getGrowthReviewQueue>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthReviewQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGrowthReviewQueueQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGrowthReviewQueue>>> = ({ signal }) => getGrowthReviewQueue({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGrowthReviewQueue>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGrowthReviewQueueQueryResult = NonNullable<Awaited<ReturnType<typeof getGrowthReviewQueue>>>
+export type GetGrowthReviewQueueQueryError = ErrorType<unknown>
+
+
+
+export function useGetGrowthReviewQueue<TData = Awaited<ReturnType<typeof getGrowthReviewQueue>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGrowthReviewQueue>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGrowthReviewQueueQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReviewGrowthVerificationUrl = (applicationId: string,) => {
+
+
+
+
+  return `/api/commerce/growth/verification/${applicationId}`
+}
+
+export const reviewGrowthVerification = async (applicationId: string,
+    growthVerificationReviewInput: GrowthVerificationReviewInput, options?: Parameters<typeof customFetch>[1]): Promise<GrowthVerification> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<GrowthVerification>(getReviewGrowthVerificationUrl(applicationId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(growthVerificationReviewInput)
+  }
+);}
+
+
+
+
+
+export const getReviewGrowthVerificationMutationKey = () => ['reviewGrowthVerification'] as const;
+
+export const getReviewGrowthVerificationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewGrowthVerification>>, TError,ReviewGrowthVerificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewGrowthVerification>>, TError,ReviewGrowthVerificationMutationVariables, TContext> => {
+
+const mutationKey = getReviewGrowthVerificationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewGrowthVerification>>, ReviewGrowthVerificationMutationVariables> = (props) => {
+          const {applicationId,data} = props ?? {};
+
+          return  reviewGrowthVerification(applicationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewGrowthVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof reviewGrowthVerification>>>
+    export type ReviewGrowthVerificationMutationBody = BodyType<GrowthVerificationReviewInput>
+    export type ReviewGrowthVerificationMutationError = ErrorType<unknown>
+    export type ReviewGrowthVerificationMutationVariables = {applicationId: string;data: BodyType<GrowthVerificationReviewInput>}
+
+    export const useReviewGrowthVerification = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewGrowthVerification>>, TError,ReviewGrowthVerificationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewGrowthVerification>>,
+        TError,
+        ReviewGrowthVerificationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewGrowthVerificationMutationOptions(options));
     }
 
 export const getHealthCheckUrl = () => {
@@ -7378,7 +7929,7 @@ export const getListCommunityGigsUrl = (params?: ListCommunityGigsParams,) => {
 }
 
 /**
- * @summary Browse skill offers and help requests in communities
+ * @summary Browse local skill offers and help requests
  */
 export const listCommunityGigs = async (params?: ListCommunityGigsParams, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGigList> => {
 
@@ -7425,7 +7976,7 @@ export type ListCommunityGigsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Browse skill offers and help requests in communities
+ * @summary Browse local skill offers and help requests
  */
 
 export function useListCommunityGigs<TData = Awaited<ReturnType<typeof listCommunityGigs>>, TError = ErrorType<unknown>>(
@@ -7455,7 +8006,7 @@ export const getCreateCommunityGigUrl = () => {
 }
 
 /**
- * @summary Offer a skill or request help in a community
+ * @summary Publish a local skill offer or help request
  */
 export const createCommunityGig = async (communityGigCreate: CommunityGigCreate, options?: Parameters<typeof customFetch>[1]): Promise<CommunityGig> => {
 
@@ -7521,7 +8072,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateCommunityGigMutationVariables = {data: BodyType<CommunityGigCreate>}
 
     /**
- * @summary Offer a skill or request help in a community
+ * @summary Publish a local skill offer or help request
  */
 export const useCreateCommunityGig = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCommunityGig>>, TError,CreateCommunityGigMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}

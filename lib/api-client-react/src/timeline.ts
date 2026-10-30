@@ -15,7 +15,9 @@ export function usePagedSocialTimeline(input: Omit<GetVideosParams, "before">, e
     ...(input.topic ? { topic: input.topic } : {}),
   };
   const client = useQueryClient();
-  const key = [...getGetVideosQueryKey(base), "infinite"];
+  // Cache version separates this strict destination filter from older mixed
+  // timeline entries that may still be present in a running client session.
+  const key = [...getGetVideosQueryKey(base), "infinite", "surface-isolation-v2"];
   const query = useInfiniteQuery({
     queryKey: key,
     enabled,

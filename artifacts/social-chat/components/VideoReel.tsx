@@ -65,6 +65,7 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
   const router = useRouter();
   const queryClient = useQueryClient();
   const { profile } = useAppStore();
+  const colors = useColors();
   const { source, error } = useAuthedMedia(post.media, near);
   const player = useVideoPlayer(source, p => { p.loop = true; p.timeUpdateEventInterval = 0.25; });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
@@ -177,7 +178,8 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
     <View style={[s.meta, { paddingBottom: bottomInset + 18 }]} pointerEvents="box-none">
       <View style={s.row}>
         <Pressable accessibilityRole="link" accessibilityLabel={`Open ${post.author.name}'s profile`} onPress={openCreator} style={{ flexShrink: 1 }}>
-          <Text style={s.name} numberOfLines={1}>{post.author.name}</Text><Text style={s.dim}>@{post.author.username}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Text style={s.name} numberOfLines={1}>{post.author.name}</Text>{post.author.verifiedBadge ? <Feather name="check-circle" size={13} color={colors.primary} /> : null}</View>
+          <Text style={s.dim}>@{post.author.username}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={following ? `Unfollow ${post.author.name}` : `Follow ${post.author.name}`} disabled={follow.isPending} onPress={() => { setFollowing(f => !f); follow.mutate({ userId: post.author.id }); }} style={[s.pill, following ? null : { backgroundColor: 'rgba(246,239,228,0.16)' }]}>
           <Text style={{ color: '#f6efe4', fontSize: 12, fontWeight: '700' }}>{following ? 'Following' : 'Follow'}</Text>
@@ -197,6 +199,7 @@ export function ReelItem({ post, active, near, height, bottomInset }: { post: Po
       <ActionButton icon="heart" label={`${stats.reacted ? 'Unlike clip' : 'Like clip'}, ${stats.reactions} likes`} count={stats.reactions} tint={stats.reacted ? 'hsl(347,96%,61%)' : undefined} disabled={react.isPending} onPress={() => { if (!stats.reacted) showHeartBurst(); react.mutate({ postId: post.id, data: { reaction: 'like' } }); }} />
       <ActionButton icon="message-circle" label={`View ${stats.comments} comments`} count={stats.comments} onPress={() => setComments(true)} />
       <ActionButton icon="share" label="Share creator link" onPress={share} />
+      {profile?.id === post.author.id ? <ActionButton icon="trending-up" label="Save a promotion draft for this clip" onPress={() => router.push({ pathname: '/(tabs)/business', params: { targetType: 'post', targetId: post.id, name: post.content.slice(0, 70) || 'Feed post' } } as never)} /> : null}
     </View>
     {comments ? <CommentsSheet post={post} onClose={() => setComments(false)} onAdded={() => setStats(st => ({ ...st, comments: st.comments + 1 }))} /> : null}
   </View>;

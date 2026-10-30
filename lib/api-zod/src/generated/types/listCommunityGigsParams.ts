@@ -14,8 +14,18 @@ export type ListCommunityGigsParams = {
  * @maxLength 120
  */
 q?: string;
+/**
+ * Optional legacy group scope
+ */
 communityId?: string;
 kind?: ListCommunityGigsKind;
 category?: ListCommunityGigsCategory;
+/**
+ * @maxLength 120
+ */
+location?: string;
+/**
+ * Public standalone listings by default; mine includes your listings and responses
+ */
 scope?: ListCommunityGigsScope;
 };

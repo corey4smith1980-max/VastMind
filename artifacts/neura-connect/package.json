@@ -75,9 +75,11 @@
     "@better-auth/passkey": "^1.7.11",
     "@clerk/react": "^6.17.8",
     "@clerk/themes": "^2.4.57",
+    "@workspace/vastmind-token": "workspace:*",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
     "better-auth": "^1.7.11",
+    "ethers": "^6.17.0",
     "next": "^15.5.28",
     "socket.io-client": "^4.8.4"
   }

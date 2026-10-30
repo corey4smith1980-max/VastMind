@@ -69,6 +69,48 @@ export const commerceHistory = pgTable("commerce_history", {
   note: text("note").notNull().default(""), createdAt: created(),
 }, t => [index("commerce_history_order_time").on(t.orderId, t.createdAt)]);
 
+// Subscription state is entitlement metadata only. Billing providers may populate it later;
+// this app does not collect or charge money while billing is disabled.
+export const memberSubscriptions = pgTable("member_subscriptions", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  plan: text("plan").notNull().default("free"),
+  status: text("status").notNull().default("free"),
+  provider: text("provider"),
+  providerSubscriptionId: text("provider_subscription_id").unique(),
+  currentPeriodEndsAt: timestamp("current_period_ends_at", { withTimezone: true }),
+  createdAt: created(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Promotion requests remain drafts until billing and ad delivery are enabled.
+export const growthPromotions = pgTable("growth_promotions", {
+  id: id(),
+  ownerId: user(),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  name: text("name").notNull(),
+  objective: text("objective").notNull(),
+  desiredDailyBudgetMinor: integer("desired_daily_budget_minor"),
+  currency: text("currency"),
+  durationDays: integer("duration_days").notNull().default(7),
+  state: text("state").notNull().default("draft"),
+  createdAt: created(),
+}, t => [index("growth_promotions_owner_created").on(t.ownerId, t.createdAt)]);
+
+// Applications are separate from the public badge flag; staff approval is required.
+export const verificationApplications = pgTable("verification_applications", {
+  id: id(),
+  userId: user().unique(),
+  businessName: text("business_name").notNull(),
+  website: text("website").notNull().default(""),
+  reason: text("reason").notNull(),
+  state: text("state").notNull().default("pending"),
+  reviewNote: text("review_note").notNull().default(""),
+  reviewedBy: text("reviewed_by").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+  createdAt: created(),
+}, t => [index("verification_applications_state_created").on(t.state, t.createdAt)]);
+
 export const insertCommerceTeamSchema = createInsertSchema(commerceTeam);
 export const insertCommerceFollowerSchema = createInsertSchema(commerceFollowers);
 export const insertCommercePhotoSchema = createInsertSchema(commercePhotos);

@@ -50,7 +50,7 @@ export function ReelStack({ items, hasMore, loadingMore, error, onLoadMore, onRe
   }, [itemKey]);
 
   return <div className="relative flex min-h-0 flex-1">
-    <div ref={scrollRef} tabIndex={0} role="feed" aria-busy={loadingMore} className="reel-scroll min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary" aria-label={label} data-testid="video-reel-feed">
+    <div ref={scrollRef} tabIndex={0} role="feed" aria-busy={loadingMore} className="reel-scroll min-h-0 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary" aria-label={label} data-testid="video-reel-feed">
       {items.map((post, index) => !isClip(post) ? <PostEntry key={post.id} post={post} index={index} /> : <ReelCard key={post.id} post={post} index={index} active={activeId === post.id} onActive={() => setActiveId(post.id)} />)}
       <div ref={tailRef} className="flex min-h-24 snap-start items-center justify-center text-xs text-white/55" aria-live="polite">
         {loadingMore ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finding more moments</> : error ? <button onClick={onRetry} className="rounded-full bg-white/10 px-4 py-2 underline hover:bg-white/15">Couldn't load more. Retry</button> : hasMore ? <button onClick={onLoadMore} className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 hover:bg-white/15"><ArrowDown className="h-4 w-4" />Keep watching</button> : <span>You're all caught up.</span>}

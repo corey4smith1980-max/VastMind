@@ -253,7 +253,7 @@ export function ClipComposer({ onClose }: { onClose: (published?: boolean) => vo
       }
       setStage("publishing");
       await create.mutateAsync({ data: { content: caption.trim(), surface: "feed", mediaId, ...extra, ...(cleanCues.length ? { captions: cleanCues } : {}) } });
-      void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: getGetVideosQueryKey({ surface: "feed" }) });
       toast({ title: "Your clip is live" });
       onClose(true);
     } catch (e) { setStageError(errMessage(e)); }

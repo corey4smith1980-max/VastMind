@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Captions, CaptionsOff, Heart, MessageCircle, Music2, Pause, Play, Share2, Volume2, VolumeX } from "lucide-react";
+import { BadgeCheck, Captions, CaptionsOff, Heart, MessageCircle, Megaphone, Music2, Pause, Play, Share2, Volume2, VolumeX } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetCreatorQueryKey, getListPostCommentsQueryKey, useAddPostComment, useListPostComments, useTogglePostReaction, useToggleUserFollow, type Post } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/user-avatar";
@@ -12,6 +12,7 @@ import { basePath } from "@/lib/base";
 import { errMessage, relTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ShoppableProducts } from "@/components/commerce/shoppable";
+import { useMe } from "@/lib/me";
 import { activeCue, useCaptionsPref, useVideoPlayback, useWatchSession } from "./video-kit";
 
 const effectClass = { none: "", warm: "sepia-[.2] saturate-[1.15]", mono: "grayscale", soft: "brightness-[1.06] saturate-[.82]" };
@@ -73,6 +74,8 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
   const soundtrack = useVideoPlayback(post.audioMedia, active && playing && !muted);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const me = useMe();
+  const isOwner = post.author.id === me.id;
   const hasCaptions = !!post.captions?.length;
   const cue = hasCaptions && ccOn ? activeCue(post.captions, time) : null;
 
@@ -152,7 +155,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
   };
   const profileHref = `/profile/${encodeURIComponent(post.author.id)}`;
 
-  return <article className="relative flex h-full min-h-0 snap-start items-center justify-center overflow-hidden bg-[hsl(192_52%_9%)]" data-testid={`reel-${post.id}`} data-reel-id={post.id} onMouseEnter={onActive}>
+  return <article className="relative mx-auto flex h-full min-h-0 w-full max-w-[720px] snap-start items-center justify-center overflow-hidden bg-black" data-testid={`reel-${post.id}`} data-reel-id={post.id} onMouseEnter={onActive}>
     <video ref={videoRef} src={playback.url ?? undefined} muted={muted} playsInline loop preload={active ? "auto" : "none"} className={cn("absolute inset-0 h-full w-full object-contain", effectClass[post.effect])} aria-label={`Video by ${post.author.name}`}
       onPlay={() => { setPlaying(true); session.setPlaying(true); if (!muted && audioRef.current) void audioRef.current.play().catch(() => {}); }}
       onPause={() => { setPlaying(false); session.setPlaying(false); audioRef.current?.pause(); }}
@@ -174,7 +177,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
       <div className="flex items-center gap-2.5">
         <Link href={profileHref} aria-label={`Open ${post.author.name}'s profile`}><UserAvatar id={post.author.id} name={post.author.name} src={post.author.avatarUrl} size="md" /></Link>
         <Link href={profileHref} className="min-w-0 hover:underline" data-testid={`link-video-creator-${post.id}`}>
-          <span className="block truncate text-sm font-bold">{post.author.name}</span><span className="block text-xs text-white/70">@{post.author.username}</span>
+          <span className="block truncate text-sm font-bold">{post.author.name}{post.author.verifiedBadge ? <BadgeCheck className="ml-1 inline h-3.5 w-3.5 text-[hsl(190_95%_66%)]" aria-label="Verified account" /> : null}</span><span className="block text-xs text-white/70">@{post.author.username}</span>
         </Link>
         {!following ? <Button size="sm" variant="outline" className="h-8 rounded-full border-white/50 bg-white/10 text-white hover:bg-white/20" onClick={() => { setFollowing(true); follow.mutate({ userId: post.author.id }); }} disabled={follow.isPending} data-testid={`button-follow-${post.author.id}`}>Follow</Button> : <button onClick={() => { setFollowing(false); follow.mutate({ userId: post.author.id }); }} disabled={follow.isPending} className="rounded-full border border-white/25 px-3 py-1 text-[11px] text-white/70 hover:bg-white/10" aria-label={`Unfollow ${post.author.name}`}>Following</button>}
       </div>
@@ -192,6 +195,7 @@ export function ReelCard({ post, active, onActive, index }: { post: Post; active
        <button onClick={() => { if (!stats.reacted) animateLike(); react.mutate({ postId: post.id, data: { reaction: "like" } }); }} disabled={react.isPending} className="flex flex-col items-center gap-1" aria-label={`${stats.reacted ? "Unlike clip" : "Like clip"}, ${stats.reactions} likes`} aria-pressed={stats.reacted} data-testid={`button-like-${post.id}`}><span className={cn("grid h-12 w-12 place-items-center rounded-full bg-black/35 backdrop-blur transition-transform", stats.reacted && "scale-105 text-[hsl(347_96%_61%)]")}><Heart className={cn("h-6 w-6", stats.reacted && "fill-current")} /></span><span className="text-xs font-semibold">{compactCount(stats.reactions)}</span></button>
       <button onClick={() => setCommentsOpen(true)} className="flex flex-col items-center gap-1" aria-label={`View ${stats.comments} comments`} data-testid={`button-open-comments-${post.id}`}><span className="grid h-12 w-12 place-items-center rounded-full bg-black/35 backdrop-blur"><MessageCircle className="h-6 w-6" /></span><span className="text-xs font-semibold">{stats.comments}</span></button>
       <button onClick={() => void share()} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 backdrop-blur" aria-label="Share creator link" data-testid={`button-share-${post.id}`}><Share2 className="h-5 w-5" /></button>
+       {isOwner ? <Link href={`/business/growth?targetType=post&targetId=${encodeURIComponent(post.id)}&name=${encodeURIComponent(post.content.slice(0, 70) || "Feed post")}`} className="grid h-11 w-11 place-items-center rounded-full bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/55" aria-label="Save a promotion draft for this Feed post" title="Promote"><Megaphone className="h-4 w-4" /></Link> : null}
       <span className="font-mono text-[10px] text-white/65">{index + 1}</span>
     </div>
     {commentsOpen ? <CommentsPanel post={post} count={stats.comments} onAdded={() => setStats((s) => ({ ...s, comments: s.comments + 1 }))} onClose={() => setCommentsOpen(false)} /> : null}

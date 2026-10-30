@@ -46,7 +46,7 @@ export default function CreatorScreen() {
       <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: colors.primaryForeground, fontSize: 16, fontWeight: "700" }}>{initials(user.name)}</Text>
       </View>
-      <View style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: colors.foreground, fontWeight: "800", fontSize: 18 }}>{user.name}</Text><Text style={{ color: colors.mutedForeground }}>@{user.username}</Text></View>
+      <View style={{ flex: 1 }}><View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Text numberOfLines={1} style={{ color: colors.foreground, fontWeight: "800", fontSize: 18 }}>{user.name}</Text>{user.verifiedBadge ? <Feather name="check-circle" size={15} color={colors.primary} /> : null}</View><Text style={{ color: colors.mutedForeground }}>@{user.username}</Text></View>
       {!isMe ? <Pressable accessibilityRole="button" accessibilityLabel={user.following ? "Unfollow creator" : "Follow creator"} onPress={() => follow.mutate({ userId: user.id })} disabled={follow.isPending}
         style={{ backgroundColor: user.following ? colors.secondary : colors.primary, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 9 }}><Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>{user.following ? "Following" : "Follow"}</Text></Pressable> : null}
     </View>
