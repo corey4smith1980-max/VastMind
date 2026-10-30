@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Clapperboard, MessagesSquare, Newspaper, RefreshCw, ShoppingBag } from "lucide-react";
+import { Clapperboard, MessagesSquare, Newspaper, RefreshCw, Search, ShoppingBag, X } from "lucide-react";
 import type { GetVideosFeed } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CardSkeleton, ErrorState } from "@/components/states";
 import { PageScroll } from "@/components/page-scroll";
 import { Composer } from "@/components/feed/composer";
@@ -20,7 +21,13 @@ const FEEDS: { id: GetVideosFeed; label: string }[] = [
 /** Community is a public, Facebook-style board; clips live only in Feed. */
 export default function HomeFeedPage() {
   const [feed, setFeed] = useState<GetVideosFeed>("latest");
-  const timeline = usePagedVideos({ surface: "community", feed });
+  const [search, setSearch] = useState("");
+  const [settledSearch, setSettledSearch] = useState("");
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSettledSearch(search.trim()), 300);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
+  const timeline = usePagedVideos({ surface: "community", feed, q: settledSearch });
   // Hide legacy group-scoped posts while the old data is being retired.
   const posts = timeline.items.filter((post) => !post.communityId);
 
@@ -30,7 +37,7 @@ export default function HomeFeedPage() {
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[.22em] text-primary">VastMind</p>
           <h1 className="font-display text-3xl font-bold tracking-tight">Community</h1>
-          <p className="mt-1 text-sm text-muted-foreground">See what people you follow are sharing.</p>
+           <p className="mt-1 text-sm text-muted-foreground">Public conversations, photos and polls. Clips stay in Feed.</p>
         </div>
         <Button type="button" variant="outline" size="icon" className="rounded-full" aria-label="Refresh posts" onClick={timeline.refresh} data-testid="button-refresh-home">
           <RefreshCw className="h-4 w-4" />
@@ -51,6 +58,21 @@ export default function HomeFeedPage() {
 
         <main className="mx-auto w-full max-w-[680px] min-w-0 space-y-4">
           <Composer onPublished={timeline.refresh} />
+          <div className="relative">
+            <Search aria-hidden="true" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search Community posts"
+              aria-label="Search Community posts"
+              type="search"
+              className="h-11 rounded-full bg-card pl-10 pr-10"
+              data-testid="input-search-community"
+            />
+            {search ? <button type="button" onClick={() => setSearch("")} aria-label="Clear Community search" className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button> : null}
+          </div>
           <div className="flex rounded-full border bg-card p-1" role="tablist" aria-label="Choose posts">
             {FEEDS.map((option) => (
               <button key={option.id} type="button" role="tab" aria-selected={feed === option.id} onClick={() => setFeed(option.id)}
@@ -64,9 +86,9 @@ export default function HomeFeedPage() {
           {!timeline.isLoading && !timeline.isError && posts.length === 0 ? (
             <section className="rounded-2xl border bg-card px-6 py-12 text-center">
               <Newspaper className="mx-auto h-8 w-8 text-primary" />
-              <h2 className="mt-4 font-display text-xl font-semibold">Your feed starts here</h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">Share a post, photo, or poll, or follow people to see their updates here.</p>
-              <Button asChild variant="outline" className="mt-5 rounded-full"><Link href="/videos">Explore the Feed</Link></Button>
+              <h2 className="mt-4 font-display text-xl font-semibold">{settledSearch ? "No matching posts" : "Your Community starts here"}</h2>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">{settledSearch ? `No Community posts match “${settledSearch}”. Try another search.` : "Share a post, photo, or poll to start a conversation."}</p>
+              {settledSearch ? <Button type="button" variant="outline" className="mt-5 rounded-full" onClick={() => setSearch("")}>Clear search</Button> : <Button asChild variant="outline" className="mt-5 rounded-full"><Link href="/videos">Explore Feed clips</Link></Button>}
             </section>
           ) : null}
           <div className="space-y-4">{posts.map((post, index) => <PostCard key={post.id} post={post} index={index} />)}</div>
