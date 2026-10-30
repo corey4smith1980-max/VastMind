@@ -34,7 +34,8 @@ const NAV = [
 ];
 const NAV_SECTIONS = [
   { label: "Your space", hrefs: ["/chats", "/videos", "/statuses"] },
-  { label: "Discover", hrefs: ["/communities", "/channels"] },
+  { label: "Discover", hrefs: ["/communities"] },
+  { label: "Channels", hrefs: ["/channels"] },
   { label: "Business", hrefs: ["/shop", "/business"] },
   { label: "Account", hrefs: ["/notifications", "/account-security", "/settings"] },
 ] as const;
