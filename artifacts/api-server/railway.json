@@ -1,0 +1,28 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "artifacts/api-server/Dockerfile",
+    "watchPatterns": [
+      "artifacts/api-server/**",
+      "lib/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.json",
+      "tsconfig.base.json",
+      ".npmrc",
+      ".dockerignore"
+    ]
+  },
+  "deploy": {
+    "preDeployCommand": "pnpm --filter @workspace/db run migrate",
+    "startCommand": "pnpm --filter @workspace/api-server run start",
+    "healthcheckPath": "/api/healthz",
+    "healthcheckTimeout": 120,
+    "preDeployTimeoutSeconds": 180,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5,
+    "numReplicas": 1
+  }
+}

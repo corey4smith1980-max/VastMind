@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p ${PORT:-22088}",
     "build": "next build",
-    "start": "next start -H 0.0.0.0 -p ${PORT:-22088}",
+    "start": "next start -H ${LISTEN_HOST:-::} -p ${PORT:-22088}",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "serve": "next start -H 0.0.0.0 -p ${PORT:-22088}"
+    "serve": "next start -H ${LISTEN_HOST:-::} -p ${PORT:-22088}"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",

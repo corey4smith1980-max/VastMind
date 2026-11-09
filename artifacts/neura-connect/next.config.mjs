@@ -14,10 +14,17 @@ const nextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost", "*.replit.dev", "*.repl.co", "*.replit.app", "*.pike.replit.dev", "*.picard.replit.dev", "*.kirk.replit.dev", "*.janeway.replit.dev", "*.riker.replit.dev", "*.worf.replit.dev", "*.spock.replit.dev"],
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
+    // Publishable key only. Never read CLERK_SECRET_KEY into the client bundle.
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-      process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || "",
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+      process.env.CLERK_PUBLISHABLE_KEY ||
+      process.env.VITE_CLERK_PUBLISHABLE_KEY ||
+      "",
     NEXT_PUBLIC_CLERK_PROXY_URL:
-      process.env.VITE_CLERK_PROXY_URL || process.env.CLERK_PROXY_URL || "",
+      process.env.NEXT_PUBLIC_CLERK_PROXY_URL ||
+      process.env.CLERK_PROXY_URL ||
+      process.env.VITE_CLERK_PROXY_URL ||
+      "",
   },
   transpilePackages: ["@workspace/api-client-react"],
 };

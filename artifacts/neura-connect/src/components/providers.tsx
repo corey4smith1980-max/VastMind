@@ -12,12 +12,10 @@ import { RealtimeProvider } from "@/lib/realtime";
 import { basePath, stripBase } from "@/lib/base";
 import { VastMindAuthProvider, useAuth } from "@/lib/vastmind-auth";
 
-// REQUIRED — resolves the key from window.location.hostname so the same build
-// serves multiple Clerk custom domains.
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
+// Production sets NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY at build time.
+// Host lookup remains only for Replit domains that embed a managed key.
+const configuredClerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() ?? "";
+const clerkPubKey = configuredClerkKey || publishableKeyFromHost(window.location.hostname, "") || "";
 
 // REQUIRED — empty in dev (Clerk hits dev FAPI directly), auto-set in prod.
 const clerkProxyUrl = process.env.NEXT_PUBLIC_CLERK_PROXY_URL;

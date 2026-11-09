@@ -1,9 +1,10 @@
 import type { Server as HttpServer, IncomingMessage } from "node:http";
 import { Server } from "socket.io";
 import { clerkClient } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { z } from "zod";
 import { getClerkProxyHost } from "../middlewares/clerkProxyMiddleware";
+import { clerkPublishableKey } from "./clerk-key";
+import { socketCorsOrigin, socketOriginAllowed } from "./cors-policy";
 import { query, chatAllowed, blocked, canDiscover, onlineUsers, provision } from "./social";
 import { logger } from "./logger";
 import { attachCalls } from "./calls";
@@ -30,7 +31,8 @@ async function authenticate(req:IncomingMessage, bearer?:string) {
   }
   try {
     const state=await clerkClient.authenticateRequest(new Request(`https://${host}${req.url??"/api/socket.io"}`,{headers}),{
-      publishableKey:publishableKeyFromHost(host,process.env.CLERK_PUBLISHABLE_KEY),
+      publishableKey:clerkPublishableKey(host),
+      secretKey:process.env.CLERK_SECRET_KEY,
       acceptsToken:"session_token",
     });
     const auth=state.toAuth();
@@ -53,14 +55,13 @@ async function presence(userId:string,online:boolean) {
   for(const p of peers)if(await canDiscover(p.user_id,user))io?.to(`user:${p.user_id}`).emit("presence",{userId,online});
 }
 export function attachRealtime(server:HttpServer) {
-  const expoOrigin=process.env.REPLIT_EXPO_DEV_DOMAIN ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}` : undefined;
   io=new Server(server,{
     path:"/api/socket.io",maxHttpBufferSize:65536,
-    cors:{credentials:true,origin:(origin,callback)=>callback(null,!!origin && origin===expoOrigin)},
+    cors:{credentials:true,origin:socketCorsOrigin},
     allowRequest:(req,callback)=>{
-      const origin=req.headers.origin;
+      const origin=typeof req.headers.origin==="string"?req.headers.origin:undefined;
       const host=getClerkProxyHost(req);
-      try{callback(null,!origin || origin===expoOrigin || new URL(origin).host===host);}catch{callback(null,false);}
+      callback(null,socketOriginAllowed(origin,host));
     },
   });
   io.use(async(socket,next)=>{

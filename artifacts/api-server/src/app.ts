@@ -1,15 +1,16 @@
 import express, { type Express } from "express";
-import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import healthRouter from "./routes/health";
 import { logger } from "./lib/logger";
 import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
 import { CLERK_PROXY_PATH, clerkProxyMiddleware, getClerkProxyHost } from "./middlewares/clerkProxyMiddleware";
 import { HttpError } from "./lib/social";
 import type { ErrorRequestHandler } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { vastMindAuth } from "./lib/vastmind-auth";
+import { clerkPublishableKey } from "./lib/clerk-key";
+import { configuredCorsOrigins, createCorsMiddleware } from "./lib/cors-policy";
 
 const app: Express = express();
 
@@ -37,19 +38,12 @@ app.use(
     },
   }),
 );
+// Probes stay in front of auth. Deployment checks must not depend on Clerk.
+configuredCorsOrigins();
+app.use("/api", healthRouter);
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-// Native requests have no Origin. Expo's browser preview is on a separate,
-// workspace-owned hostname, so allow that exact origin rather than a wildcard.
-const expoOrigin = process.env.REPLIT_EXPO_DEV_DOMAIN
-  ? `https://${process.env.REPLIT_EXPO_DEV_DOMAIN}`
-  : undefined;
-app.use(cors({
-  credentials: true,
-  origin: (origin, callback) => callback(null, !!origin && origin === expoOrigin),
-  allowedHeaders: ["Authorization", "Content-Type", "X-VastMind-Client", "X-VastMind-Device-Trust"],
-  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  maxAge: 600,
-}));
+// Credentialed browsers only. Listed origins are reflected; never "*".
+app.use(createCorsMiddleware());
 // Better Auth consumes the raw request stream for passkey/WebAuthn endpoints.
 // The raw email/password endpoint is intentionally not exposed: usernames are
 // resolved server-side and password sign-in is checked against device trust.
@@ -62,10 +56,8 @@ app.use(express.json({ limit: "32kb" }));
 app.use(express.urlencoded({ extended: false, limit: "32kb" }));
 app.use(
   clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
+    publishableKey: clerkPublishableKey(getClerkProxyHost(req)),
+    secretKey: process.env.CLERK_SECRET_KEY,
   })),
 );
 

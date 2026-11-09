@@ -1,7 +1,7 @@
-import { ObjectStorageService } from "./objectStorage";
+import { createStorage } from "./objectStorage";
 import { query, assert, type Query } from "./social";
 
-export const storage = new ObjectStorageService();
+export const storage = createStorage();
 export const MEDIA_LIMIT = 25 * 1024 * 1024;
 export const mediaTypes = new Set([
   "image/jpeg", "image/png", "image/webp", "image/gif",

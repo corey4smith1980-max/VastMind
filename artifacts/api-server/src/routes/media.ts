@@ -46,11 +46,11 @@ router.post("/storage/uploads/request-url", async (req, res): Promise<void> => {
   if (body.purpose === "chat") { assert(body.chatId, 400, "Conversation required"); await chatAllowed(body.chatId!, userId); }
   const [pending] = await query("SELECT count(*)::int AS n FROM media_uploads WHERE owner_id=$1 AND attached=false AND created_at>now()-interval '1 day'", [userId]);
   assert(pending.n < 30, 429, "Too many unfinished uploads. Try again later");
-  const uploadUrl = await storage.getObjectEntityUploadURL();
+  const reserved = await storage.reserveUpload({ contentType: body.contentType });
   const id = randomUUID();
   await query(`INSERT INTO media_uploads (id,owner_id,object_path,name,content_type,size,purpose,chat_id)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [id,userId,storage.normalizeObjectEntityPath(uploadUrl),body.name,body.contentType,body.size,body.purpose,body.purpose==="chat"?body.chatId:null]);
-  res.json(RequestUploadUrlResponse.parse({id,uploadUrl}));
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [id,userId,reserved.objectPath,body.name,body.contentType,body.size,body.purpose,body.purpose==="chat"?body.chatId:null]);
+  res.json(RequestUploadUrlResponse.parse({id,uploadUrl:reserved.uploadUrl}));
 });
 
 router.post("/storage/uploads/:mediaId/complete", async (req, res): Promise<void> => {

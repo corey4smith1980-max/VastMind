@@ -12,6 +12,7 @@ VastMind (formerly I AM / NeuraCoreConnect) is Gather's cross-platform companion
 - `pnpm --filter @workspace/neura-connect run build` — production web build
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate shared API types and hooks from OpenAPI
 - `pnpm --filter @workspace/db run push` — push schema to the development PostgreSQL database only
+- `pnpm --filter @workspace/db run migrate` — apply committed SQL migrations on a fresh or production database
 
 ## Product
 
@@ -43,8 +44,8 @@ VastMind (formerly I AM / NeuraCoreConnect) is Gather's cross-platform companion
 
 ## Configuration and security
 
-- Clerk uses Replit-managed keys from workspace Secrets. Never place secret keys in browser/mobile code or source control; only the publishable key is client-side.
-- Social data is stored in the Replit PostgreSQL database. No Supabase project or media-storage credentials are required for text features.
+- Clerk uses `CLERK_PUBLISHABLE_KEY` in client bundles and `CLERK_SECRET_KEY` only on the API. Replit host-key lookup is a fallback when the publishable key is unset. Never place secret keys in browser/mobile code or source control.
+- Social data is stored in PostgreSQL (`DATABASE_URL`). Production media uses any S3-compatible bucket; Replit App Storage remains available when `STORAGE_BACKEND=replit`. See `DEPLOY.md` for Railway.
 - Keep React and React Query as single, compatible workspace versions across web, native, and shared generated-hook packages.
 - Preserve the historical mobile AsyncStorage data; server state is fetched from the shared API.
 - Do not enable unrestricted CORS or log incoming request URLs: auth handshakes can include sensitive query parameters.

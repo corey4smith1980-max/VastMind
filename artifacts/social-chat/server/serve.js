@@ -167,6 +167,16 @@ function createAppServer({ staticRoot = STATIC_ROOT, templatePath = TEMPLATE_PAT
       const origin = requestOrigin(req);
       let pathname = requestPath(req);
       if (req.method !== 'GET' && req.method !== 'HEAD') throw httpError(405);
+      if (pathname === '/healthz') {
+        const body = JSON.stringify({ status: 'ok' });
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'content-length': Buffer.byteLength(body),
+          'cache-control': 'no-store',
+        });
+        res.end(req.method === 'HEAD' ? undefined : body);
+        return;
+      }
       if (mount) {
         if (pathname !== mount && !pathname.startsWith(`${mount}/`)) throw httpError(404);
         pathname = pathname.slice(mount.length) || '/';
@@ -189,7 +199,7 @@ function createAppServer({ staticRoot = STATIC_ROOT, templatePath = TEMPLATE_PAT
 if (require.main === module) {
   const port = parseInt(process.env.PORT || '3000', 10);
   const server = createAppServer();
-  server.listen(port, '0.0.0.0', () => {
+  server.listen(port, process.env.LISTEN_HOST || '::', () => {
     process.stdout.write(`Serving static Expo build on port ${port}\n`);
   });
   for (const signal of ['SIGINT', 'SIGTERM']) {

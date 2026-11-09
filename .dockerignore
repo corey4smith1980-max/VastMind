@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.expo
+**/.expo-shared
+**/static-build
+**/*.tsbuildinfo
+.cache
+.local
+coverage
+tmp
+*.log
+.DS_Store

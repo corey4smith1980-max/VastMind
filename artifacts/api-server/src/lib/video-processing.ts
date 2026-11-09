@@ -169,8 +169,9 @@ export async function renderClip(user: string, input: RenderSettings & { mediaId
     const result = await encodeClip(source, output, input, input.audioMediaId ? music : undefined);
     const size = (await stat(output)).size;
     assert(size > 0 && size <= MEDIA_LIMIT, 400, "Edited video is too large. Try a shorter clip");
-    const uploadUrl = await storage.getObjectEntityUploadURL();
-    const objectPath = storage.normalizeObjectEntityPath(uploadUrl);
+    const reserved = await storage.reserveUpload({ contentType: "video/mp4" });
+    const uploadUrl = reserved.uploadUrl;
+    const objectPath = reserved.objectPath;
     const mediaId = uuid();
     await query(`INSERT INTO media_uploads(id,owner_id,object_path,name,content_type,size,purpose)
       VALUES($1,$2,$3,'VastMind clip.mp4','video/mp4',$4,'post')`, [mediaId, user, objectPath, String(size)]);

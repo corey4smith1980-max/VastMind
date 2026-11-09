@@ -1,0 +1,14 @@
+{
+  "name": "@workspace/gateway",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node --check server.js",
+    "start": "node server.js",
+    "typecheck": "node --check server.js",
+    "test": "node --test server.test.js"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
