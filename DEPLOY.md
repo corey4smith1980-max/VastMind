@@ -31,7 +31,7 @@ Suggested names are what the variable references below use. If you rename a serv
 4. Deploy `vastmind-api` first. Its pre-deploy command applies SQL migrations before the new process receives traffic. The command is `pnpm --filter @workspace/db run migrate`.
 5. Generate a Railway domain on `vastmind-gateway` (or attach a custom domain). Use that origin, including `https://`, as `VASTMIND_AUTH_URL` and `PUBLIC_APP_ORIGIN`.
 6. Deploy `vastmind-web`, `vastmind-mobile`, and `vastmind-gateway`. Web and mobile read public keys and the public origin at **build** time, so changing those variables requires a new deploy.
-7. Add the bucket CORS rule in the last section so browsers can PUT uploads directly.
+7. The API writes the bucket CORS rule at startup. Browser uploads PUT the file directly to the bucket, so that rule is required. A failed update is only a warning.
 
 `pnpm --filter @workspace/db run push` is for a local development database only. Production uses the committed files in `lib/db/drizzle`. After a schema change, generate a new migration locally and commit it:
 
@@ -138,7 +138,9 @@ Health check: `GET /healthz`. This service serves the Expo landing page and nati
 
 ## Bucket CORS
 
-Browsers PUT media straight to the bucket with the presigned URL. The bucket stays private; the API streams authorized reads. Allow `PUT` from the public origin only:
+Browsers PUT media straight to the presigned bucket URL, with `Content-Type` signed into that URL. The API then checks the bytes and streams authorized reads. On startup the API calls `PutBucketCors` with its S3 credentials so the connector does not have to. Allowed origins are `VASTMIND_AUTH_URL` plus `CORS_ORIGINS`. Methods are `PUT` and `HEAD`, the allowed header is `content-type`, and the max age is 600 seconds. The call is skipped when that rule is already present. If it fails, the API logs a warning and keeps serving.
+
+The same rule can be applied by hand when the startup warning says the update did not stick:
 
 ```bash
 aws s3api put-bucket-cors --endpoint-url "$S3_ENDPOINT" --bucket "$S3_BUCKET" --cors-configuration '{

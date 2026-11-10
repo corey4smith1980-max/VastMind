@@ -3,6 +3,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
+const { resolveMetroOrigin } = require('../server/metro-origin');
 
 let metroProcess = null;
 
@@ -23,8 +24,12 @@ function findWorkspaceRoot(startDir) {
 
 const workspaceRoot = findWorkspaceRoot(projectRoot);
 const basePath = (process.env.BASE_PATH || '/').replace(/\/+$/, '');
-const metroPort = Number(process.env.EXPO_METRO_PORT || process.env.PORT || 20437);
-const metroOrigin = `http://127.0.0.1:${metroPort}`;
+// Do not reuse Railway's PORT. That is the service port, not the packager.
+const configuredMetroPort = Number(process.env.EXPO_METRO_PORT);
+const metroPort = Number.isInteger(configuredMetroPort) && configuredMetroPort > 0 && configuredMetroPort < 65536
+  ? configuredMetroPort
+  : 20437;
+let metroOrigin = '';
 
 function exitWithError(message) {
   console.error(message);
@@ -120,24 +125,14 @@ function clearMetroCache() {
   console.log('Cache cleared');
 }
 
-async function checkMetroHealth() {
-  try {
-    const response = await fetch(`${metroOrigin}/status`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    return response.ok && (await response.text()).trim() === 'packager-status:running';
-  } catch {
-    return false;
-  }
-}
-
 function getExpoPublicReplId() {
   return process.env.REPL_ID || process.env.EXPO_PUBLIC_REPL_ID;
 }
 
 async function startMetro(expoPublicDomain, expoPublicReplId) {
-  const isRunning = await checkMetroHealth();
-  if (isRunning) {
+  const already = await resolveMetroOrigin(metroPort);
+  if (already) {
+    metroOrigin = already;
     console.log('Metro already running');
     return;
   }
@@ -146,6 +141,7 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
   const env = {
     ...process.env,
+    CI: '1',
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
     EXPO_PUBLIC_REPL_ID: expoPublicReplId || '',
     EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
@@ -159,7 +155,7 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
 
   metroProcess = spawn(
     'pnpm',
-    ['exec', 'expo', 'start', '--no-dev', '--minify', '--localhost', '--port', String(metroPort), '--non-interactive'],
+    ['exec', 'expo', 'start', '--no-dev', '--minify', '--localhost', '--port', String(metroPort)],
     {
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
@@ -184,8 +180,9 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   for (let i = 0; i < 60; i++) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const healthy = await checkMetroHealth();
-    if (healthy) {
+    const origin = await resolveMetroOrigin(metroPort);
+    if (origin) {
+      metroOrigin = origin;
       console.log('Metro ready');
       return;
     }
