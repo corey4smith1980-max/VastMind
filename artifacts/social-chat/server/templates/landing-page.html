@@ -74,20 +74,21 @@
         gap: 12px;
         margin-bottom: 28px;
       }
-      .brand img {
-        width: 84px;
-        height: 84px;
+      .brand > img {
+        width: 104px;
+        height: auto;
       }
-      .wordmark {
+      .brand .wordmark-img {
+        display: block;
+        width: min(340px, 78vw);
+        height: auto;
+        margin: 0 auto;
+      }
+      .brand-glow {
+        filter: drop-shadow(0 0 12px rgba(0, 198, 255, 0.35));
+      }
+      h1 {
         margin: 0;
-        font-size: 40px;
-        font-weight: 800;
-        letter-spacing: -0.045em;
-        line-height: 1;
-        background: linear-gradient(100deg, #0094c8 0%, #2457ff 48%, #8a32ee 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
       }
       .tagline {
         margin: 8px 0 0;
@@ -327,11 +328,6 @@
         .tagline {
           color: rgba(245, 248, 255, 0.92);
         }
-        .wordmark {
-          background: linear-gradient(100deg, #5cefff 0%, #7aa2ff 42%, #e47bff 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-        }
         h1 {
           color: #f5f8ff;
         }
@@ -403,9 +399,9 @@
 
       <div class="content" id="content">
         <div class="brand">
-          <img src="ASSET_PREFIX_PLACEHOLDER/brand-mark.svg" alt="" width="84" height="84" />
+          <img class="brand-glow" src="ASSET_PREFIX_PLACEHOLDER/icon@2x.png" alt="" width="92" height="68" />
           <div>
-            <h1 class="wordmark">VastMind</h1>
+            <h1><img class="wordmark-img" src="ASSET_PREFIX_PLACEHOLDER/wordmark@2x.png" alt="VastMind" /></h1>
             <p class="tagline">ALL YOUR SOCIALS • ONE MIND</p>
           </div>
         </div>

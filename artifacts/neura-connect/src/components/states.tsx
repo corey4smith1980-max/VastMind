@@ -15,7 +15,7 @@ export function BootScreen() {
         stacked
         tone="onDark"
         markClassName="h-32 w-32 sm:h-40 sm:w-40"
-        wordmarkClassName="text-5xl sm:text-6xl"
+        wordmarkClassName="h-14 w-auto sm:h-16"
         taglineClassName="text-sm tracking-[0.22em] text-white sm:text-base"
       />
       <p className="sr-only" role="status">Loading VastMind. All your socials, one mind.</p>

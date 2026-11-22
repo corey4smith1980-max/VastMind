@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav aria-label="Main" className="hidden w-[248px] shrink-0 flex-col border-r bg-sidebar px-3 py-5 text-sidebar-foreground md:flex">
           <Link href="/home" aria-label="VastMind community feed" className="mb-6 flex items-center gap-3 rounded-2xl px-3 py-2">
             <BrandMark className="h-9 w-9 shrink-0" />
-            <Wordmark tone="onDark" wordmarkClassName="text-xl" />
+            <Wordmark tone="onDark" wordmarkClassName="h-7" />
           </Link>
           <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-4">
             <section aria-label="Daily use">

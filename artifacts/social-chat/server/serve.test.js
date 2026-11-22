@@ -49,19 +49,21 @@ describe('production Expo request handling', () => {
   }
 
   it('serves the VastMind install icon and share image', async () => {
-    const icon = await request('/mobile/favicon.svg');
+    const icon = await request('/mobile/icon@2x.png');
     assert.equal(icon.status, 200);
-    assert.match(icon.headers['content-type'], /image\/svg\+xml/);
-    assert.match(icon.text, /#00C6FF/);
-    assert.doesNotMatch(icon.text, /FF3C00/i);
+    assert.match(icon.headers['content-type'], /image\/png/);
+    const word = await request('/mobile/wordmark@2x.png');
+    assert.equal(word.status, 200);
+    assert.match(word.headers['content-type'], /image\/png/);
     const share = await request('/mobile/og.png');
     assert.equal(share.status, 200);
     assert.match(share.headers['content-type'], /image\/png/);
     const page = await fs.readFile(path.resolve(__dirname, 'templates', 'landing-page.html'), 'utf8');
     assert.doesNotMatch(page, /FF3C00/i);
+    assert.doesNotMatch(page, /brand-mark\.svg/);
     assert.match(page, /og:image/);
-    assert.match(page, /VastMind/);
-    assert.match(page, /favicon\.svg/);
+    assert.match(page, /wordmark@2x\.png/);
+    assert.match(page, /ALL YOUR SOCIALS/);
   });
   it('serves the landing page without caching or content sniffing', async () => {
     const res = await request();

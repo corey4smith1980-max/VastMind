@@ -22,14 +22,18 @@ export function VastMindMark({ size = 30 }: { size?: number }) {
 export function AppBrand({ size = 30, fontSize = 19, tagline = false }: { size?: number; fontSize?: number; tagline?: boolean }) {
   const scheme = useColorScheme();
   const onDark = scheme === 'dark';
+  const wordHeight = fontSize;
   return (
     <View style={styles.brandRow} accessibilityRole="header" accessibilityLabel="VastMind. All your socials, one mind.">
       <VastMindMark size={size} />
       <View>
-        <Text style={{ fontFamily: 'Outfit_800ExtraBold', fontSize, letterSpacing: -0.8 }} accessibilityLabel="VastMind">
-          <Text style={{ color: onDark ? '#5CEFFF' : '#0096C8' }}>Vast</Text>
-          <Text style={{ color: onDark ? '#E47BFF' : '#7A32EE' }}>Mind</Text>
-        </Text>
+        <Image
+          source={require('../assets/images/vastmind-wordmark.png')}
+          style={{ width: wordHeight * 5.92, height: wordHeight }}
+          resizeMode="contain"
+          accessibilityLabel="VastMind"
+          accessibilityIgnoresInvertColors
+        />
         {tagline ? (
           <Text style={{ marginTop: 4, fontFamily: 'Outfit_700Bold', fontSize: Math.max(11, fontSize * 0.34), letterSpacing: 1.3, color: onDark ? '#F5F8FF' : '#1B2744' }}>
             ALL YOUR SOCIALS • ONE MIND

@@ -19,7 +19,11 @@ const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
 const BRAND_ROOT = path.resolve(__dirname, 'brand');
 const BRAND_FILES = {
   '/favicon.svg': 'image/svg+xml',
-  '/brand-mark.svg': 'image/svg+xml',
+  '/favicon-32.png': 'image/png',
+  '/icon.png': 'image/png',
+  '/icon@2x.png': 'image/png',
+  '/wordmark.png': 'image/png',
+  '/wordmark@2x.png': 'image/png',
   '/apple-touch-icon.png': 'image/png',
   '/og.png': 'image/png',
   '/Outfit-Bold.ttf': 'font/ttf',

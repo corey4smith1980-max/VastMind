@@ -196,7 +196,7 @@ export function Landing() {
         <Button asChild size="lg" className="mt-10 h-12 rounded-full px-8 text-base"><Link href="/sign-up">Create your VastMind ID</Link></Button>
       </section>
       <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-sm text-muted-foreground sm:flex-row">
-        <span className="flex items-center gap-2"><BrandMark className="h-7 w-7" /><Wordmark wordmarkClassName="text-lg" /></span>
+        <span className="flex items-center gap-2"><BrandMark className="h-7 w-7" /><Wordmark wordmarkClassName="h-6" /></span>
         <span>Made for real friends, real neighbourhoods and real shops.</span>
       </footer>
     </div>
