@@ -64,7 +64,7 @@ export const vastMindAuth = betterAuth({
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
-    minPasswordLength: 12,
+    minPasswordLength: 6,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
   },
@@ -181,6 +181,11 @@ export const vastMindAuth = betterAuth({
                VALUES ($1,$2,$3,false) ON CONFLICT (id) DO NOTHING`,
               [intent.user_id, intent.display_name, `${intent.user_id}@users.vastmind.invalid`],
             );
+            const { rows: [taken] } = await client.query<{ id: string }>(
+              "SELECT id FROM users WHERE lower(username)=lower($1) AND id<>$2",
+              [intent.username, intent.user_id],
+            );
+            if (taken) throw new Error("That VastMind ID is already in use.");
             await client.query(
               `INSERT INTO users (id, name, username, email)
                VALUES ($1, $2, $3, NULL)

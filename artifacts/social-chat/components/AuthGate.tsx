@@ -353,8 +353,7 @@ function AuthForm({
     contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: insets.top + 32, paddingBottom: insets.bottom + 32, gap: 16 }}
     style={{ backgroundColor: colors.background }}
   >
-    <AppBrand size={44} fontSize={29} />
-    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>All your socials · One mind</Text>
+    <AppBrand size={56} fontSize={32} tagline />
     <Text style={{ color: colors.foreground, fontSize: 25, fontWeight: '700' }}>Sign in to VastMind</Text>
     <Text style={{ color: colors.mutedForeground, lineHeight: 22 }}>Use your password on a trusted device. To add another device while this account is active elsewhere, scan its QR from a signed-in device and verify your password here.</Text>
     {trustedDevice ? <>

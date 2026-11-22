@@ -11,9 +11,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth, vastMindAuthClient, identityCall, identityRequest } from "@/lib/vastmind-auth";
 import { basePath } from "@/lib/base";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { DeviceLinkLogin } from "@/components/vastmind-access/device-link";
 
 export const USERNAME_RE = /^(?!member_[a-f0-9]{24}$)[a-zA-Z0-9_]{3,32}$/i;
+type UsernameAvailability = { username: string; valid: boolean; available: boolean; suggestions: string[] };
 const errText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong. Try again.");
 const goChats = () => window.location.assign(`${basePath}/chats`);
 
@@ -173,7 +175,7 @@ export function PasskeyPasswordResetForm() {
 
   async function resetPassword(event: React.FormEvent) {
     event.preventDefault();
-    if (newPassword.length < 12 || newPassword !== confirmPassword) return;
+    if (newPassword.length < MIN_PASSWORD_LENGTH || newPassword !== confirmPassword) return;
     setBusy(true);
     setMessage("");
     try {
@@ -190,10 +192,11 @@ export function PasskeyPasswordResetForm() {
 
   return (
     <form onSubmit={resetPassword} className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-      <div><p className="font-semibold">Reset your password</p><p className="mt-1 text-xs text-muted-foreground">Your passkey just verified this session. At least 12 characters; other active sessions will be signed out.</p></div>
-      <div className="space-y-1.5"><Label htmlFor="passkey-reset-new-password">New password</Label><Input id="passkey-reset-new-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></div>
-      <div className="space-y-1.5"><Label htmlFor="passkey-reset-confirm-password">Confirm new password</Label><Input id="passkey-reset-confirm-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
-      <Button type="submit" disabled={busy || newPassword.length < 12 || newPassword !== confirmPassword}>{busy ? "Resetting…" : "Reset password with passkey"}</Button>
+      <div><p className="font-semibold">Reset your password</p><p className="mt-1 text-xs text-muted-foreground">Your passkey just verified this session. At least 6 characters; other active sessions will be signed out.</p></div>
+      <div className="space-y-1.5"><Label htmlFor="passkey-reset-new-password">New password</Label><Input id="passkey-reset-new-password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></div>
+      <div className="space-y-1.5"><Label htmlFor="passkey-reset-confirm-password">Confirm new password</Label><Input id="passkey-reset-confirm-password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
+      {newPassword.length > 0 && newPassword.length < MIN_PASSWORD_LENGTH ? <p className="text-xs text-destructive">Use at least 6 characters.</p> : null}
+      <Button type="submit" disabled={busy || newPassword.length < MIN_PASSWORD_LENGTH || newPassword !== confirmPassword}>{busy ? "Resetting…" : "Reset password with passkey"}</Button>
       {message && <p role={message.startsWith("Password reset") ? "status" : "alert"} className="text-sm text-muted-foreground">{message}</p>}
     </form>
   );
@@ -277,11 +280,51 @@ export function SignupFlow({
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<UsernameAvailability | { error: string } | null>(null);
+  const [checkingName, setCheckingName] = useState(false);
 
   const u = username ?? prof?.username ?? "";
   const n = displayName ?? prof?.name ?? "";
   const words = useMemo(() => phrase.split(" "), [phrase]);
-  const detailsValid = USERNAME_RE.test(u) && n.trim().length > 0 && password.length >= 12 && password === passwordConfirm;
+  const normalizedUsername = u.trim().toLowerCase();
+  const checked = availability && !("error" in availability) && availability.username === normalizedUsername ? availability : null;
+  const usernameReady = checked?.available === true;
+  const detailsValid = usernameReady && n.trim().length > 0 && password.length >= MIN_PASSWORD_LENGTH && password.length <= MAX_PASSWORD_LENGTH && password === passwordConfirm;
+  const passwordShort = password.length > 0 && password.length < MIN_PASSWORD_LENGTH;
+
+  useEffect(() => {
+    const handle = u.trim();
+    setAvailability(null);
+    if (!handle) {
+      setCheckingName(false);
+      return;
+    }
+    const controller = new AbortController();
+    setCheckingName(true);
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams({ u: handle });
+      if (n.trim()) params.set("name", n.trim());
+      fetch(`/api/identity/username-availability?${params}`, { signal: controller.signal, credentials: "same-origin" })
+        .then(async (response) => {
+          const data = await response.json().catch(() => null) as UsernameAvailability & { error?: string } | null;
+          if (!response.ok || !data || typeof data.available !== "boolean") {
+            throw new Error(data?.error ?? "Couldn't check that username.");
+          }
+          setAvailability(data);
+        })
+        .catch((cause: unknown) => {
+          if (cause instanceof DOMException && cause.name === "AbortError") return;
+          setAvailability({ error: cause instanceof Error ? cause.message : "Couldn't check that username." });
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setCheckingName(false);
+        });
+    }, 400);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [u, n]);
   const wordsOk = checks.length > 0 && checks.every((i) => (answers[i] ?? "").trim().toLowerCase() === words[i]);
 
   if (!isLoaded) return <AccessCard eyebrow="Create" title="One moment."><div className="h-24 animate-pulse rounded-lg bg-muted" /></AccessCard>;
@@ -337,12 +380,38 @@ export function SignupFlow({
             <Input id="su-username" value={u} onChange={(e) => setUsername(e.target.value.trim())} placeholder="amara_o" autoComplete="username" aria-describedby="su-username-hint" className="border-0 shadow-none focus-visible:ring-0" data-testid="input-username" />
             <span className="pr-3 text-sm text-muted-foreground">@vastmind.com</span>
           </div>
-          <p id="su-username-hint" className={`text-xs ${u && !USERNAME_RE.test(u) ? "text-destructive" : "text-muted-foreground"}`}>3 to 32 letters, numbers or underscores.</p>
+          <p id="su-username-hint" data-testid="text-username-availability" role="status" className={`text-xs ${checked && !checked.available ? "text-destructive" : checked?.available ? "text-emerald-600" : "text-muted-foreground"}`}>
+            {!u.trim() ? "3 to 32 letters, numbers or underscores."
+              : checkingName && !checked ? "Checking availability…"
+                : availability && "error" in availability ? availability.error
+                  : checked?.available ? `${checked.username} is available`
+                    : checked && !checked.valid ? "Use 3 to 32 letters, numbers, or underscores."
+                      : checked ? `${checked.username} is not available`
+                        : "3 to 32 letters, numbers or underscores."}
+          </p>
+          {checked && !checked.available && checked.suggestions.length > 0 ? (
+            <div className="flex flex-wrap gap-2 pt-1" data-testid="username-suggestions">
+              <p className="w-full text-xs text-muted-foreground">Available names</p>
+              {checked.suggestions.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setUsername(name)}
+                  className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-foreground hover:border-primary hover:text-primary"
+                  data-testid={`button-username-suggestion-${name}`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="su-password">Password</Label>
-          <Input id="su-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={password} onChange={(e) => setPassword(e.target.value)} />
-          <p className="text-xs text-muted-foreground">Use at least 12 characters. Password sign-in works only on devices you have added.</p>
+          <Input id="su-password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} value={password} onChange={(e) => setPassword(e.target.value)} aria-describedby="su-password-hint" aria-invalid={passwordShort} />
+          <p id="su-password-hint" data-testid="text-password-hint" className={`text-xs ${passwordShort ? "text-destructive" : "text-muted-foreground"}`}>
+            {passwordShort ? "Use at least 6 characters." : "At least 6 characters. Password sign-in works only on devices you have added."}
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="su-password-confirm">Confirm password</Label>

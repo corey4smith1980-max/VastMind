@@ -5,18 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { errMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { basePath } from "@/lib/base";
+import { BrandLockup } from "@/components/brand";
 
 // ---------- Boot: shown while the client-only providers load ----------
 export function BootScreen() {
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030611]">
-      <img
-        src={`${basePath}/vastmind-splash.png`}
-        alt="VastMind — All your socials. One mind. Chat, connect, manage, grow."
-        className="block h-auto max-h-[90dvh] w-[min(92vw,90dvh,900px)] select-none object-contain"
-        draggable={false}
-        fetchPriority="high"
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-[#030611] px-6">
+      <BrandLockup
+        stacked
+        tone="onDark"
+        markClassName="h-32 w-32 sm:h-40 sm:w-40"
+        wordmarkClassName="text-5xl sm:text-6xl"
+        taglineClassName="text-sm tracking-[0.22em] text-white sm:text-base"
       />
       <p className="sr-only" role="status">Loading VastMind. All your socials, one mind.</p>
     </div>

@@ -1260,7 +1260,7 @@ export interface IdentityPasswordStatus {
 
 export interface IdentityPasswordInput {
   /**
-     * @minLength 12
+     * @minLength 6
      * @maxLength 128
      */
   newPassword: string;
@@ -1273,7 +1273,7 @@ export interface IdentityPasswordInput {
 
 export interface IdentityPasswordResetInput {
   /**
-     * @minLength 12
+     * @minLength 6
      * @maxLength 128
      */
   newPassword: string;

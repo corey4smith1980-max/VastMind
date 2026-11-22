@@ -48,7 +48,7 @@ export function Landing() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
           <Link href="/" aria-label="VastMind home" className="flex shrink-0 items-center gap-2.5">
             <BrandMark className="h-12 w-12 sm:h-14 sm:w-14" />
-            <Wordmark className="hidden h-8 w-[190px] sm:inline sm:h-9 sm:w-[190px]" />
+            <Wordmark tagline className="hidden sm:flex" taglineClassName="text-[0.62rem] tracking-[0.14em]" />
           </Link>
           <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
             <a href="#lines" className="hover:text-foreground">What's inside</a>
@@ -74,7 +74,10 @@ export function Landing() {
           <p className="mt-6 max-w-lg text-lg text-muted-foreground">
             Chat with friends, share posts, watch the Feed and discover independent shops—all from one VastMind ID.
           </p>
-          <p className="mt-4 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="mt-5 text-sm font-bold tracking-[0.18em] text-foreground/85">
+            ALL YOUR SOCIALS <span className="text-[#2457ff]">•</span> ONE MIND
+          </p>
+          <p className="mt-2 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Chat <span className="text-[#08cfe9]">•</span> Connect <span className="text-[#3568ff]">•</span> Manage <span className="text-[#823cff]">•</span> Grow
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -193,7 +196,7 @@ export function Landing() {
         <Button asChild size="lg" className="mt-10 h-12 rounded-full px-8 text-base"><Link href="/sign-up">Create your VastMind ID</Link></Button>
       </section>
       <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-sm text-muted-foreground sm:flex-row">
-        <span className="flex items-center gap-2"><BrandMark className="h-6 w-6" /> VastMind</span>
+        <span className="flex items-center gap-2"><BrandMark className="h-7 w-7" /><Wordmark wordmarkClassName="text-lg" /></span>
         <span>Made for real friends, real neighbourhoods and real shops.</span>
       </footer>
     </div>

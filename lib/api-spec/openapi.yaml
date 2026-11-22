@@ -2821,14 +2821,14 @@ components:
       additionalProperties: false
       required: [newPassword]
       properties:
-        newPassword: { type: string, minLength: 12, maxLength: 128 }
+        newPassword: { type: string, minLength: 6, maxLength: 128 }
         currentPassword: { type: string, minLength: 1, maxLength: 128 }
     IdentityPasswordResetInput:
       type: object
       additionalProperties: false
       required: [newPassword]
       properties:
-        newPassword: { type: string, minLength: 12, maxLength: 128 }
+        newPassword: { type: string, minLength: 6, maxLength: 128 }
     IdentityPasswordSaved:
       type: object
       additionalProperties: false

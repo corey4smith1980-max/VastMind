@@ -31,7 +31,7 @@ const clerkAppearance = {
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-    logoImageUrl: `${window.location.origin}${basePath}/vastmind-wordmark.png`,
+    logoImageUrl: `${window.location.origin}${basePath}/vastmind-mark.png`,
   },
   variables: {
     colorPrimary: "#2563eb",
@@ -61,7 +61,7 @@ const clerkAppearance = {
     formFieldSuccessText: "text-[#1f7a4a]",
     alertText: "text-[#15182f]",
     logoBox: "h-12 justify-center",
-    logoImage: "h-12 w-12",
+    logoImage: "h-14 w-14 object-contain",
     socialButtonsBlockButton: "bg-white border border-[#e0e5f2] hover:bg-[#eef1ff]",
     formButtonPrimary: "bg-[#2563eb] hover:bg-[#1748be] text-white shadow-none",
     formFieldInput: "bg-white border-[#d8deed] text-[#15182f]",

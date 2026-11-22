@@ -136,7 +136,7 @@ export default function AccountSecurityScreen() {
   };
 
   const submitPasswordReset = async () => {
-    if (newPassword.length < 12 || newPassword !== confirmNewPassword) return;
+    if (newPassword.length < 6 || newPassword !== confirmNewPassword) return;
     setPasswordResetNotice("");
     try {
       await resetPassword.mutateAsync({ data: { newPassword } });
@@ -238,10 +238,11 @@ export default function AccountSecurityScreen() {
         <Text style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 19, marginTop: 6 }}>
           Set a new one from a passkey-verified VastMind session. Resetting does not add this device to password-trusted devices.
         </Text>
-        <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 14 }}>New password (at least 12 characters)</Text>
-        <TextInput accessibilityLabel="New VastMind password" secureTextEntry autoComplete="new-password" value={newPassword} onChangeText={setNewPassword} placeholder="New password" placeholderTextColor={colors.mutedForeground} style={{ marginTop: 6, borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.foreground, padding: 13 }} />
+        <Text style={{ color: colors.mutedForeground, fontSize: 12, marginTop: 14 }}>New password (at least 6 characters)</Text>
+        <TextInput accessibilityLabel="New VastMind password" secureTextEntry autoComplete="new-password" value={newPassword} onChangeText={setNewPassword} placeholder="New password" placeholderTextColor={colors.mutedForeground} style={{ marginTop: 6, borderWidth: 1, borderColor: newPassword.length > 0 && newPassword.length < 6 ? colors.destructive : colors.border, borderRadius: 12, color: colors.foreground, padding: 13 }} />
+        {newPassword.length > 0 && newPassword.length < 6 ? <Text accessibilityRole="alert" style={{ color: colors.destructive, fontSize: 12, marginTop: 6 }}>Use at least 6 characters.</Text> : null}
         <TextInput accessibilityLabel="Confirm new VastMind password" secureTextEntry autoComplete="new-password" value={confirmNewPassword} onChangeText={setConfirmNewPassword} placeholder="Confirm new password" placeholderTextColor={colors.mutedForeground} style={{ marginTop: 9, borderWidth: 1, borderColor: colors.border, borderRadius: 12, color: colors.foreground, padding: 13 }} />
-        <Pressable accessibilityRole="button" disabled={resetPassword.isPending || newPassword.length < 12 || newPassword !== confirmNewPassword} onPress={() => void submitPasswordReset()} style={{ marginTop: 12, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: colors.primary, paddingHorizontal: 16, opacity: resetPassword.isPending || newPassword.length < 12 || newPassword !== confirmNewPassword ? 0.55 : 1 }}>
+        <Pressable accessibilityRole="button" disabled={resetPassword.isPending || newPassword.length < 6 || newPassword !== confirmNewPassword} onPress={() => void submitPasswordReset()} style={{ marginTop: 12, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 14, backgroundColor: colors.primary, paddingHorizontal: 16, opacity: resetPassword.isPending || newPassword.length < 6 || newPassword !== confirmNewPassword ? 0.55 : 1 }}>
           <Text style={{ color: colors.primaryForeground, fontWeight: "700" }}>{resetPassword.isPending ? "Resetting…" : "Reset password with passkey"}</Text>
         </Pressable>
         {passwordResetNotice ? <Text accessibilityRole="alert" style={{ color: colors.mutedForeground, fontSize: 12, lineHeight: 18, marginTop: 10 }}>{passwordResetNotice}</Text> : null}

@@ -53,6 +53,8 @@ export default function RootLayout() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Outfit_800ExtraBold: require('../assets/fonts/Outfit-ExtraBold.ttf'),
+    Outfit_700Bold: require('../assets/fonts/Outfit-Bold.ttf'),
   });
 
   useEffect(() => {

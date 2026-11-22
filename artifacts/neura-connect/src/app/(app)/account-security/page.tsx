@@ -11,6 +11,7 @@ import { AddPasskeyButton, MigrationNotice, PasskeyPasswordResetForm } from "@/c
 import { DeviceLinkScanner } from "@/components/vastmind-access/device-link";
 import { SessionManager } from "@/components/vastmind-access/session-manager";
 import { identityCall, useAuth } from "@/lib/vastmind-auth";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { useMe } from "@/lib/me";
 import { accountRecoveryPublicKey, createRecoveryPhrase } from "@workspace/mail-crypto";
 
@@ -57,7 +58,7 @@ function PasswordSettings() {
 
   async function savePassword(event: React.FormEvent) {
     event.preventDefault();
-    if (newPassword.length < 12 || newPassword !== confirmPassword) return;
+    if (newPassword.length < MIN_PASSWORD_LENGTH || newPassword !== confirmPassword) return;
     setBusy(true);
     setMessage("");
     try {
@@ -83,9 +84,9 @@ function PasswordSettings() {
       <p className="mt-2 text-sm text-muted-foreground">Password sign-in works only with an existing trusted-device credential. Resetting a password never adds a device to that trusted list.</p>
       <form onSubmit={savePassword} className="mt-4 max-w-md space-y-3">
         {enabled && <div className="space-y-1.5"><Label htmlFor="current-vastmind-password">Current password</Label><Input id="current-vastmind-password" type="password" autoComplete="current-password" minLength={1} maxLength={128} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></div>}
-        <div className="space-y-1.5"><Label htmlFor="new-vastmind-password">{enabled ? "New password" : "Create a password"}</Label><Input id="new-vastmind-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /><p className="text-xs text-muted-foreground">At least 12 characters.</p></div>
-        <div className="space-y-1.5"><Label htmlFor="confirm-vastmind-password">Confirm password</Label><Input id="confirm-vastmind-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
-        <Button type="submit" disabled={busy || newPassword.length < 12 || newPassword !== confirmPassword || (enabled && !currentPassword)}>{busy ? "Saving…" : enabled ? "Change password" : "Set password"}</Button>
+        <div className="space-y-1.5"><Label htmlFor="new-vastmind-password">{enabled ? "New password" : "Create a password"}</Label><Input id="new-vastmind-password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} aria-invalid={newPassword.length > 0 && newPassword.length < MIN_PASSWORD_LENGTH} /><p className={`text-xs ${newPassword.length > 0 && newPassword.length < MIN_PASSWORD_LENGTH ? "text-destructive" : "text-muted-foreground"}`}>{newPassword.length > 0 && newPassword.length < MIN_PASSWORD_LENGTH ? "Use at least 6 characters." : "At least 6 characters."}</p></div>
+        <div className="space-y-1.5"><Label htmlFor="confirm-vastmind-password">Confirm password</Label><Input id="confirm-vastmind-password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} /></div>
+        <Button type="submit" disabled={busy || newPassword.length < MIN_PASSWORD_LENGTH || newPassword !== confirmPassword || (enabled && !currentPassword)}>{busy ? "Saving…" : enabled ? "Change password" : "Set password"}</Button>
       </form>
       {enabled && <div className="mt-4 border-t pt-4">
         <p className="text-sm text-muted-foreground">Forgot your current password? Reset it from a passkey-authenticated session.</p>

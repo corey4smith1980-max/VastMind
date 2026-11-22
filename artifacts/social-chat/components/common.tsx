@@ -1,6 +1,6 @@
 import React from 'react';
 import { Feather } from '@expo/vector-icons';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
 import { useAppStore } from '@/state/AppStore';
@@ -19,17 +19,23 @@ export function VastMindMark({ size = 30 }: { size?: number }) {
   );
 }
 
-export function AppBrand({ size = 30, fontSize = 19 }: { size?: number; fontSize?: number }) {
+export function AppBrand({ size = 30, fontSize = 19, tagline = false }: { size?: number; fontSize?: number; tagline?: boolean }) {
+  const scheme = useColorScheme();
+  const onDark = scheme === 'dark';
   return (
     <View style={styles.brandRow} accessibilityRole="header" accessibilityLabel="VastMind. All your socials, one mind.">
       <VastMindMark size={size} />
-      <Image
-        source={require('../assets/images/vastmind-wordmark.png')}
-        style={{ width: fontSize * 5.9, height: fontSize }}
-        resizeMode="contain"
-        accessibilityLabel="VastMind"
-        accessibilityIgnoresInvertColors
-      />
+      <View>
+        <Text style={{ fontFamily: 'Outfit_800ExtraBold', fontSize, letterSpacing: -0.8 }} accessibilityLabel="VastMind">
+          <Text style={{ color: onDark ? '#5CEFFF' : '#0096C8' }}>Vast</Text>
+          <Text style={{ color: onDark ? '#E47BFF' : '#7A32EE' }}>Mind</Text>
+        </Text>
+        {tagline ? (
+          <Text style={{ marginTop: 4, fontFamily: 'Outfit_700Bold', fontSize: Math.max(11, fontSize * 0.34), letterSpacing: 1.3, color: onDark ? '#F5F8FF' : '#1B2744' }}>
+            ALL YOUR SOCIALS • ONE MIND
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }

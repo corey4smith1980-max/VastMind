@@ -1971,7 +1971,7 @@ export const CompleteIdentityDeviceLinkResponse = zod.object({
 /**
  * @summary Set or change the signed-in member's VastMind password
  */
-export const setIdentityPasswordBodyNewPasswordMin = 12;
+export const setIdentityPasswordBodyNewPasswordMin = 6;
 export const setIdentityPasswordBodyNewPasswordMax = 128;
 
 export const setIdentityPasswordBodyCurrentPasswordMax = 128;
@@ -1991,7 +1991,7 @@ export const SetIdentityPasswordResponse = zod.object({
 /**
  * @summary Reset a forgotten VastMind password from a passkey-authenticated session
  */
-export const resetIdentityPasswordWithPasskeyBodyNewPasswordMin = 12;
+export const resetIdentityPasswordWithPasskeyBodyNewPasswordMin = 6;
 export const resetIdentityPasswordWithPasskeyBodyNewPasswordMax = 128;
 
 

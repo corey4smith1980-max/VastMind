@@ -37,6 +37,8 @@ import {
   TRUSTED_DEVICE_TTL_MS,
 } from "../lib/trusted-device";
 import { isValidChosenUsername, normalizeUsername } from "../lib/usernames";
+import { assessUsernameAvailability, availabilityCandidates } from "../lib/username-availability";
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, passwordRequirementMessage } from "../lib/password-policy";
 
 const router = Router();
 router.use((req, res, next) => {
@@ -65,6 +67,14 @@ const deviceLinkStatusLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
+const usernameAvailabilityLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 60,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many username checks. Wait a moment and try again." },
+});
+const newPasswordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(MAX_PASSWORD_LENGTH);
 const mobileTicketIdentifier = (ticket: string) =>
   `mobile-session:${createHash("sha256").update(ticket).digest("hex")}`;
 const mobileSessionDetailsSchema = z.object({
@@ -351,6 +361,35 @@ router.post("/identity/device-link-complete", identityLimiter, async (req, res):
   for (const cookie of signInResponse.headers.getSetCookie()) res.append("Set-Cookie", cookie);
   setTrustedDeviceCookie(res, trustToken);
   res.json(CompleteIdentityDeviceLinkResponse.parse({ signedIn: true }));
+});
+
+// Public, case-insensitive check used while a person is typing a username.
+// Registration still re-checks inside the passkey transaction.
+router.get("/identity/username-availability", usernameAvailabilityLimiter, async (req, res) => {
+  const username = typeof req.query.u === "string" ? req.query.u : "";
+  const displayName = typeof req.query.name === "string" ? req.query.name : "";
+  if (username.length > 64 || displayName.length > 80) {
+    res.status(400).json({ error: "That username check is invalid." });
+    return;
+  }
+  const candidates = availabilityCandidates(username, displayName);
+  const legacyUserId = getAuth(req).userId;
+  const passkeySession = await vastMindAuth.api.getSession({ headers: requestHeaders(req) }).catch(() => null);
+  const selfId = passkeySession?.user.id ?? legacyUserId ?? null;
+  const rows = candidates.length
+    ? await query(
+      selfId
+        ? "SELECT lower(username) AS username FROM users WHERE lower(username) = ANY($1::text[]) AND id<>$2"
+        : "SELECT lower(username) AS username FROM users WHERE lower(username) = ANY($1::text[])",
+      selfId ? [candidates, selfId] : [candidates],
+    )
+    : [];
+  res.set("Cache-Control", "no-store");
+  res.json(assessUsernameAvailability({
+    username,
+    displayName,
+    taken: new Set(rows.map((row) => row.username)),
+  }));
 });
 
 // Start a passwordless account or link a passkey to the currently signed-in
@@ -771,10 +810,10 @@ router.get("/identity/password-status", async (req, res): Promise<void> => {
 
 router.post("/identity/password", identityLimiter, async (req, res): Promise<void> => {
   const parsed = z.object({
-    newPassword: z.string().min(12).max(128),
-    currentPassword: z.string().min(1).max(128).optional(),
+    newPassword: newPasswordSchema,
+    currentPassword: z.string().min(1).max(MAX_PASSWORD_LENGTH).optional(),
   }).safeParse(req.body);
-  assert(parsed.success, 400, "Use a password between 12 and 128 characters.");
+  assert(parsed.success, 400, passwordRequirementMessage());
   const current = await currentSessionIdentity(req);
   assert(current?.provider === "vastmind", 401, "Sign in with a VastMind passkey to manage your password.");
   const method = await sessionMethod(current.userId, current.sessionId);
@@ -820,8 +859,8 @@ router.post("/identity/password", identityLimiter, async (req, res): Promise<voi
 // password. This operation never enrolls a trusted device; password sign-in
 // continues to require an already-issued trusted-device token.
 router.post("/identity/password/reset-with-passkey", identityLimiter, async (req, res): Promise<void> => {
-  const parsed = z.object({ newPassword: z.string().min(12).max(128) }).safeParse(req.body);
-  assert(parsed.success, 400, "Use a password between 12 and 128 characters.");
+  const parsed = z.object({ newPassword: newPasswordSchema }).safeParse(req.body);
+  assert(parsed.success, 400, passwordRequirementMessage());
   const current = await currentSessionIdentity(req);
   assert(current?.provider === "vastmind", 401, "Sign in with a VastMind passkey before resetting this password.");
   const method = await sessionMethod(current.userId, current.sessionId);

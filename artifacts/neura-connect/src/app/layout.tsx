@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, DM_Sans, JetBrains_Mono } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans, JetBrains_Mono, Outfit } from "next/font/google";
 import ClientRoot from "./client-root";
 import "../index.css";
 
@@ -7,6 +7,7 @@ import "../index.css";
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-display-face", display: "swap" });
 const body = DM_Sans({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+const brand = Outfit({ subsets: ["latin"], variable: "--font-brand", weight: ["600", "700", "800"], display: "swap" });
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -15,7 +16,19 @@ export const metadata: Metadata = {
   applicationName: "VastMind",
   description: "All your socials in one mind: chat, share posts, manage a business, and grow on VastMind.",
   manifest: `${base}/manifest.webmanifest`,
-  appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "VastMind", statusBarStyle: "black-translucent" },
+  openGraph: {
+    title: "VastMind",
+    description: "ALL YOUR SOCIALS • ONE MIND",
+    siteName: "VastMind",
+    images: [{ url: `${base}/og.png`, width: 1200, height: 630, alt: "VastMind. All your socials. One mind." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VastMind",
+    description: "ALL YOUR SOCIALS • ONE MIND",
+    images: [`${base}/og.png`],
+  },
   icons: {
     icon: [
       { url: `${base}/favicon.ico`, sizes: "any" },
@@ -35,7 +48,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${display.variable} ${body.variable} ${mono.variable} ${brand.variable}`}>
       <body className="grain min-h-[100dvh]">
         <ClientRoot>{children}</ClientRoot>
       </body>
