@@ -48,6 +48,21 @@ describe('production Expo request handling', () => {
     assert.equal((await request()).status, 200, 'a rejected request must not terminate the server');
   }
 
+  it('serves the VastMind install icon and share image', async () => {
+    const icon = await request('/mobile/favicon.svg');
+    assert.equal(icon.status, 200);
+    assert.match(icon.headers['content-type'], /image\/svg\+xml/);
+    assert.match(icon.text, /#00C6FF/);
+    assert.doesNotMatch(icon.text, /FF3C00/i);
+    const share = await request('/mobile/og.png');
+    assert.equal(share.status, 200);
+    assert.match(share.headers['content-type'], /image\/png/);
+    const page = await fs.readFile(path.resolve(__dirname, 'templates', 'landing-page.html'), 'utf8');
+    assert.doesNotMatch(page, /FF3C00/i);
+    assert.match(page, /og:image/);
+    assert.match(page, /VastMind/);
+    assert.match(page, /favicon\.svg/);
+  });
   it('serves the landing page without caching or content sniffing', async () => {
     const res = await request();
     assert.equal(res.status, 200);

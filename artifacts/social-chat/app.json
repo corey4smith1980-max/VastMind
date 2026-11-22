@@ -19,7 +19,13 @@
       }
     },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.png",
+      "name": "VastMind",
+      "shortName": "VastMind",
+      "lang": "en",
+      "themeColor": "#030611",
+      "backgroundColor": "#030611",
+      "description": "ALL YOUR SOCIALS • ONE MIND"
     },
     "plugins": [
       "expo-router",

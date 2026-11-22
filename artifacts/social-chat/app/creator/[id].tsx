@@ -59,7 +59,7 @@ export default function CreatorScreen() {
           contentContainerStyle={{ paddingTop: 18, paddingBottom: 28 }} renderItem={clipItem}
           onEndReached={() => { if (clips.hasMore) clips.loadNext(); }} onEndReachedThreshold={0.4} />
         : <View style={{ alignItems: "center", padding: 34 }}><Feather name="film" size={26} color={colors.mutedForeground} /><Text style={{ color: colors.mutedForeground, marginTop: 10 }}>No clips to see yet</Text></View>}
-    {playing ? <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#10262b" }}>
+    {playing ? <View style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0, backgroundColor: "#030611" }}>
       <Pressable accessibilityRole="button" onPress={() => setPlaying(null)} style={{ height: 48, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 10 }}><Feather name="x" size={22} color="#f6efe4" /><Text style={{ color: "#f6efe4", fontWeight: "700" }}>Close clips</Text></Pressable>
       <ReelPager items={clips.items} focused onEndReached={clips.loadNext} initialIndex={Math.max(0, clips.items.findIndex(p => p.id === playing))} bottomInset={28} />
     </View> : null}

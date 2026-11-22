@@ -187,7 +187,7 @@ export default function VideoStudioScreen() {
         {audio ? <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Switch accessibilityLabel="I have rights to use this music" value={rights} onValueChange={setRights} /><Text style={{ flex: 1, color: colors.foreground, fontSize: 12 }}>I own this music or have permission to publish it.</Text></View> : null}
       </View>
       <TextInput accessibilityLabel="Clip caption" multiline maxLength={5000} value={caption} onChangeText={setCaption} placeholder="Add a caption for your clip…" placeholderTextColor={colors.mutedForeground} style={{ minHeight: 82, padding: 14, borderRadius: 16, backgroundColor: colors.card, color: colors.foreground, textAlignVertical: "top" }} />
-      {edited ? <View style={{ height: 300, borderRadius: 18, overflow: "hidden", backgroundColor: "#10262b" }}><VideoView player={player} style={{ flex: 1 }} contentFit="contain" nativeControls /></View> : null}
+      {edited ? <View style={{ height: 300, borderRadius: 18, overflow: "hidden", backgroundColor: "#030611" }}><VideoView player={player} style={{ flex: 1 }} contentFit="contain" nativeControls /></View> : null}
       {edited && captions.length ? <View style={{ gap: 8 }}><Text style={{ color: colors.foreground, fontWeight: "700" }}>Review captions · approximate five-second timings</Text>{captions.map((cue, index) =>
         <View key={`${cue.start}-${index}`} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Text style={{ width: 48, fontSize: 11, color: colors.mutedForeground }}>{Math.floor(cue.start)}s</Text>
           <TextInput accessibilityLabel={`Edit caption ${index + 1}`} value={cue.text} onChangeText={text => setCaptions(items => items.map((x, i) => i === index ? { ...x, text } : x))}

@@ -16,6 +16,15 @@ const { assertSafePath, httpError, serveStaticFile } = require('./static-files')
 
 const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
+const BRAND_ROOT = path.resolve(__dirname, 'brand');
+const BRAND_FILES = {
+  '/favicon.svg': 'image/svg+xml',
+  '/brand-mark.svg': 'image/svg+xml',
+  '/apple-touch-icon.png': 'image/png',
+  '/og.png': 'image/png',
+  '/Outfit-Bold.ttf': 'font/ttf',
+  '/Outfit-ExtraBold.ttf': 'font/ttf',
+};
 const basePath = (process.env.BASE_PATH || '/').replace(/\/+$/, '');
 
 const MIME_TYPES = {
@@ -80,6 +89,7 @@ function serveLandingPage(req, res, landingPageTemplate, appName, mount, origin)
 
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, escapeHtml(baseUrl))
+    .replace(/ASSET_PREFIX_PLACEHOLDER/g, escapeHtml(mount || ''))
     .replace(/EXPS_URL_ATTRIBUTE_PLACEHOLDER/g, escapeHtml(expsUrl))
     .replace(/EXPS_URL_JSON_PLACEHOLDER/g, toScriptString(expsUrl))
     .replace(/APP_NAME_PLACEHOLDER/g, escapeHtml(appName));
@@ -180,6 +190,11 @@ function createAppServer({ staticRoot = STATIC_ROOT, templatePath = TEMPLATE_PAT
       if (mount) {
         if (pathname !== mount && !pathname.startsWith(`${mount}/`)) throw httpError(404);
         pathname = pathname.slice(mount.length) || '/';
+      }
+      if (BRAND_FILES[pathname]) {
+        return await serveStaticFile(BRAND_ROOT, pathname, req, res, BRAND_FILES[pathname], {
+          'cache-control': 'public, max-age=86400',
+        });
       }
       if (pathname === '/' || pathname === '/manifest') {
         const platform = req.headers['expo-platform'];
