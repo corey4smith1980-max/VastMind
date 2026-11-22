@@ -78,6 +78,48 @@ export async function finalizePasskeyRegistration(userId: string): Promise<void>
   }
 }
 
+/**
+ * Release synthetic signups from before the session-id fix that stored a
+ * passkey and never created a session. The cutoff keeps later accounts out.
+ */
+export async function releasePreFixPasskeyAccounts(): Promise<string[]> {
+  const { rows } = await pool.query<{ username: string }>(`
+    WITH doomed AS (
+      SELECT DISTINCT i.user_id, u.username
+      FROM passkey_registration_intent i
+      JOIN "user" au ON au.id = i.user_id
+      JOIN users u ON u.id = i.user_id
+      WHERE au.email = i.user_id || '@users.vastmind.invalid'
+        AND i.used_at IS NOT NULL
+        AND u.created_at < timestamptz '2026-11-22 20:00:00+00'
+        AND EXISTS (SELECT 1 FROM passkey p WHERE p.user_id = i.user_id)
+        AND NOT EXISTS (SELECT 1 FROM "session" s WHERE s.user_id = i.user_id)
+    ),
+    removed_passkeys AS (
+      DELETE FROM passkey p USING doomed d WHERE p.user_id = d.user_id RETURNING p.user_id
+    ),
+    removed_keys AS (
+      DELETE FROM account_recovery_key k USING doomed d WHERE k.user_id = d.user_id RETURNING k.user_id
+    ),
+    removed_profiles AS (
+      DELETE FROM users u USING doomed d WHERE u.id = d.user_id RETURNING u.username
+    ),
+    removed_auth AS (
+      DELETE FROM "user" au USING doomed d WHERE au.id = d.user_id RETURNING au.id
+    ),
+    removed_intents AS (
+      DELETE FROM passkey_registration_intent i USING doomed d WHERE i.user_id = d.user_id RETURNING i.user_id
+    )
+    SELECT DISTINCT p.username
+    FROM removed_profiles p
+    LEFT JOIN removed_passkeys ON true
+    LEFT JOIN removed_keys ON true
+    LEFT JOIN removed_auth ON true
+    LEFT JOIN removed_intents ON true
+  `);
+  return rows.map((row) => row.username).filter((username): username is string => typeof username === "string");
+}
+
 export async function releaseOrphanRegistrations(): Promise<number> {
   const { rows: [row] } = await pool.query<{ released: number }>(`
     WITH doomed AS (

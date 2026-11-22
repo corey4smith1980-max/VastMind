@@ -55,6 +55,9 @@ export const vastMindAuth = betterAuth({
   secret: authSecret,
   database: drizzleAdapter(db, {
     provider: "pg",
+    // Default is false. Without this, passkey insert commits before session
+    // creation, so a later failure leaves a passkey and no session.
+    transaction: true,
     schema: {
       user: authUser,
       session: authSession,

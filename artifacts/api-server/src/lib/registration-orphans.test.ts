@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { shouldReleaseRegistration } from "./registration-orphan-policy";
+import { shouldReleasePreFixPasskeyAccount, shouldReleaseRegistration } from "./registration-orphan-policy";
 
 const now = Date.parse("2026-11-22T19:50:00.000Z");
 
@@ -44,6 +44,38 @@ test("an in-flight registration and a finished account are kept", () => {
     profileCreatedAt: now - 60 * 60_000,
     intentExpiresAt: now - 60 * 60_000,
     now,
+  }), false);
+});
+
+test("vastmind1 is released because its passkey was saved and it never had a session", () => {
+  const createdAt = Date.parse("2026-11-22T19:46:45.000Z");
+  assert.equal(shouldReleasePreFixPasskeyAccount({
+    syntheticAccount: true,
+    hasPasskey: true,
+    hasSession: false,
+    intentUsed: true,
+    createdAt,
+  }), true);
+  assert.equal(shouldReleasePreFixPasskeyAccount({
+    syntheticAccount: true,
+    hasPasskey: true,
+    hasSession: true,
+    intentUsed: true,
+    createdAt,
+  }), false);
+  assert.equal(shouldReleasePreFixPasskeyAccount({
+    syntheticAccount: true,
+    hasPasskey: true,
+    hasSession: false,
+    intentUsed: true,
+    createdAt: Date.parse("2026-11-22T20:00:00.000Z"),
+  }), false);
+  assert.equal(shouldReleasePreFixPasskeyAccount({
+    syntheticAccount: true,
+    hasPasskey: false,
+    hasSession: false,
+    intentUsed: true,
+    createdAt,
   }), false);
 });
 

@@ -5,7 +5,7 @@ import { ensureBucketCors } from "./lib/s3-cors";
 import { createServer } from "node:http";
 import { attachRealtime } from "./lib/realtime";
 import { cleanExpiredMedia } from "./routes/media";
-import { releaseOrphanRegistrations } from "./lib/registration-orphans";
+import { releaseOrphanRegistrations, releasePreFixPasskeyAccounts } from "./lib/registration-orphans";
 import { deliverPush } from "./lib/push";
 
 const rawPort = process.env["PORT"];
@@ -32,6 +32,11 @@ server.listen({ port, host }, () => {
   const cleanup=()=>cleanExpiredMedia().catch(()=>logger.warn("Media cleanup unavailable"));
   void cleanup();
   setInterval(cleanup,60*60_000).unref();
+  void releasePreFixPasskeyAccounts()
+    .then((usernames) => {
+      for (const username of usernames) logger.info({ username }, "Released unfinished passkey account");
+    })
+    .catch(() => logger.warn("Pre-fix passkey account cleanup unavailable"));
   const releaseSignups=()=>releaseOrphanRegistrations()
     .then((released)=>released ? logger.info({ released }, "Released unfinished passkey registrations") : undefined)
     .catch(()=>logger.warn("Unfinished passkey registration cleanup unavailable"));
