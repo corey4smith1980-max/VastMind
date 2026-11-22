@@ -17,6 +17,12 @@ import { DeviceLinkLogin } from "@/components/vastmind-access/device-link";
 export const USERNAME_RE = /^(?!member_[a-f0-9]{24}$)[a-zA-Z0-9_]{3,32}$/i;
 type UsernameAvailability = { username: string; valid: boolean; available: boolean; suggestions: string[] };
 const errText = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong. Try again.");
+export function passkeyFailureMessage(message: string | null | undefined): string {
+  if (!message || message === "Failed to verify registration") {
+    return "Your phone couldn't finish saving the passkey. Nothing was kept. Try Create passkey again.";
+  }
+  return message;
+}
 const goChats = () => window.location.assign(`${basePath}/chats`);
 
 function downloadRecoveryPhrase(phrase: string, username: string): void {
@@ -220,7 +226,7 @@ export function RecoveryFlow({ onBack, onSuccess }: { onBack: () => void; onSucc
       const { signature } = await signAccountRecoveryChallenge(phrase, challenge);
       const { context } = await identityRequest<{ context: string }>("recovery-registration-intents", { challengeId, challenge, signature });
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
-      if (res?.error) { setError(res.error.message ?? "The new passkey was not saved."); return; }
+      if (res?.error) { setError(passkeyFailureMessage(res.error.message) || "The new passkey was not saved."); return; }
       await identityRequest("trusted-devices", {});
       setPhrase("");
       if (onSuccess) await onSuccess();
@@ -345,7 +351,7 @@ export function SignupFlow({
       const recoveryPublicKey = await accountRecoveryPublicKey(phrase);
       const { context } = await identityRequest<{ context: string }>("passkey-registration-intents", { username: u, displayName: n.trim(), recoveryPublicKey });
       const res = await vastMindAuthClient.passkey.addPasskey({ context, createSession: true });
-      if (res?.error) { setError(res.error.message ?? "The passkey was not saved."); return; }
+      if (res?.error) { setError(passkeyFailureMessage(res.error.message) || "The passkey was not saved."); return; }
       await identityRequest("trusted-devices", {});
       await identityRequest("password", { newPassword: password });
       setPhrase("");

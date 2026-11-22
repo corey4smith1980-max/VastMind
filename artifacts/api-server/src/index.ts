@@ -5,6 +5,7 @@ import { ensureBucketCors } from "./lib/s3-cors";
 import { createServer } from "node:http";
 import { attachRealtime } from "./lib/realtime";
 import { cleanExpiredMedia } from "./routes/media";
+import { releaseOrphanRegistrations } from "./lib/registration-orphans";
 import { deliverPush } from "./lib/push";
 
 const rawPort = process.env["PORT"];
@@ -31,6 +32,11 @@ server.listen({ port, host }, () => {
   const cleanup=()=>cleanExpiredMedia().catch(()=>logger.warn("Media cleanup unavailable"));
   void cleanup();
   setInterval(cleanup,60*60_000).unref();
+  const releaseSignups=()=>releaseOrphanRegistrations()
+    .then((released)=>released ? logger.info({ released }, "Released unfinished passkey registrations") : undefined)
+    .catch(()=>logger.warn("Unfinished passkey registration cleanup unavailable"));
+  void releaseSignups();
+  setInterval(releaseSignups,5*60_000).unref();
   setInterval(()=>deliverPush().catch(()=>logger.warn("Push worker unavailable")),5_000).unref();
 });
 for (const signal of ["SIGINT", "SIGTERM"] as const) {

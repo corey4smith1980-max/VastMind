@@ -14,6 +14,8 @@ import {
 } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import type { Request } from "express";
+import { ensureSessionId } from "./login-reservation";
+import { abandonFailedRegistration, finalizePasskeyRegistration } from "./registration-orphans";
 
 function getCanonicalOrigin(): string {
   const configured = process.env.VASTMIND_AUTH_URL
@@ -69,6 +71,13 @@ export const vastMindAuth = betterAuth({
     revokeSessionsOnPasswordReset: true,
   },
   trustedOrigins: [canonicalOrigin],
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for"],
+      // The API is only reached through the Railway gateway on the private network.
+      trustedProxies: ["127.0.0.1", "::1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"],
+    },
+  },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
   databaseHooks: {
     session: {
@@ -77,6 +86,8 @@ export const vastMindAuth = betterAuth({
         // allowed only while a one-time QR request is being completed.
         // Authentication does not store a device fingerprint, IP, or user agent.
         before: async (session) => {
+          const reserved = ensureSessionId(session);
+          try {
           const { rows: [active] } = await pool.query<{ active: boolean }>(
             `SELECT EXISTS(
                SELECT 1 FROM "session" WHERE user_id=$1 AND expires_at > now()
@@ -110,7 +121,7 @@ export const vastMindAuth = betterAuth({
              SET session_id=EXCLUDED.session_id,expires_at=EXCLUDED.expires_at
              WHERE identity_login_reservation.expires_at <= now()
              RETURNING user_id`,
-            [session.userId, session.id],
+            [reserved.userId, reserved.id],
           );
           if (!rowCount) {
             throw APIError.from("FORBIDDEN", {
@@ -118,13 +129,20 @@ export const vastMindAuth = betterAuth({
               message: "Another sign-in is already being completed for this VastMind account.",
             });
           }
-          return { data: { ...session, ipAddress: null, userAgent: null } };
+          return { data: { ...reserved, ipAddress: null, userAgent: null } };
+          } catch (error) {
+            if (!(error instanceof APIError) && typeof reserved.userId === "string") {
+              await abandonFailedRegistration(reserved.userId).catch(() => undefined);
+            }
+            throw error;
+          }
         },
         after: async (session) => {
           await pool.query(
             `DELETE FROM identity_login_reservation WHERE user_id=$1 AND session_id=$2`,
             [session.userId, session.id],
           );
+          await finalizePasskeyRegistration(session.userId);
         },
       },
     },
@@ -152,40 +170,36 @@ export const vastMindAuth = betterAuth({
           };
         },
         afterVerification: async ({ context, user, verification }) => {
-          if (!verification.registrationInfo?.userVerified) throw new Error("Verify your device to register a passkey.");
+          if (!verification.registrationInfo?.userVerified) {
+            throw APIError.from("BAD_REQUEST", { code: "PASSKEY_NOT_VERIFIED", message: "Verify your device to register a passkey." });
+          }
           // Session-authenticated members may add a second passkey without a
           // public registration intent; the plugin checks session ownership.
           if (!context) return;
-          if (context.length > 256) throw new Error("Registration is unavailable.");
-          const { rows: [intent] } = await pool.query(
-            `SELECT user_id, username, display_name, recovery_public_key
-             FROM passkey_registration_intent
-             WHERE token_hash=$1 AND expires_at > now() AND used_at IS NULL`,
-            [tokenHash(context)],
-          );
-          if (!intent || intent.user_id !== user.id) throw new Error("Registration is unavailable or expired.");
-
+          if (context.length > 256) throw APIError.from("BAD_REQUEST", { code: "REGISTRATION_UNAVAILABLE", message: "Registration is unavailable." });
           const client = await pool.connect();
           try {
             await client.query("BEGIN");
-            const claimed = await client.query(
-              `UPDATE passkey_registration_intent SET used_at=now()
-               WHERE token_hash=$1 AND used_at IS NULL AND expires_at > now() RETURNING user_id`,
+            const { rows: [intent] } = await client.query(
+              `SELECT user_id, username, display_name, recovery_public_key
+               FROM passkey_registration_intent
+               WHERE token_hash=$1 AND expires_at > now() AND used_at IS NULL
+               FOR UPDATE`,
               [tokenHash(context)],
             );
-            if (!claimed.rowCount) throw new Error("Registration was already used or expired.");
-            // Persist the identity, public profile and recovery verification key
-            // together. Better Auth still owns credential and session creation.
+            if (!intent || intent.user_id !== user.id) {
+              throw APIError.from("BAD_REQUEST", { code: "REGISTRATION_UNAVAILABLE", message: "Registration is unavailable or expired." });
+            }
+            const { rows: [taken] } = await client.query(
+              "SELECT id FROM users WHERE lower(username)=lower($1) AND id<>$2",
+              [intent.username, intent.user_id],
+            );
+            if (taken) throw APIError.from("CONFLICT", { code: "USERNAME_TAKEN", message: "That VastMind ID is already in use." });
             await client.query(
               `INSERT INTO "user" (id, name, email, email_verified)
                VALUES ($1,$2,$3,false) ON CONFLICT (id) DO NOTHING`,
               [intent.user_id, intent.display_name, `${intent.user_id}@users.vastmind.invalid`],
             );
-            const { rows: [taken] } = await client.query<{ id: string }>(
-              "SELECT id FROM users WHERE lower(username)=lower($1) AND id<>$2",
-              [intent.username, intent.user_id],
-            );
-            if (taken) throw new Error("That VastMind ID is already in use.");
             await client.query(
               `INSERT INTO users (id, name, username, email)
                VALUES ($1, $2, $3, NULL)
@@ -198,14 +212,19 @@ export const vastMindAuth = betterAuth({
                ON CONFLICT (user_id) DO UPDATE SET public_key=EXCLUDED.public_key, rotated_at=now()`,
               [intent.user_id, intent.recovery_public_key],
             );
+            await client.query(
+              `UPDATE passkey_registration_intent SET used_at=now()
+               WHERE user_id=$1 AND used_at IS NULL`,
+              [intent.user_id],
+            );
             await client.query("COMMIT");
+            return { userId: intent.user_id };
           } catch (error) {
             await client.query("ROLLBACK");
             throw error;
           } finally {
             client.release();
           }
-          return { userId: intent.user_id };
         },
       },
       authentication: {
